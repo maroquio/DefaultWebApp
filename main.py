@@ -23,7 +23,7 @@ from routes.public_routes import router as public_router
 from util.seed_data import inicializar_dados
 
 # Criar aplicação FastAPI
-app = FastAPI(title="DefaultWebApp - Boilerplate", version="1.0.0")
+app = FastAPI(title="Biblix", version="1.0.0")
 
 # Configurar SessionMiddleware
 SECRET_KEY = os.getenv("SECRET_KEY", "sua-chave-secreta-super-segura-mude-isso-em-producao")
@@ -87,7 +87,7 @@ async def health_check():
 
 if __name__ == "__main__":
     logger.info("=" * 60)
-    logger.info("Iniciando DefaultWebApp - Boilerplate FastAPI")
+    logger.info("Iniciando Biblix...")
     logger.info("=" * 60)
 
     # Configurações do servidor
