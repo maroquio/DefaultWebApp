@@ -144,7 +144,7 @@ async def logout(request: Request):
     request.session.clear()
     logger.info(f"Usuário {usuario_email} fez logout")
     informar_sucesso(request, "Logout realizado com sucesso!")
-    return RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/cadastrar")

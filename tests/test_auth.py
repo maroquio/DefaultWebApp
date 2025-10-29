@@ -171,11 +171,11 @@ class TestLogout:
     """Testes de logout"""
 
     def test_logout_limpa_sessao(self, cliente_autenticado):
-        """Logout deve limpar sessão e redirecionar para login"""
+        """Logout deve limpar sessão e redirecionar para raiz"""
         response = cliente_autenticado.get("/logout", follow_redirects=False)
 
-        # Deve redirecionar para login
-        assert_redirects_to(response, "/login")
+        # Deve redirecionar para raiz do site
+        assert_redirects_to(response, "/")
 
     def test_logout_desautentica_usuario(self, cliente_autenticado):
         """Após logout, usuário não deve ter acesso a áreas protegidas"""
