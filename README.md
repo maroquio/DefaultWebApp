@@ -1,6 +1,6 @@
 # DefaultWebApp - Boilerplate FastAPI Completo
 
-> Boilerplate profissional e educacional para desenvolvimento rápido de aplicações web modernas em Python, com componentes reutilizáveis, validação robusta e exemplos práticos.
+> Boilerplate profissional e educacional para desenvolvimento rápido de aplicações web modernas em Python, com componentes reutilizáveis, validação robusta e exemplos práticos. Agora com deploy via Jenkinsfile!
 
 ## 🎯 Visão Geral
 
