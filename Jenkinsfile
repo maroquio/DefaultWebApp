@@ -2,14 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    credentialsId: 'maroquio',
-                    url: 'https://github.com/maroquio/DefaultWebApp.git'
-            }
-        }
-
         stage('Criar .env') {
             steps {
                 withCredentials([
