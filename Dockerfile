@@ -19,5 +19,5 @@ COPY . .
 ENV PORT=8000
 EXPOSE 8000
 
-# Ajuste "app.main:app" para o módulo ASGI do seu projeto
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Ajuste "main:app" para o módulo ASGI do seu projeto
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
