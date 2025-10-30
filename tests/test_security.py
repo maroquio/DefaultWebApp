@@ -383,9 +383,13 @@ class TestSessionSecurity:
     def test_logout_invalida_sessao(self, cliente_autenticado):
         """Logout deve invalidar sessão e prevenir acesso subsequente"""
 
+        # Verificar que está logado antes do logout
+        response_antes = cliente_autenticado.get("/usuario", follow_redirects=False)
+        assert response_antes.status_code == 200, "Deveria estar autenticado antes do logout"
+
         # Fazer logout
         response_logout = cliente_autenticado.get("/logout", follow_redirects=False)
-        assert_redirects_to(response_logout, "/login")
+        assert_redirects_to(response_logout, "/")
 
         # Tentar acessar área protegida com mesma sessão
         response_protegido = cliente_autenticado.get("/usuario", follow_redirects=False)

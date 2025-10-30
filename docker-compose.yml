@@ -1,0 +1,6 @@
+services:
+  web:
+    container_name: dwa.cachoeiro.es
+    build: .
+    ports:
+      - "8400:8000"
