@@ -7,6 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Instala dependências do sistema (curl para health check)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Instala dependências do projeto
 # Garanta que seu projeto tenha um requirements.txt no diretório raiz
 COPY requirements.txt ./
