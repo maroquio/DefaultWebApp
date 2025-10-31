@@ -36,11 +36,20 @@
                         </div>                        
 
                         <div class="col-md-6 mb-3 mb-md-0">
-                            {{ field(name='senha', label='Senha', type='password', required=true) }}
+                            {{ field(name='senha', label='Senha', type='password', required=true,
+                            append_icon='bi-eye', append_button_onclick="togglePassword('senha')",
+                            attributes={'minlength': 8}) }}
                         </div>
 
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            {{ field(name='confirma_senha', label='Confirmar Senha', type='password', required=true) }}
+                        <div class="col-md-6 mb-1 mb-md-0">
+                            {{ field(name='confirma_senha', label='Confirmar Senha', type='password', required=true,
+                            append_icon='bi-eye', append_button_onclick="togglePassword('confirma_senha')",
+                            attributes={'minlength': 8}) }}
+                        </div>
+
+                        <div class="col-12 mb-0">
+                            {% set show_special = true %}
+                            {% include 'components/indicador_senha.html' %}
                         </div>
                     </div>
                 </div>
@@ -62,19 +71,25 @@
 
 {% block scripts %}
 <script>
-    // Inicializar validador de senha
+    // Inicializar validador de senha (apenas feedback visual)
     const passwordValidator = new PasswordValidator({
         passwordFieldId: 'senha',
         confirmPasswordFieldId: 'confirma_senha',
-        minLength: 6
+        strengthBarId: 'senha-strength',
+        strengthTextId: 'senha-strength-text',
+        matchMessageId: 'senha-match',
+        requirements: {
+            length: 'req-length',
+            uppercase: 'req-uppercase',
+            lowercase: 'req-lowercase',
+            number: 'req-number',
+            special: 'req-special'
+        },
+        minLength: 8,
+        showStrength: true,
+        showRequirements: true
     });
 
-    // Validação do formulário
-    document.querySelector('form').addEventListener('submit', function (e) {
-        if (!passwordValidator.validateForm()) {
-            e.preventDefault();
-            return false;
-        }
-    });
+    // Validação é feita server-side via CadastroUsuarioDTO
 </script>
 {% endblock %}

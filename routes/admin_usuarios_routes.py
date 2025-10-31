@@ -15,6 +15,7 @@ from util.security import criar_hash_senha
 from util.exceptions import FormValidationError
 from util.validation_helpers import verificar_email_disponivel
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+from util.repository_helpers import obter_ou_404
 
 router = APIRouter(prefix="/admin/usuarios")
 templates = criar_templates("templates/admin/usuarios")
@@ -131,11 +132,15 @@ async def post_cadastrar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_editar(request: Request, id: int, usuario_logado: Optional[dict] = None):
     """Exibe formulário de alteração de usuário"""
-    usuario = usuario_repo.obter_por_id(id)
-
-    if not usuario:
-        informar_erro(request, "Usuário não encontrado")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou retornar 404
+    usuario = obter_ou_404(
+        usuario_repo.obter_por_id(id),
+        request,
+        "Usuário não encontrado",
+        "/admin/usuarios/listar"
+    )
+    if isinstance(usuario, RedirectResponse):
+        return usuario
 
     # Criar cópia dos dados do usuário sem o campo senha (para não expor hash no HTML)
     dados_usuario = usuario.__dict__.copy()
@@ -171,11 +176,15 @@ async def post_editar(
         informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
         return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Verificar se usuário existe
-    usuario_atual = usuario_repo.obter_por_id(id)
-    if not usuario_atual:
-        informar_erro(request, "Usuário não encontrado")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou retornar 404
+    usuario_atual = obter_ou_404(
+        usuario_repo.obter_por_id(id),
+        request,
+        "Usuário não encontrado",
+        "/admin/usuarios/listar"
+    )
+    if isinstance(usuario_atual, RedirectResponse):
+        return usuario_atual
 
     # Armazena os dados do formulário para reexibição em caso de erro
     dados_formulario: dict = {"id": id, "nome": nome, "email": email, "perfil": perfil}
@@ -242,11 +251,15 @@ async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict]
         informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
         return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
 
-    usuario = usuario_repo.obter_por_id(id)
-
-    if not usuario:
-        informar_erro(request, "Usuário não encontrado")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou retornar 404
+    usuario = obter_ou_404(
+        usuario_repo.obter_por_id(id),
+        request,
+        "Usuário não encontrado",
+        "/admin/usuarios/listar"
+    )
+    if isinstance(usuario, RedirectResponse):
+        return usuario
 
     # Impedir exclusão do próprio usuário
     if usuario.id == usuario_logado["id"]:

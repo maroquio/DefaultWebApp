@@ -25,6 +25,7 @@ from util.template_util import criar_templates
 from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
 from util.exceptions import FormValidationError
+from util.repository_helpers import obter_ou_404
 
 router = APIRouter(prefix="/admin/chamados")
 templates = criar_templates("templates/admin/chamados")
@@ -59,11 +60,16 @@ async def listar(request: Request, usuario_logado: Optional[dict] = None):
 async def get_responder(request: Request, id: int, usuario_logado: Optional[dict] = None):
     """Exibe formulário para responder um chamado com histórico completo."""
     assert usuario_logado is not None
-    chamado = chamado_repo.obter_por_id(id)
 
-    if not chamado:
-        informar_erro(request, "Chamado não encontrado")
-        return RedirectResponse("/admin/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/admin/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
 
     # Marcar mensagens como lidas (apenas as de outros usuários)
     chamado_interacao_repo.marcar_como_lidas(id, usuario_logado["id"])
@@ -99,10 +105,15 @@ async def post_responder(
         logger.warning(f"Rate limit excedido para admin responder chamado - IP: {ip}")
         return RedirectResponse(f"/admin/chamados/{id}/responder", status_code=status.HTTP_303_SEE_OTHER)
 
-    chamado = chamado_repo.obter_por_id(id)
-    if not chamado:
-        informar_erro(request, "Chamado não encontrado")
-        return RedirectResponse("/admin/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/admin/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
 
     # Obter interações para reexibir em caso de erro
     interacoes = chamado_interacao_repo.obter_por_chamado(id)
@@ -165,10 +176,15 @@ async def fechar(request: Request, id: int, usuario_logado: Optional[dict] = Non
     """Fecha um chamado alterando apenas o status, sem adicionar mensagem."""
     assert usuario_logado is not None
 
-    chamado = chamado_repo.obter_por_id(id)
-    if not chamado:
-        informar_erro(request, "Chamado não encontrado")
-        return RedirectResponse("/admin/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/admin/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
 
     sucesso = chamado_repo.atualizar_status(
         id=id,
@@ -191,10 +207,15 @@ async def reabrir(request: Request, id: int, usuario_logado: Optional[dict] = No
     """Reabre um chamado fechado, alterando status para 'Em Análise'."""
     assert usuario_logado is not None
 
-    chamado = chamado_repo.obter_por_id(id)
-    if not chamado:
-        informar_erro(request, "Chamado não encontrado")
-        return RedirectResponse("/admin/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/admin/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
 
     # Verificar se o chamado está fechado
     if chamado.status != StatusChamado.FECHADO:

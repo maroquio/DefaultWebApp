@@ -1,4 +1,6 @@
 {% extends "base_privada.html" %}
+{% from "macros/form_fields.html" import field with context %}
+{% from 'macros/badges.html' import badge_status_chamado, badge_prioridade %}
 
 {% block titulo %}Responder Chamado #{{ chamado.id }}{% endblock %}
 
@@ -20,26 +22,8 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">{{ chamado.titulo }}</h5>
                         <div class="d-flex gap-2">
-                            <!-- Badge de Status -->
-                            {% if chamado.status.value == 'Aberto' %}
-                            <span class="badge bg-light text-dark">{{ chamado.status.value }}</span>
-                            {% elif chamado.status.value == 'Em Análise' %}
-                            <span class="badge bg-info">{{ chamado.status.value }}</span>
-                            {% elif chamado.status.value == 'Resolvido' %}
-                            <span class="badge bg-success">{{ chamado.status.value }}</span>
-                            {% elif chamado.status.value == 'Fechado' %}
-                            <span class="badge bg-secondary">{{ chamado.status.value }}</span>
-                            {% endif %}
-                            <!-- Badge de Prioridade -->
-                            {% if chamado.prioridade.value == 'Urgente' %}
-                            <span class="badge bg-danger">{{ chamado.prioridade.value }}</span>
-                            {% elif chamado.prioridade.value == 'Alta' %}
-                            <span class="badge bg-warning text-dark">{{ chamado.prioridade.value }}</span>
-                            {% elif chamado.prioridade.value == 'Média' %}
-                            <span class="badge bg-info">{{ chamado.prioridade.value }}</span>
-                            {% elif chamado.prioridade.value == 'Baixa' %}
-                            <span class="badge bg-light text-dark">{{ chamado.prioridade.value }}</span>
-                            {% endif %}
+                            {{ badge_status_chamado(chamado.status) }}
+                            {{ badge_prioridade(chamado.prioridade) }}
                         </div>
                     </div>
                 </div>
@@ -130,50 +114,44 @@
                         <!-- CSRF Token -->
                         <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
 
-                        <div class="mb-3">
-                            <label for="mensagem" class="form-label">Mensagem</label>
-                            <textarea class="form-control {% if erros and 'mensagem' in erros %}is-invalid{% endif %}"
-                                id="mensagem" name="mensagem" rows="5" placeholder="Digite sua resposta ao usuário..."
-                                required>{{ dados.mensagem if dados and dados.mensagem else '' }}</textarea>
-                            {% if erros and 'mensagem' in erros %}
-                            <div class="invalid-feedback">{{ erros['mensagem'] }}</div>
-                            {% endif %}
-                            <div class="form-text">Mínimo 10 caracteres, máximo 2000 caracteres</div>
-                        </div>
+                        {{ field(
+                            name='mensagem',
+                            label='Mensagem',
+                            type='textarea',
+                            required=true,
+                            rows=5,
+                            placeholder='Digite sua resposta ao usuário...',
+                            help_text='Mínimo 10 caracteres, máximo 2000 caracteres',
+                            value=dados.mensagem if dados and dados.mensagem else ''
+                        ) }}
 
                         <div class="mb-3">
-                            <label class="form-label d-block">Novo Status</label>
-                            <div class="btn-group w-100 {% if erros and 'status_chamado' in erros %}is-invalid{% endif %}"
-                                role="group" aria-label="Status do chamado">
-                                <!-- Aberto -->
+                            <label class="form-label">Novo Status</label>
+                            <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="status_chamado" id="status_aberto"
-                                    value="Aberto" {% if (dados and dados.status_chamado=='Aberto' ) or
-                                    chamado.status.value=='Aberto' %}checked{% endif %}>
+                                    value="Aberto" {% if (dados and dados.status_chamado =='Aberto' ) or (not dados and
+                                    chamado.status.value=='Aberto' ) %}checked{% endif %} required>
                                 <label class="btn btn-outline-secondary" for="status_aberto">
                                     <i class="bi bi-folder2-open"></i> Aberto
                                 </label>
 
-                                <!-- Em Análise -->
                                 <input type="radio" class="btn-check" name="status_chamado" id="status_analise"
-                                    value="Em Análise" {% if (dados and dados.status_chamado=='Em Análise' ) or (not
-                                    dados and chamado.status.value !='Aberto' and chamado.status.value !='Resolvido' and
-                                    chamado.status.value !='Fechado' ) %}checked{% endif %}>
+                                    value="Em Análise" {% if (dados and dados.status_chamado =='Em Análise' ) or (not
+                                    dados and chamado.status.value=='Em Análise' ) %}checked{% endif %}>
                                 <label class="btn btn-outline-info" for="status_analise">
                                     <i class="bi bi-hourglass-split"></i> Em Análise
                                 </label>
 
-                                <!-- Resolvido -->
                                 <input type="radio" class="btn-check" name="status_chamado" id="status_resolvido"
-                                    value="Resolvido" {% if dados and dados.status_chamado=='Resolvido' %}checked{%
-                                    endif %}>
+                                    value="Resolvido" {% if (dados and dados.status_chamado =='Resolvido' ) or (not dados
+                                    and chamado.status.value=='Resolvido' ) %}checked{% endif %}>
                                 <label class="btn btn-outline-success" for="status_resolvido">
                                     <i class="bi bi-check-circle"></i> Resolvido
                                 </label>
 
-                                <!-- Fechado -->
                                 <input type="radio" class="btn-check" name="status_chamado" id="status_fechado"
-                                    value="Fechado" {% if dados and dados.status_chamado=='Fechado' %}checked{% endif
-                                    %}>
+                                    value="Fechado" {% if (dados and dados.status_chamado =='Fechado' ) or (not dados and
+                                    chamado.status.value=='Fechado' ) %}checked{% endif %}>
                                 <label class="btn btn-outline-dark" for="status_fechado">
                                     <i class="bi bi-lock-fill"></i> Fechado
                                 </label>

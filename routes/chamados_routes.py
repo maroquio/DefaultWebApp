@@ -24,6 +24,8 @@ from util.template_util import criar_templates
 from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
 from util.exceptions import FormValidationError
+from util.repository_helpers import obter_ou_404
+from util.permission_helpers import verificar_propriedade
 
 router = APIRouter(prefix="/chamados")
 templates = criar_templates("templates/chamados")
@@ -160,14 +162,25 @@ async def post_cadastrar(
 async def visualizar(request: Request, id: int, usuario_logado: Optional[dict] = None):
     """Exibe detalhes de um chamado específico com histórico de interações."""
     assert usuario_logado is not None
-    chamado = chamado_repo.obter_por_id(id)
 
-    # Verificar se chamado existe e pertence ao usuário
-    if not chamado or chamado.usuario_id != usuario_logado["id"]:
-        informar_erro(request, "Chamado não encontrado")
-        logger.warning(
-            f"Usuário {usuario_logado['id']} tentou acessar chamado {id} sem permissão"
-        )
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
+
+    # Verificar se usuário é proprietário do chamado
+    if not verificar_propriedade(
+        chamado,
+        usuario_logado["id"],
+        request,
+        "Você não tem permissão para acessar este chamado",
+        "/chamados/listar"
+    ):
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     # Marcar mensagens como lidas (apenas as de outros usuários)
@@ -203,11 +216,24 @@ async def post_responder(
         logger.warning(f"Rate limit excedido para resposta em chamados - IP: {ip}")
         return RedirectResponse(f"/chamados/{id}/visualizar", status_code=status.HTTP_303_SEE_OTHER)
 
-    chamado = chamado_repo.obter_por_id(id)
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
 
-    # Verificar se chamado existe e pertence ao usuário
-    if not chamado or chamado.usuario_id != usuario_logado["id"]:
-        informar_erro(request, "Chamado não encontrado")
+    # Verificar se usuário é proprietário do chamado
+    if not verificar_propriedade(
+        chamado,
+        usuario_logado["id"],
+        request,
+        "Você não tem permissão para responder a este chamado",
+        "/chamados/listar"
+    ):
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     # Armazena os dados do formulário para reexibição em caso de erro
@@ -255,14 +281,25 @@ async def post_responder(
 async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict] = None):
     """Exclui um chamado do usuário (apenas se aberto e sem respostas de admin)."""
     assert usuario_logado is not None
-    chamado = chamado_repo.obter_por_id(id)
 
-    # Verificar se chamado existe e pertence ao usuário
-    if not chamado or chamado.usuario_id != usuario_logado["id"]:
-        informar_erro(request, "Chamado não encontrado")
-        logger.warning(
-            f"Usuário {usuario_logado['id']} tentou excluir chamado {id} sem permissão"
-        )
+    # Obter chamado ou retornar 404
+    chamado = obter_ou_404(
+        chamado_repo.obter_por_id(id),
+        request,
+        "Chamado não encontrado",
+        "/chamados/listar"
+    )
+    if isinstance(chamado, RedirectResponse):
+        return chamado
+
+    # Verificar se usuário é proprietário do chamado
+    if not verificar_propriedade(
+        chamado,
+        usuario_logado["id"],
+        request,
+        "Você não tem permissão para excluir este chamado",
+        "/chamados/listar"
+    ):
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     # Verificar se chamado está aberto

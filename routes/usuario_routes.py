@@ -14,6 +14,8 @@ from util.foto_util import salvar_foto_cropada_usuario
 from util.logger_config import logger
 from util.exceptions import FormValidationError
 from util.validation_helpers import verificar_email_disponivel
+from util.repository_helpers import obter_ou_404
+
 router = APIRouter()
 templates_usuario = criar_templates("templates")
 
@@ -75,11 +77,16 @@ async def dashboard(request: Request, usuario_logado: Optional[dict] = None):
 async def get_visualizar_perfil(request: Request, usuario_logado: Optional[dict] = None):
     """Visualizar perfil do usuário logado"""
     assert usuario_logado is not None
-    usuario = usuario_repo.obter_por_id(usuario_logado["id"])
 
-    if not usuario:
-        informar_erro(request, "Usuário não encontrado!")
-        return RedirectResponse("/logout", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou redirecionar para logout
+    usuario = obter_ou_404(
+        usuario_repo.obter_por_id(usuario_logado["id"]),
+        request,
+        "Usuário não encontrado!",
+        "/logout"
+    )
+    if isinstance(usuario, RedirectResponse):
+        return usuario
 
     return templates_usuario.TemplateResponse(
         "perfil/visualizar.html", {"request": request, "usuario": usuario}
@@ -97,11 +104,16 @@ async def get_editar_perfil(request: Request, usuario_logado: Optional[dict] = N
         return RedirectResponse("/usuario", status_code=status.HTTP_303_SEE_OTHER)
     """Formulário para editar dados do perfil"""
     assert usuario_logado is not None
-    usuario = usuario_repo.obter_por_id(usuario_logado["id"])
 
-    if not usuario:
-        informar_erro(request, "Usuário não encontrado!")
-        return RedirectResponse("/logout", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou redirecionar para logout
+    usuario = obter_ou_404(
+        usuario_repo.obter_por_id(usuario_logado["id"]),
+        request,
+        "Usuário não encontrado!",
+        "/logout"
+    )
+    if isinstance(usuario, RedirectResponse):
+        return usuario
 
     return templates_usuario.TemplateResponse(
         "perfil/editar.html", {"request": request, "dados": usuario.__dict__}
@@ -119,12 +131,15 @@ async def post_editar_perfil(
     """Processar edição de dados do perfil"""
     assert usuario_logado is not None
 
-    # Obter usuário atual antes do try para ter acesso no except
-    usuario = usuario_repo.obter_por_id(usuario_logado["id"])
-
-    if not usuario:
-        informar_erro(request, "Usuário não encontrado!")
-        return RedirectResponse("/logout", status_code=status.HTTP_303_SEE_OTHER)
+    # Obter usuário ou redirecionar para logout
+    usuario = obter_ou_404(
+        usuario_repo.obter_por_id(usuario_logado["id"]),
+        request,
+        "Usuário não encontrado!",
+        "/logout"
+    )
+    if isinstance(usuario, RedirectResponse):
+        return usuario
 
     # Armazenar dados do formulário para reexibição em caso de erro
     dados_formulario: dict = {"nome": nome, "email": email}
@@ -242,12 +257,15 @@ async def post_alterar_senha(
             confirmar_senha=confirmar_senha,
         )
 
-        # Obter usuário
-        usuario = usuario_repo.obter_por_id(usuario_logado["id"])
-
-        if not usuario:
-            informar_erro(request, "Usuário não encontrado!")
-            return RedirectResponse("/logout", status_code=status.HTTP_303_SEE_OTHER)
+        # Obter usuário ou redirecionar para logout
+        usuario = obter_ou_404(
+            usuario_repo.obter_por_id(usuario_logado["id"]),
+            request,
+            "Usuário não encontrado!",
+            "/logout"
+        )
+        if isinstance(usuario, RedirectResponse):
+            return usuario
 
         # Validar senha atual
         if not verificar_senha(dto.senha_atual, usuario.senha):
