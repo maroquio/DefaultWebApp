@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
 from dtos.perfil_dto import EditarPerfilDTO, AlterarSenhaDTO
-from repo import usuario_repo, chamado_repo, tarefa_repo
+from repo import usuario_repo, chamado_repo
 from util.auth_decorator import requer_autenticacao
 from util.perfis import Perfil
 from util.template_util import criar_templates
@@ -65,9 +65,8 @@ async def dashboard(request: Request, usuario_logado: Optional[dict] = None):
         # Admin vê total de chamados pendentes no sistema
         context["chamados_pendentes"] = chamado_repo.contar_pendentes()
     else:
-        # Usuário comum vê seus próprios chamados em aberto e tarefas pendentes
+        # Usuário comum vê seus próprios chamados em aberto
         context["chamados_abertos"] = chamado_repo.contar_abertos_por_usuario(usuario_logado["id"])
-        context["tarefas_pendentes"] = tarefa_repo.contar_pendentes_por_usuario(usuario_logado["id"])
 
     return templates_usuario.TemplateResponse("dashboard.html", context)
 

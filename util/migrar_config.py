@@ -59,12 +59,6 @@ CONFIGS_PARA_MIGRAR = {
     "rate_limit_admin_chamado_responder_max": ("RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MAX", "Máximo de respostas a chamados (admin)", "Suporte"),
     "rate_limit_admin_chamado_responder_minutos": ("RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MINUTOS", "Período em minutos para responder (admin)", "Suporte"),
 
-    # === Rate Limiting - Tarefas ===
-    "rate_limit_tarefa_criar_max": ("RATE_LIMIT_TAREFA_CRIAR_MAX", "Máximo de criações de tarefas", "Tarefas"),
-    "rate_limit_tarefa_criar_minutos": ("RATE_LIMIT_TAREFA_CRIAR_MINUTOS", "Período em minutos para criar tarefas", "Tarefas"),
-    "rate_limit_tarefa_operacao_max": ("RATE_LIMIT_TAREFA_OPERACAO_MAX", "Máximo de operações em tarefas", "Tarefas"),
-    "rate_limit_tarefa_operacao_minutos": ("RATE_LIMIT_TAREFA_OPERACAO_MINUTOS", "Período em minutos para operações", "Tarefas"),
-
     # === Rate Limiting - Admin e Páginas Públicas ===
     "rate_limit_backup_download_max": ("RATE_LIMIT_BACKUP_DOWNLOAD_MAX", "Máximo de downloads de backup", "Admin"),
     "rate_limit_backup_download_minutos": ("RATE_LIMIT_BACKUP_DOWNLOAD_MINUTOS", "Período em minutos para download de backup", "Admin"),

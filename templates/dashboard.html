@@ -130,29 +130,6 @@
         </div>
     </div>
     {% else %}
-    <!-- Minhas Tarefas -->
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm shadow-hover">
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <i class="bi bi-list-task text-success display-3"></i>
-                </div>
-                <h5 class="card-title">Minhas Tarefas</h5>
-                <p class="card-text text-muted">
-                    Gerencie suas tarefas pendentes e concluídas
-                </p>
-                {% if tarefas_pendentes > 0 %}
-                <div class="mb-3">
-                    <span class="badge bg-success">{{ tarefas_pendentes }} pendente(s)</span>
-                </div>
-                {% endif %}
-                <a href="/tarefas/listar" class="btn btn-success">
-                    <i class="bi bi-arrow-right-circle"></i> Acessar
-                </a>
-            </div>
-        </div>
-    </div>
-
     <!-- Chamados para usuários comuns -->
     <div class="col-md-4">
         <div class="card h-100 shadow-sm shadow-hover">

@@ -72,10 +72,6 @@
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if '/tarefas/' in request.path else '' }}"
-                            href="/tarefas/listar">Tarefas</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/chamados/' in request.path else '' }}"
                             href="/chamados/listar">Chamados</a>
                     </li>

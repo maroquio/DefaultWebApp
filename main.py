@@ -22,12 +22,11 @@ from util.exception_handlers import (
 from util.exceptions import FormValidationError
 
 # Repositórios
-from repo import usuario_repo, configuracao_repo, tarefa_repo, chamado_repo, chamado_interacao_repo, indices_repo
+from repo import usuario_repo, configuracao_repo, chamado_repo, chamado_interacao_repo, indices_repo
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
 
 # Rotas
 from routes.auth_routes import router as auth_router
-from routes.tarefas_routes import router as tarefas_router
 from routes.chamados_routes import router as chamados_router
 from routes.admin_usuarios_routes import router as admin_usuarios_router
 from routes.admin_configuracoes_routes import router as admin_config_router
@@ -74,9 +73,6 @@ try:
     configuracao_repo.criar_tabela()
     logger.info("Tabela 'configuracao' criada/verificada")
 
-    tarefa_repo.criar_tabela()
-    logger.info("Tabela 'tarefa' criada/verificada")
-
     chamado_repo.criar_tabela()
     logger.info("Tabela 'chamado' criada/verificada")
 
@@ -116,9 +112,6 @@ except Exception as e:
 # IMPORTANTE: public_router deve ser incluído por último para que a rota "/" funcione corretamente
 app.include_router(auth_router, tags=["Autenticação"])
 logger.info("Router de autenticação incluído")
-
-app.include_router(tarefas_router, tags=["Tarefas"])
-logger.info("Router de tarefas incluído")
 
 app.include_router(chamados_router, tags=["Chamados"])
 logger.info("Router de chamados incluído")

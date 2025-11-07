@@ -279,42 +279,6 @@
                 {% endfor %}
                 {% endif %}
 
-                <!-- Tarefas -->
-                {% if configs_por_categoria.get('Tarefas', []) %}
-                <h4 class="mb-3 mt-4"><i class="bi bi-list-task"></i> Tarefas</h4>
-                {% for config in configs_por_categoria.get('Tarefas', []) %}
-                    {% if config.chave.startswith('rate_limit_tarefa_criar') and config.chave.endswith('_max') %}
-                        {% set pair_key = 'rate_limit_tarefa_criar' %}
-                        {% set max_config = config %}
-                        {% set minutos_config = configs_por_categoria.get('Tarefas', []) | selectattr('chave', 'equalto', pair_key ~ '_minutos') | first %}
-                        {{ rate_limit_field(
-                            prefixo=pair_key,
-                            label='Criação de Tarefas',
-                            max_atual=max_config.valor,
-                            minutos_atuais=minutos_config.valor if minutos_config else 10,
-                            max_recomendado=20,
-                            minutos_recomendados=10,
-                            descricao='Tarefas criadas por usuário',
-                            erros=erros
-                        ) }}
-                    {% elif config.chave.startswith('rate_limit_tarefa_operacao') and config.chave.endswith('_max') %}
-                        {% set pair_key = 'rate_limit_tarefa_operacao' %}
-                        {% set max_config = config %}
-                        {% set minutos_config = configs_por_categoria.get('Tarefas', []) | selectattr('chave', 'equalto', pair_key ~ '_minutos') | first %}
-                        {{ rate_limit_field(
-                            prefixo=pair_key,
-                            label='Operações em Tarefas',
-                            max_atual=max_config.valor,
-                            minutos_atuais=minutos_config.valor if minutos_config else 5,
-                            max_recomendado=30,
-                            minutos_recomendados=5,
-                            descricao='Operações (editar, excluir, etc) em tarefas',
-                            erros=erros
-                        ) }}
-                    {% endif %}
-                {% endfor %}
-                {% endif %}
-
                 <!-- Admin -->
                 {% if configs_por_categoria.get('Admin', []) %}
                 <h4 class="mb-3 mt-4"><i class="bi bi-tools"></i> Administração</h4>

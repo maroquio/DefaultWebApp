@@ -49,7 +49,6 @@ def limpar_rate_limiter():
     from routes.admin_configuracoes_routes import admin_config_limiter
     from routes.chamados_routes import chamado_criar_limiter, chamado_responder_limiter
     from routes.admin_chamados_routes import admin_chamado_responder_limiter
-    from routes.tarefas_routes import tarefa_criar_limiter, tarefa_operacao_limiter
     from routes.usuario_routes import upload_foto_limiter, alterar_senha_limiter, form_get_limiter
     from routes.chat_routes import chat_mensagem_limiter, chat_sala_limiter, busca_usuarios_limiter, chat_listagem_limiter
     from routes.public_routes import public_limiter
@@ -67,8 +66,6 @@ def limpar_rate_limiter():
         chamado_criar_limiter,
         chamado_responder_limiter,
         admin_chamado_responder_limiter,
-        tarefa_criar_limiter,
-        tarefa_operacao_limiter,
         upload_foto_limiter,
         alterar_senha_limiter,
         form_get_limiter,
@@ -103,13 +100,11 @@ def limpar_banco_dados():
             cursor = conn.cursor()
             # Verificar se tabelas existem antes de limpar
             cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tarefa', 'chamado', 'chamado_interacao', 'usuario', 'configuracao')"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('chamado', 'chamado_interacao', 'usuario', 'configuracao')"
             )
             tabelas_existentes = [row[0] for row in cursor.fetchall()]
 
             # Limpar apenas tabelas que existem (respeitando foreign keys)
-            if 'tarefa' in tabelas_existentes:
-                cursor.execute("DELETE FROM tarefa")
             # Limpar chamado_interacao antes de chamado (devido à FK)
             if 'chamado_interacao' in tabelas_existentes:
                 cursor.execute("DELETE FROM chamado_interacao")
@@ -256,32 +251,6 @@ def admin_autenticado(client, criar_usuario, fazer_login, admin_teste):
 
     # Retornar cliente autenticado
     return client
-
-
-@pytest.fixture
-def tarefa_teste():
-    """Dados de uma tarefa de teste"""
-    return {
-        "titulo": "Tarefa de Teste",
-        "descricao": "Descrição da tarefa de teste"
-    }
-
-
-@pytest.fixture
-def criar_tarefa(cliente_autenticado):
-    """
-    Fixture que retorna uma função para criar tarefas
-    Requer cliente autenticado
-    """
-    def _criar_tarefa(titulo: str, descricao: str = ""):
-        """Cria uma tarefa via endpoint"""
-        response = cliente_autenticado.post("/tarefas/cadastrar", data={
-            "titulo": titulo,
-            "descricao": descricao
-        }, follow_redirects=False)
-        return response
-
-    return _criar_tarefa
 
 
 @pytest.fixture

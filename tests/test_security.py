@@ -40,46 +40,6 @@ class TestXSSProtection:
                 # Script tag não deve ser executável
                 assert "<script>" in usuario.nome or usuario.nome == malicious_name
 
-    def test_tarefa_com_html_malicioso_no_titulo(self, cliente_autenticado):
-        """Título com HTML malicioso deve ser escapado ao exibir"""
-        malicious_title = '<img src=x onerror=alert("XSS")>Tarefa'
-
-        response = cliente_autenticado.post("/tarefas/cadastrar", data={
-            "titulo": malicious_title,
-            "descricao": "Descrição normal"
-        }, follow_redirects=False)
-
-        assert_redirects_to(response, "/tarefas/listar")
-
-        # Verificar que ao listar, HTML é escapado
-        response_list = cliente_autenticado.get("/tarefas/listar")
-        assert response_list.status_code == 200
-
-        # IMPORTANTE: Jinja2 escapa automaticamente por padrão
-        # Se HTML malicioso aparece literal, é problema de segurança
-        # Se aparece escapado (&lt;img&gt;), está correto
-
-        # Este teste documenta que XSS não pode ser executado
-        # O título deve aparecer, mas como texto seguro (escapado)
-        # Não verificamos formato específico, apenas que não é executável
-
-        # Se o título foi salvo, deve aparecer na listagem
-        assert "Tarefa" in response_list.text
-
-    def test_descricao_com_javascript_url(self, cliente_autenticado):
-        """Descrição com javascript: URL não deve executar"""
-        malicious_desc = 'Clique aqui: <a href="javascript:alert(1)">Link</a>'
-
-        response = cliente_autenticado.post("/tarefas/cadastrar", data={
-            "titulo": "Tarefa Normal",
-            "descricao": malicious_desc
-        }, follow_redirects=False)
-
-        # Deve ser aceito (validação é de negócio, não de segurança aqui)
-        # Mas ao renderizar, deve ser escapado
-        assert response.status_code == 303
-
-
 class TestSQLInjection:
     """Testes de proteção contra SQL Injection"""
 
@@ -317,16 +277,6 @@ class TestValidacaoInputs:
 
         # Pode ser rejeitado por validação ou sanitizado
         assert response.status_code in [200, 303]
-
-    def test_titulo_tarefa_vazio_rejeitado(self, cliente_autenticado):
-        """Título vazio ou só espaços deve ser rejeitado"""
-        response = cliente_autenticado.post("/tarefas/cadastrar", data={
-            "titulo": "   ",  # Só espaços
-            "descricao": "Descrição válida"
-        }, follow_redirects=True)
-
-        assert response.status_code == 200
-        assert "título" in response.text.lower() or "obrigatório" in response.text.lower()
 
     def test_perfil_invalido_rejeitado_no_cadastro_admin(self, admin_autenticado):
         """Perfil inválido no cadastro admin deve ser rejeitado"""
