@@ -9,6 +9,7 @@
         <div class="col-12 col-md-8 col-lg-7">
             <div class="card shadow">
                 <form method="POST" action="/cadastrar">
+                    {{ csrf_input() }}
                     <div class="card-body p-4">
                         <h3 class="card-title text-center mb-4">
                             <i class="bi bi-person-plus"></i> Criar Conta

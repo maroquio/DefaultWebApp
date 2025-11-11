@@ -9,6 +9,7 @@
         <div class="col-12 col-md-6 col-lg-5 ">
             <div class="card shadow">
                 <form method="POST" action="/login">
+                    {{ csrf_input() }}
                     <!-- Campo hidden para preservar o redirect -->
                     <input type="hidden" name="redirect" value="{{ redirect|default('/usuario') }}">
 

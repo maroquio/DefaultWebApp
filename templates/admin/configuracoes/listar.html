@@ -58,6 +58,7 @@
         <!-- ABA 1: FREQUÊNCIA DE REQUISIÇÕES (Rate Limits) -->
         <div class="tab-pane fade show active" id="rate-limit" role="tabpanel" aria-labelledby="rate-limit-tab">
             <form id="form-rate-limit" method="POST" action="/admin/configuracoes/salvar-lote">
+                {{ csrf_input() }}
                 <input type="hidden" name="categoria" value="rate_limit">
 
                 <div class="alert alert-info mb-4">
@@ -348,6 +349,7 @@
         <!-- ABA 2: INTERFACE -->
         <div class="tab-pane fade" id="interface" role="tabpanel" aria-labelledby="interface-tab">
             <form id="form-interface" method="POST" action="/admin/configuracoes/salvar-lote">
+                {{ csrf_input() }}
                 <input type="hidden" name="categoria" value="interface">
 
                 <div class="alert alert-info mb-4">
@@ -439,6 +441,7 @@
         <!-- ABA 3: APLICAÇÃO -->
         <div class="tab-pane fade" id="aplicacao" role="tabpanel" aria-labelledby="aplicacao-tab">
             <form id="form-aplicacao" method="POST" action="/admin/configuracoes/salvar-lote">
+                {{ csrf_input() }}
                 <input type="hidden" name="categoria" value="aplicacao">
 
                 <div class="alert alert-info mb-4">
@@ -512,6 +515,7 @@
         <!-- ABA 4: FOTOS -->
         <div class="tab-pane fade" id="fotos" role="tabpanel" aria-labelledby="fotos-tab">
             <form id="form-fotos" method="POST" action="/admin/configuracoes/salvar-lote">
+                {{ csrf_input() }}
                 <input type="hidden" name="categoria" value="fotos">
 
                 <div class="alert alert-info mb-4">

@@ -110,8 +110,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="/chamados/{{ chamado.id }}/responder">
-                    <!-- CSRF Token -->
-                    <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+                    {{ csrf_input() }}
 
                     {{ field(
                         name='mensagem',

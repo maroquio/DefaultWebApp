@@ -54,8 +54,6 @@ const chatWidget = (() => {
         elementos.userSearch.addEventListener('input', handleBuscaUsuario);
         elementos.messageInput.addEventListener('keydown', handleMessageInputKeydown);
         elementos.messagesContainer.addEventListener('scroll', handleScrollMensagens);
-
-        console.log('[Chat] Widget inicializado');
     }
 
     /**
@@ -63,10 +61,6 @@ const chatWidget = (() => {
      */
     function conectarSSE() {
         eventSource = new EventSource('/chat/stream');
-
-        eventSource.onopen = () => {
-            console.log('[Chat SSE] Conexão estabelecida');
-        };
 
         eventSource.onmessage = (event) => {
             const mensagem = JSON.parse(event.data);
@@ -83,8 +77,6 @@ const chatWidget = (() => {
      * Processa mensagem recebida via SSE
      */
     function processarMensagemSSE(mensagem) {
-        console.log('[Chat SSE] Mensagem recebida:', mensagem);
-
         if (mensagem.tipo === 'nova_mensagem') {
             // Se for da conversa atual, adicionar na tela
             if (conversaAtual && mensagem.sala_id === conversaAtual.sala_id) {
@@ -485,7 +477,6 @@ const chatWidget = (() => {
 
         // Se scroll está próximo do topo (menos de 50px do topo)
         if (container.scrollTop < 50 && conversaAtual && !carregandoMensagens && !todasMensagensCarregadas) {
-            console.log('[Chat] Carregando mais mensagens...');
             carregarMensagens(conversaAtual.sala_id, false);
         }
     }

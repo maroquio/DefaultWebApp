@@ -12,6 +12,7 @@
 
         <div class="card shadow-sm">
             <form method="POST" action="/admin/usuarios/editar/{{ dados.id if dados.id is defined else usuario.id }}">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">

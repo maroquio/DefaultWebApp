@@ -1,5 +1,6 @@
 {% extends "base_privada.html" %}
 {% from 'macros/badges.html' import badge_status_chamado, badge_prioridade, badge_mensagens_nao_lidas %}
+{% from 'macros/empty_states.html' import empty_state %}
 
 {% block titulo %}Gerenciar Chamados{% endblock %}
 
@@ -92,9 +93,12 @@
                     </small>
                 </div>
                 {% else %}
-                <div class="alert alert-info text-center mb-0">
-                    <i class="bi bi-info-circle"></i> Nenhum chamado cadastrado.
-                </div>
+                {{ empty_state(
+                    'Nenhum chamado cadastrado',
+                    'Ainda não há chamados no sistema. Aguarde os usuários abrirem chamados de suporte.',
+                    icon='headset',
+                    variant='info'
+                ) }}
                 {% endif %}
             </div>
         </div>

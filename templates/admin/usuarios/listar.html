@@ -1,6 +1,7 @@
 {% extends "base_privada.html" %}
 {% from 'macros/badges.html' import badge_perfil %}
 {% from 'macros/action_buttons.html' import btn_group_crud %}
+{% from 'macros/empty_states.html' import empty_state %}
 
 {% block titulo %}Gerenciar Usuários{% endblock %}
 
@@ -76,9 +77,14 @@
                     </small>
                 </div>
                 {% else %}
-                <div class="alert alert-info text-center mb-0">
-                    <i class="bi bi-info-circle"></i> Nenhum usuário cadastrado.
-                </div>
+                {{ empty_state(
+                    'Nenhum usuário cadastrado',
+                    'Comece cadastrando o primeiro usuário do sistema.',
+                    action_url='/admin/usuarios/cadastrar',
+                    action_text='Cadastrar Primeiro Usuário',
+                    icon='people',
+                    variant='info'
+                ) }}
                 {% endif %}
             </div>
         </div>
