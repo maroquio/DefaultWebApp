@@ -1474,6 +1474,8 @@ mkdir -p templates/admin/categorias
 
 ```html
 {% extends "base_privada.html" %}
+{% from 'macros/empty_states.html' import empty_state %}
+{% from 'macros/action_buttons.html' import btn_group_crud %}
 
 {% block titulo %}Gerenciar Categorias{% endblock %}
 
@@ -1509,18 +1511,16 @@ mkdir -p templates/admin/categorias
                                 <td>{{ categoria.descricao if categoria.descricao else '-' }}</td>
                                 <td>{{ categoria.data_cadastro|data_br if categoria.data_cadastro else '-' }}</td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="/admin/categorias/editar/{{ categoria.id }}"
-                                            class="btn btn-outline-primary" title="Editar"
-                                            aria-label="Editar categoria {{ categoria.nome }}">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger" title="Excluir"
-                                            aria-label="Excluir categoria {{ categoria.nome }}"
-                                            onclick="excluirCategoria({{ categoria.id }}, '{{ categoria.nome|replace("'", "\\'") }}', '{{ categoria.descricao|replace("'", "\\'") if categoria.descricao else "" }}')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
+                                    {{ btn_group_crud(
+                                        categoria.id,
+                                        'categoria ' ~ categoria.nome,
+                                        '/admin/categorias',
+                                        "excluirCategoria(%d, '%s', '%s')" | format(
+                                            categoria.id,
+                                            categoria.nome|replace("'", "\\'"),
+                                            categoria.descricao|replace("'", "\\'") if categoria.descricao else ""
+                                        )
+                                    ) }}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -1529,14 +1529,19 @@ mkdir -p templates/admin/categorias
                 </div>
 
                 <div class="mt-3">
-                    <small class="text-muted">
+                    <span class="fs-small text-muted">
                         Total: {{ categorias|length }} categoria(s)
-                    </small>
+                    </span>
                 </div>
                 {% else %}
-                <div class="alert alert-info text-center mb-0">
-                    <i class="bi bi-info-circle"></i> Nenhuma categoria cadastrada.
-                </div>
+                {{ empty_state(
+                    'Nenhuma categoria cadastrada',
+                    'Comece criando sua primeira categoria para organizar o conteúdo do sistema.',
+                    action_url='/admin/categorias/cadastrar',
+                    action_text='Nova Categoria',
+                    icon='folder',
+                    variant='info'
+                ) }}
                 {% endif %}
             </div>
         </div>
@@ -1599,19 +1604,6 @@ mkdir -p templates/admin/categorias
 - Mais limpo que usar `strftime()` diretamente
 - Se não há data, exibe "-"
 
-#### Button Group
-
-```html
-<div class="btn-group btn-group-sm" role="group">
-    <a class="btn btn-outline-primary">Editar</a>
-    <button class="btn btn-outline-danger">Excluir</button>
-</div>
-```
-
-- Agrupa botões lado a lado sem espaço
-- `btn-outline-*`: Botões com borda colorida (mais moderno)
-- `btn-group-sm`: Tamanho pequeno
-
 #### Segurança: Escape de Aspas
 
 ```html
@@ -1622,17 +1614,15 @@ onclick="excluirCategoria(..., '{{ categoria.nome|replace("'", "\\'") }}')"
 - Previne quebra de JavaScript se nome tiver aspas
 - **Muito importante para segurança!**
 
-#### Contador de Registros
+#### Contador de Registros com Classe Utilitária
 
 ```html
-<div class="mt-3">
-    <small class="text-muted">
-        Total: {{ categorias|length }} categoria(s)
-    </small>
-</div>
+<span class="fs-small text-muted">
+    Total: {{ categorias|length }} categoria(s)
+</span>
 ```
 
-- Mostra quantas categorias existem
+- `.fs-small`: Classe utilitária para texto pequeno (em vez de `<small>`)
 - `|length`: Filtro que conta elementos da lista
 - `text-muted`: Cor cinza suave
 
@@ -1650,6 +1640,127 @@ abrirModalConfirmacao({
 - Centraliza a lógica do modal de confirmação
 - Usado em todas as páginas admin para consistência
 - Você **NÃO** precisa criar o modal manualmente no template!
+
+#### 📦 Macro `empty_state()` - Estados Vazios Padronizados
+
+```html
+{{ empty_state(
+    'Nenhuma categoria cadastrada',
+    'Comece criando sua primeira categoria para organizar o conteúdo do sistema.',
+    action_url='/admin/categorias/cadastrar',
+    action_text='Nova Categoria',
+    icon='folder',
+    variant='info'
+) }}
+```
+
+**O que este componente faz:**
+- Exibe uma mensagem amigável quando não há dados para mostrar
+- Inclui ícone visual, título, descrição e botão de ação
+- Mantém consistência visual em todo o projeto
+
+**Parâmetros:**
+- `titulo` (str): Título principal do estado vazio
+- `descricao` (str): Texto explicativo
+- `action_url` (str, opcional): URL do botão de ação
+- `action_text` (str, opcional): Texto do botão
+- `icon` (str, opcional): Nome do ícone Bootstrap Icons (sem prefixo `bi-`)
+- `variant` (str, opcional): Cor do tema (`info`, `warning`, `primary`, etc.)
+
+**Vantagens:**
+- ✅ Consistência visual em todo o projeto
+- ✅ Código mais limpo e semântico
+- ✅ Menos HTML manual (1 linha vs 5+ linhas)
+- ✅ Fácil manutenção centralizada
+
+**Onde usar:**
+- Listagens vazias (sem registros)
+- Resultados de busca sem matches
+- Seções sem conteúdo
+
+#### 🎯 Macro `btn_group_crud()` - Botões de Ação Padronizados
+
+```html
+{{ btn_group_crud(
+    categoria.id,
+    'categoria ' ~ categoria.nome,
+    '/admin/categorias',
+    "excluirCategoria(%d, '%s', '%s')" | format(...)
+) }}
+```
+
+**O que este componente faz:**
+- Cria botões de edição e exclusão padronizados
+- Inclui ícones, tooltips e aria-labels para acessibilidade
+- Gera links e onclick handlers automaticamente
+
+**Parâmetros:**
+- `id` (int): ID do registro
+- `entity_name` (str): Nome da entidade (para acessibilidade)
+- `base_url` (str): URL base (ex: `/admin/categorias`)
+- `delete_onclick` (str): Função JavaScript de exclusão formatada
+
+**Vantagens:**
+- ✅ Reduz 13+ linhas de HTML para 1 linha
+- ✅ Acessibilidade automática (aria-labels)
+- ✅ Estilo consistente em todas as tabelas
+- ✅ Menos chances de erro
+
+**Exemplo de economia:**
+
+❌ **Sem macro** (13 linhas):
+```html
+<div class="btn-group btn-group-sm" role="group">
+    <a href="/admin/categorias/editar/{{ categoria.id }}"
+        class="btn btn-outline-primary" title="Editar"
+        aria-label="Editar categoria {{ categoria.nome }}">
+        <i class="bi bi-pencil"></i>
+    </a>
+    <button type="button" class="btn btn-outline-danger" title="Excluir"
+        aria-label="Excluir categoria {{ categoria.nome }}"
+        onclick="excluirCategoria(...)">
+        <i class="bi bi-trash"></i>
+    </button>
+</div>
+```
+
+✅ **Com macro** (6 linhas):
+```html
+{{ btn_group_crud(
+    categoria.id,
+    'categoria ' ~ categoria.nome,
+    '/admin/categorias',
+    "excluirCategoria(...)" | format(...)
+) }}
+```
+
+**Economia: 54% menos código!**
+
+#### 🎨 Classes Utilitárias CSS
+
+**Preferir classes CSS em vez de tags HTML semânticas:**
+
+✅ **CORRETO:**
+```html
+<span class="fs-small text-muted">Texto pequeno</span>
+<div class="card shadow-hover">Card interativo</div>
+```
+
+❌ **EVITAR:**
+```html
+<small class="text-muted">Texto pequeno</small>  <!-- Use .fs-small -->
+```
+
+**Classes disponíveis:**
+- `.fs-small` - Texto pequeno padronizado (substitui `<small>`)
+- `.shadow-hover` - Efeito de elevação ao passar o mouse
+- `.line-clamp-1`, `.line-clamp-2`, `.line-clamp-3` - Truncamento de texto
+
+**Vantagens:**
+- Mais consistente
+- Mais fácil de customizar via CSS
+- Melhor para manutenção
+- Separação entre semântica e apresentação
 
 ### ✅ Checkpoint
 
@@ -1697,6 +1808,7 @@ Criar o formulário HTML para cadastrar novas categorias.
 
         <div class="card shadow-sm">
             <form method="POST" action="/admin/categorias/cadastrar">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
@@ -1978,6 +2090,7 @@ Criar o formulário HTML para editar categorias existentes.
 
         <div class="card shadow-sm">
             <form method="POST" action="/admin/categorias/editar/{{ dados.id if dados is defined and dados.id else categoria.id }}">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
@@ -2372,17 +2485,67 @@ sequenceDiagram
 
 **Camadas**: 1) HTML5 (required, maxlength), 2) DTO (Pydantic), 3) Route (business logic), 4) Database (constraints)
 
-### 5. Segurança
+### 5. Componentes Reutilizáveis - Priorize SEMPRE! ⭐
+
+**O Projeto possui componentes prontos - USE-OS!**
+
+#### Templates (HTML)
+
+| Componente | Uso | Localização |
+|-----------|-----|-------------|
+| `{{ csrf_input() }}` | **OBRIGATÓRIO** em todos os forms POST | Função global |
+| `{{ field() }}` | Campos de formulário completos | `macros/form_fields.html` |
+| `{{ empty_state() }}` | Estados vazios em listagens | `macros/empty_states.html` |
+| `{{ btn_group_crud() }}` | Botões editar/excluir | `macros/action_buttons.html` |
+| `abrirModalConfirmacao()` | Modal de confirmação | Função global JS |
+
+**Checklist para Templates:**
+- [ ] Importou os macros necessários (`{% from 'macros/...' import ... %}`)
+- [ ] Adicionou `{{ csrf_input() }}` em TODOS os forms POST
+- [ ] Usou `{{ field() }}` para TODOS os campos de formulário
+- [ ] Usou `{{ empty_state() }}` quando lista está vazia
+- [ ] Usou `{{ btn_group_crud() }}` para botões de ação em tabelas
+
+#### Classes CSS Utilitárias
+
+| Classe | Substitui | Uso |
+|--------|-----------|-----|
+| `.fs-small` | `<small>` | Texto pequeno |
+| `.shadow-hover` | - | Efeito hover em cards |
+| `.line-clamp-1/2/3` | - | Truncamento de texto |
+
+**Exemplo:**
+
+❌ **EVITE:**
+```html
+<small class="text-muted">Total: 10 registros</small>
+<div class="card shadow-sm">...</div>
+```
+
+✅ **PREFIRA:**
+```html
+<span class="fs-small text-muted">Total: 10 registros</span>
+<div class="card shadow-sm shadow-hover">...</div>
+```
+
+**Por que usar componentes?**
+- ✅ **Consistência**: Visual e comportamental em todo o projeto
+- ✅ **Produtividade**: 90% menos código HTML manual
+- ✅ **Manutenibilidade**: Mudança em 1 lugar afeta todo o projeto
+- ✅ **Acessibilidade**: aria-labels, roles automáticos
+- ✅ **Segurança**: CSRF, sanitização automáticos
+
+### 6. Segurança
 
 **SQL Injection**: Use placeholders `?` em vez de f-strings: `cursor.execute("... WHERE nome=?", (nome,))`
 
 **XSS**: Jinja2 escapa automaticamente. Nunca use `|safe` com dados do usuário.
 
-**CSRF**: Formulários POST protegidos por sessão (automático).
+**CSRF**: Use `{{ csrf_input() }}` em TODOS os formulários POST/PUT/PATCH/DELETE.
 
 **Rate Limiting**: 10 tentativas/minuto por IP previne brute force e spam.
 
-### 6. Padrões de Código
+### 7. Padrões de Código
 
 #### Repository Pattern
 
@@ -2407,7 +2570,7 @@ dto = CriarCategoriaDTO(nome=nome, descricao=descricao)
 - Reutilizável
 
 
-### 7. Comentários e Documentação
+### 8. Comentários e Documentação
 
 #### Docstrings
 
@@ -2557,16 +2720,22 @@ Antes de começar a implementar seu CRUD, verifique se tem tudo pronto:
 **Solução**:
 ```html
 <form method="POST" action="/rota">
-    {{ csrf_input(request) | safe }}  ← ADICIONE ESTA LINHA!
-
-    <!-- resto do formulário -->
+    {{ csrf_input() }}  ← ADICIONE ESTA LINHA LOGO APÓS O <form>!
+    <div class="card-body p-4">
+        <!-- resto do formulário -->
+    </div>
 </form>
 ```
 
 **Explicação**:
-- Todos os formulários POST/PUT/PATCH/DELETE **DEVEM** ter token CSRF
+- Todos os formulários POST/PUT/PATCH/DELETE **DEVEM** ter `{{ csrf_input() }}`
 - Projeto tem middleware CSRF ativo que valida TODAS requisições
 - Sem token = 403 Forbidden
+- **NÃO** use `csrf_input(request) | safe` - a sintaxe correta é simplesmente `{{ csrf_input() }}`
+
+**Onde adicionar:**
+- Logo após a abertura da tag `<form>`
+- Antes de qualquer `<div class="card-body">` ou campo de formulário
 
 ### Problema 1: Erro "Template not found"
 
@@ -2708,7 +2877,64 @@ if categoria_existente:
 3. Verifique se há JavaScript para mostrar os toasts
 4. Abra o Console → Procure por erros
 
-### Problema 11: Erro 500 - "csrf_token is undefined"
+### Problema 11: Escrevendo muito HTML manual ⚠️ ANTIPADRÃO!
+
+**Sintoma**: Templates com centenas de linhas de HTML repetitivo
+
+**Causa**: Não está usando os componentes reutilizáveis do projeto!
+
+**Sinais de alerta:**
+```html
+<!-- ❌ NÃO FAÇA ISSO -->
+<div class="mb-3">
+    <label for="nome" class="form-label">Nome *</label>
+    <input type="text" class="form-control" id="nome" name="nome" required>
+    <div class="invalid-feedback">Campo obrigatório</div>
+</div>
+
+<!-- ❌ NÃO FAÇA ISSO -->
+<div class="alert alert-info">Nenhum registro encontrado</div>
+
+<!-- ❌ NÃO FAÇA ISSO -->
+<div class="btn-group">
+    <a href="/edit/{{ id }}" class="btn btn-primary">Editar</a>
+    <button class="btn btn-danger">Excluir</button>
+</div>
+```
+
+**Solução - Use componentes:**
+```html
+<!-- ✅ CORRETO -->
+{{ field(name='nome', label='Nome', type='text', required=true) }}
+
+<!-- ✅ CORRETO -->
+{{ empty_state('Nenhum registro', 'Comece criando o primeiro') }}
+
+<!-- ✅ CORRETO -->
+{{ btn_group_crud(id, 'registro', '/rota', 'excluir(id)') }}
+```
+
+**Checklist de componentes obrigatórios:**
+- [ ] `{{ csrf_input() }}` em TODOS os formulários POST
+- [ ] `{{ field() }}` para TODOS os campos
+- [ ] `{{ empty_state() }}` quando lista vazia
+- [ ] `{{ btn_group_crud() }}` para botões de ação
+- [ ] `<span class="fs-small">` em vez de `<small>`
+- [ ] `.shadow-hover` em cards interativos
+
+**Benefícios:**
+- ✅ 90% menos código
+- ✅ Consistência visual automática
+- ✅ Manutenção centralizada
+- ✅ Acessibilidade incluída
+- ✅ Menos bugs
+
+**Onde aprender:**
+- Veja a seção "Padrões e Boas Práticas → Componentes Reutilizáveis" deste documento
+- Estude os exemplos nos templates de usuários (`templates/admin/usuarios/`)
+- Consulte `templates/macros/` para ver todos os componentes disponíveis
+
+### Problema 12: Erro 500 - "csrf_token is undefined"
 
 **Sintoma**:
 ```
