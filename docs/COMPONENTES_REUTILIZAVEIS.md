@@ -749,7 +749,7 @@ Dropdown de usuário para navbar com foto de perfil.
 
 **Arquivo:** `templates/components/chat_widget.html`
 
-Widget de chat em tempo real (estilo WhatsApp Web).
+Widget de chat em tempo real (estilo WhatsApp Web) **totalmente funcional**.
 
 #### Uso
 
@@ -757,13 +757,32 @@ Widget de chat em tempo real (estilo WhatsApp Web).
 {% include 'components/chat_widget.html' %}
 ```
 
+**Status:** ✅ **Sistema completo com backend implementado**
+
+**Frontend:**
+- Componente HTML incluído em `base_privada.html`
+- CSS incluído em `base_privada.html`
+- JavaScript incluído em `base_privada.html`
+
+**Backend:**
+- Routes: `routes/chat_routes.py` com 10 endpoints
+- Models: `chat_sala_model.py`, `chat_mensagem_model.py`, `chat_participante_model.py`
+- Repositories: `chat_sala_repo.py`, `chat_mensagem_repo.py`, `chat_participante_repo.py`
+- DTOs: `chat_dto.py` com validação
+- ChatManager: `util/chat_manager.py` para broadcast SSE
+- Rate limiting: 4 limiters específicos
+
 **Funcionalidades:**
-- Botão flutuante retrátil
-- Badge com contador de não lidas
-- Lista de conversas com busca
-- Área de mensagens
-- Envio com Enter (Shift+Enter para quebra de linha)
-- Atualização em tempo real via SSE
+- ✅ Botão flutuante retrátil
+- ✅ Badge com contador de não lidas
+- ✅ Lista de conversas com busca e paginação
+- ✅ Área de mensagens estilo WhatsApp
+- ✅ Envio com Enter (Shift+Enter para quebra de linha)
+- ✅ Atualização em tempo real via SSE (`/chat/stream`)
+- ✅ Criar/obter salas de chat
+- ✅ Marcar mensagens como lidas
+- ✅ Buscar usuários para conversa
+- ✅ Scroll infinito (carregar mensagens antigas)
 
 **Requer JavaScript:** `static/js/chat-widget.js`
 
@@ -906,7 +925,9 @@ CSS customizado com utility classes reutilizáveis para o projeto.
 
 **Arquivo:** `static/css/chat-widget.css`
 
-Estilos específicos para o componente de chat widget.
+Estilos específicos para o componente de chat widget **totalmente funcional**.
+
+**Status:** ✅ **Em uso no sistema de chat**
 
 #### Funcionalidades
 
@@ -917,7 +938,7 @@ Estilos específicos para o componente de chat widget.
 - Botão flutuante
 - Responsividade
 
-**Nota:** Este CSS é automaticamente incluído quando você usa `{% include 'components/chat_widget.html' %}`.
+**Integração:** Este CSS está incluído em `base_privada.html` (linha 18) e é utilizado pelo sistema de chat em tempo real totalmente funcional.
 
 ---
 
@@ -1307,21 +1328,39 @@ Handler para upload de foto de perfil (integração entre cropper e backend).
 
 **Arquivo:** `static/js/chat-widget.js`
 
-Sistema de chat em tempo real com SSE (Server-Sent Events).
+Sistema de chat em tempo real com SSE (Server-Sent Events) **totalmente funcional**.
 
-**Já incluído em:** `templates/base_privada.html`
+**Status:** ✅ **Sistema completo e operacional**
+
+**Incluído em:** `templates/base_privada.html` (linha 147)
 
 **Requer componente:** `templates/components/chat_widget.html`
 
+#### Backend Integrado
+
+**Routes:** `routes/chat_routes.py` com endpoints:
+- `GET /chat/stream` - SSE para mensagens em tempo real
+- `POST /chat/salas` - Criar/obter sala de chat
+- `GET /chat/conversas` - Listar conversas
+- `GET /chat/mensagens/{sala_id}` - Listar mensagens
+- `POST /chat/mensagens` - Enviar mensagem
+- `POST /chat/mensagens/lidas/{sala_id}` - Marcar como lidas
+- `GET /chat/usuarios/buscar` - Buscar usuários
+- `GET /chat/mensagens/nao-lidas/total` - Contador total
+- `GET /chat/health` - Health check
+
 #### Funcionalidades
 
-- Conexão SSE para atualizações em tempo real
-- Lista de conversas com busca
-- Área de mensagens estilo WhatsApp
-- Scroll infinito (carregar mais mensagens antigas)
-- Badge com contador de não lidas
-- Marcar como lida automaticamente
-- Envio com Enter (Shift+Enter para quebra)
+- ✅ Conexão SSE para atualizações em tempo real
+- ✅ Lista de conversas com busca e paginação
+- ✅ Área de mensagens estilo WhatsApp
+- ✅ Scroll infinito (carregar mensagens antigas)
+- ✅ Badge com contador de mensagens não lidas
+- ✅ Marcar mensagens como lidas automaticamente
+- ✅ Envio com Enter (Shift+Enter para quebra)
+- ✅ Botão flutuante retrátil
+- ✅ Rate limiting em todas as operações
+- ✅ Autorização (apenas participantes)
 
 #### Funções Globais
 
@@ -1337,6 +1376,7 @@ carregarMaisConversas()      // Carrega mais conversas
 O widget escuta eventos do endpoint `/chat/stream`:
 - `nova_mensagem`: Nova mensagem recebida
 - `mensagem_lida`: Mensagem marcada como lida
+- `atualizar_contador`: Atualizar contador de não lidas
 - Outros eventos personalizados
 
 ---
