@@ -23,10 +23,6 @@
     font-size: 15rem;
 }
 
-.fs-small {
-    font-size: 0.85rem;
-}
-
 /* Resize utilities */
 .resize-none {
     resize: none;
@@ -42,11 +38,6 @@
     font-size: 10rem;
     font-weight: 700;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.error-heading {
-    font-size: 2rem;
-    font-weight: 500;
 }
 
 .error-container {
@@ -73,21 +64,11 @@
     outline: 6px solid var(--primary-color);
 }
 
-/* Toast container offset */
-.toast-offset {
-    margin-bottom: 60px;
-}
-
 /* Preview image size */
 .preview-120 {
     width: 120px;
     height: 120px;
     overflow: hidden;
-}
-
-/* HR separator */
-.hr-separator {
-    max-width: 200px;
 }
 
 /* Text truncation utilities */
