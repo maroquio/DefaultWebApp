@@ -1,128 +1,127 @@
 {#
-    Macros Reutilizáveis de Botões de Ação
+Macros Reutilizáveis de Botões de Ação
 
-    Este arquivo contém macros para renderizar botões de ação (view, edit, delete, etc.)
-    com estilos e acessibilidade consistentes.
+Este arquivo contém macros para renderizar botões de ação (view, edit, delete, etc.)
+com estilos e acessibilidade consistentes.
 
-    Exemplo de uso:
-    {% from 'macros/action_buttons.html' import btn_icon, btn_group_crud %}
+Exemplo de uso:
+{% from 'macros/action_buttons.html' import btn_icon, btn_group_crud %}
 
-    {{ btn_group_crud(
-        usuario.id,
-        'usuário ' ~ usuario.nome,
-        '/admin/usuarios',
-        "excluirUsuario(%d, '%s', '%s', '%s')" | format(usuario.id, usuario.nome|replace("'", "\\'"), usuario.email, usuario.perfil)
-    ) }}
+{{ btn_group_crud(
+usuario.id,
+'usuário ' ~ usuario.nome,
+'/admin/usuarios',
+"excluirUsuario(%d, '%s', '%s', '%s')" | format(usuario.id, usuario.nome|replace("'", "\\'"), usuario.email,
+usuario.perfil)
+) }}
 #}
 
 {% macro btn_icon(url, icon, variant='primary', title='', aria_label='', size='sm', onclick='', extra_classes='') %}
-    {#
-        Botão com ícone (link ou button)
+{#
+Botão com ícone (link ou button)
 
-        Args:
-            url: URL de destino (para links) ou '#' (para buttons)
-            icon: Nome do ícone Bootstrap Icons (sem o prefixo 'bi-')
-            variant: Variante do Bootstrap (primary, secondary, success, danger, warning, info)
-            title: Tooltip ao passar o mouse
-            aria_label: Label de acessibilidade para leitores de tela
-            size: Tamanho do botão ('sm', 'md', 'lg')
-            onclick: JavaScript a executar ao clicar (cria button ao invés de link)
-            extra_classes: Classes CSS adicionais
+Args:
+url: URL de destino (para links) ou '#' (para buttons)
+icon: Nome do ícone Bootstrap Icons (sem o prefixo 'bi-')
+variant: Variante do Bootstrap (primary, secondary, success, danger, warning, info)
+title: Tooltip ao passar o mouse
+aria_label: Label de acessibilidade para leitores de tela
+size: Tamanho do botão ('sm', 'md', 'lg')
+onclick: JavaScript a executar ao clicar (cria button ao invés de link)
+extra_classes: Classes CSS adicionais
 
-        Retorna:
-            Link (<a>) se onclick vazio, Button (<button>) se onclick presente
-    #}
-    {% if onclick %}
-    <button type="button"
-        class="btn btn-{% if size != 'md' %}{{ size }} {% endif %}btn-outline-{{ variant }} {{ extra_classes }}"
-        {% if title %}title="{{ title }}"{% endif %}
-        {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
-        onclick="{{ onclick }}">
-        <i class="bi bi-{{ icon }}"></i>
-    </button>
-    {% else %}
-    <a href="{{ url }}"
-        class="btn btn-{% if size != 'md' %}{{ size }} {% endif %}btn-outline-{{ variant }} {{ extra_classes }}"
-        {% if title %}title="{{ title }}"{% endif %}
-        {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}>
-        <i class="bi bi-{{ icon }}"></i>
-    </a>
-    {% endif %}
-{% endmacro %}
+Retorna:
+Link (<a>) se onclick vazio, Button (<button>) se onclick presente
+        #}
+        {% if onclick %}
+        <button type="button"
+            class="btn btn-{% if size != 'md' %}{{ size }} {% endif %}btn-outline-{{ variant }} {{ extra_classes }}" {%
+            if title %}title="{{ title }}" {% endif %} {% if aria_label %}aria-label="{{ aria_label }}" {% endif %}
+            onclick="{{ onclick }}">
+            <i class="bi bi-{{ icon }}"></i>
+        </button>
+        {% else %}
+        <a href="{{ url }}"
+            class="btn btn-{% if size != 'md' %}{{ size }} {% endif %}btn-outline-{{ variant }} {{ extra_classes }}" {%
+            if title %}title="{{ title }}" {% endif %} {% if aria_label %}aria-label="{{ aria_label }}" {% endif %}>
+            <i class="bi bi-{{ icon }}"></i>
+        </a>
+        {% endif %}
+        {% endmacro %}
 
-{% macro btn_group_crud(
-    entity_id,
-    entity_name,
-    base_url,
-    delete_function='',
-    show_view=false,
-    show_edit=true,
-    show_delete=true,
-    extra_buttons='',
-    size='sm'
-) %}
-    {#
+        {% macro btn_group_crud(
+        entity_id,
+        entity_name,
+        base_url,
+        delete_function='',
+        show_view=false,
+        show_edit=true,
+        show_delete=true,
+        extra_buttons='',
+        size='sm'
+        ) %}
+        {#
         Grupo de botões CRUD (View, Edit, Delete)
 
         Args:
-            entity_id: ID da entidade
-            entity_name: Nome descritivo da entidade (para acessibilidade)
-            base_url: URL base (ex: '/admin/usuarios')
-            delete_function: Chamada JavaScript para exclusão (ex: "excluirUsuario(1, 'João', ...)")
-            show_view: Mostrar botão de visualização (padrão: false)
-            show_edit: Mostrar botão de edição (padrão: true)
-            show_delete: Mostrar botão de exclusão (padrão: true)
-            extra_buttons: HTML adicional de botões entre edit e delete
-            size: Tamanho dos botões ('sm', 'md', 'lg')
+        entity_id: ID da entidade
+        entity_name: Nome descritivo da entidade (para acessibilidade)
+        base_url: URL base (ex: '/admin/usuarios')
+        delete_function: Chamada JavaScript para exclusão (ex: "excluirUsuario(1, 'João', ...)")
+        show_view: Mostrar botão de visualização (padrão: false)
+        show_edit: Mostrar botão de edição (padrão: true)
+        show_delete: Mostrar botão de exclusão (padrão: true)
+        extra_buttons: HTML adicional de botões entre edit e delete
+        size: Tamanho dos botões ('sm', 'md', 'lg')
 
         Exemplo:
-            {{ btn_group_crud(
-                usuario.id,
-                'usuário ' ~ usuario.nome,
-                '/admin/usuarios',
-                "excluirUsuario(%d, '%s', '%s', '%s')" | format(
-                    usuario.id,
-                    usuario.nome|replace("'", "\\'"),
-                    usuario.email,
-                    usuario.perfil
-                )
-            ) }}
+        {{ btn_group_crud(
+        usuario.id,
+        'usuário ' ~ usuario.nome,
+        '/admin/usuarios',
+        "excluirUsuario(%d, '%s', '%s', '%s')" | format(
+        usuario.id,
+        usuario.nome|replace("'", "\\'"),
+        usuario.email,
+        usuario.perfil
+        )
+        ) }}
 
         Com botão extra:
-            {{ btn_group_crud(
-                chamado.id,
-                'chamado #' ~ chamado.id,
-                '/chamados',
-                "excluirChamado(%d)" | format(chamado.id),
-                extra_buttons=btn_icon('/chamados/' ~ chamado.id ~ '/mensagens', 'chat', 'info', 'Mensagens')
-            ) }}
-    #}
-<div class="btn-group btn-group-{{ size }}" role="group">
-    {% if show_view %}
-        {{ btn_icon(
+        {{ btn_group_crud(
+        chamado.id,
+        'chamado #' ~ chamado.id,
+        '/chamados',
+        "excluirChamado(%d)" | format(chamado.id),
+        extra_buttons=btn_icon('/chamados/' ~ chamado.id ~ '/mensagens', 'chat', 'info', 'Mensagens')
+        ) }}
+        #}
+        <div class="btn-group btn-group-{{ size }}" role="group">
+            {% if show_view %}
+            {{ btn_icon(
             base_url ~ '/' ~ entity_id,
             'eye',
             'info',
             'Visualizar',
             'Visualizar ' ~ entity_name,
             size
-        ) }}
-    {% endif %}
-    {% if show_edit %}
-        {{ btn_icon(
+            ) }}
+            {% endif %}
+            {% if show_edit %}
+            {{ btn_icon(
             base_url ~ '/editar/' ~ entity_id,
             'pencil',
             'primary',
             'Editar',
             'Editar ' ~ entity_name,
             size
-        ) }}
-    {% endif %}
-    {% if extra_buttons %}
-        {{ extra_buttons|safe }}
-    {% endif %}
-    {% if show_delete and delete_function %}
-        {{ btn_icon(
+            ) }}
+            {% endif %}
+            {% if extra_buttons %}
+            {{ extra_buttons|safe }}
+            {% endif %}
+            {% if show_delete and delete_function %}
+            {{ btn_icon(
             '#',
             'trash',
             'danger',
@@ -130,54 +129,54 @@
             'Excluir ' ~ entity_name,
             size,
             onclick=delete_function
-        ) }}
-    {% endif %}
-</div>
-{% endmacro %}
+            ) }}
+            {% endif %}
+        </div>
+        {% endmacro %}
 
-{% macro btn_text(url, texto, icon='', variant='primary', size='md', onclick='', extra_classes='') %}
-    {#
+        {% macro btn_text(url, texto, icon='', variant='primary', size='md', onclick='', extra_classes='') %}
+        {#
         Botão com texto e ícone opcional
 
         Args:
-            url: URL de destino (para links) ou '#' (para buttons)
-            texto: Texto do botão
-            icon: Nome do ícone Bootstrap Icons (opcional, sem o prefixo 'bi-')
-            variant: Variante do Bootstrap (primary, secondary, success, danger, warning, info)
-            size: Tamanho do botão ('sm', 'md', 'lg')
-            onclick: JavaScript a executar ao clicar (cria button ao invés de link)
-            extra_classes: Classes CSS adicionais
+        url: URL de destino (para links) ou '#' (para buttons)
+        texto: Texto do botão
+        icon: Nome do ícone Bootstrap Icons (opcional, sem o prefixo 'bi-')
+        variant: Variante do Bootstrap (primary, secondary, success, danger, warning, info)
+        size: Tamanho do botão ('sm', 'md', 'lg')
+        onclick: JavaScript a executar ao clicar (cria button ao invés de link)
+        extra_classes: Classes CSS adicionais
 
         Exemplo:
-            {{ btn_text('/tarefas/cadastrar', 'Nova Tarefa', 'plus-circle', 'success') }}
-    #}
-    {% if onclick %}
-    <button type="button"
-        class="btn {% if size != 'md' %}btn-{{ size }} {% endif %}btn-{{ variant }} {{ extra_classes }}"
-        onclick="{{ onclick }}">
-        {% if icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ texto }}
-    </button>
-    {% else %}
-    <a href="{{ url }}"
-        class="btn {% if size != 'md' %}btn-{{ size }} {% endif %}btn-{{ variant }} {{ extra_classes }}">
-        {% if icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ texto }}
-    </a>
-    {% endif %}
-{% endmacro %}
+        {{ btn_text('/categorias/cadastrar', 'Nova Tarefa', 'plus-circle', 'success') }}
+        #}
+        {% if onclick %}
+        <button type="button"
+            class="btn {% if size != 'md' %}btn-{{ size }} {% endif %}btn-{{ variant }} {{ extra_classes }}"
+            onclick="{{ onclick }}">
+            {% if icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ texto }}
+        </button>
+        {% else %}
+        <a href="{{ url }}"
+            class="btn {% if size != 'md' %}btn-{{ size }} {% endif %}btn-{{ variant }} {{ extra_classes }}">
+            {% if icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ texto }}
+        </a>
+        {% endif %}
+        {% endmacro %}
 
-{% macro btn_voltar(url, texto='Voltar', variant='secondary', size='md') %}
-    {#
+        {% macro btn_voltar(url, texto='Voltar', variant='secondary', size='md') %}
+        {#
         Botão de voltar/cancelar padronizado
 
         Args:
-            url: URL de destino
-            texto: Texto do botão (padrão: 'Voltar')
-            variant: Variante do Bootstrap (padrão: 'secondary')
-            size: Tamanho do botão ('sm', 'md', 'lg')
+        url: URL de destino
+        texto: Texto do botão (padrão: 'Voltar')
+        variant: Variante do Bootstrap (padrão: 'secondary')
+        size: Tamanho do botão ('sm', 'md', 'lg')
 
         Exemplo:
-            {{ btn_voltar('/tarefas/listar') }}
-            {{ btn_voltar('/admin/usuarios/listar', 'Cancelar') }}
-    #}
-    {{ btn_text(url, texto, 'arrow-left', variant, size) }}
-{% endmacro %}
+        {{ btn_voltar('/categorias/listar') }}
+        {{ btn_voltar('/admin/usuarios/listar', 'Cancelar') }}
+        #}
+        {{ btn_text(url, texto, 'arrow-left', variant, size) }}
+        {% endmacro %}

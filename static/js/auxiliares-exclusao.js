@@ -20,7 +20,7 @@
  * @param {number} config.id - ID da entidade a ser excluida
  * @param {string} config.nome - Nome/identificador principal da entidade
  * @param {string} config.urlBase - URL base para exclusao (ex: '/admin/usuarios')
- * @param {string} [config.entidade='item'] - Nome da entidade (ex: 'usuario', 'tarefa', 'chamado')
+ * @param {string} [config.entidade='item'] - Nome da entidade (ex: 'usuario', 'chamado')
  * @param {Object} [config.camposDetalhes={}] - Objeto com campos a exibir (chave: label, valor: conteudo HTML)
  * @param {string} [config.mensagem=null] - Mensagem customizada (null = usa mensagem padrao)
  * @param {string} [config.urlExclusao=null] - URL completa de exclusao (null = usa urlBase + id + '/excluir')
@@ -53,8 +53,8 @@
  * confirmarExclusao({
  *     id: 1,
  *     nome: 'Tarefa #1',
- *     urlExclusao: '/tarefas/excluir/1',
- *     entidade: 'tarefa',
+ *     urlExclusao: '/categorias/excluir/1',
+ *     entidade: 'categoria',
  *     camposDetalhes: {
  *         'Titulo': 'Implementar funcionalidade X',
  *         'Status': '<span class="badge bg-primary">Pendente</span>'
@@ -172,40 +172,6 @@ function excluirUsuario(id, nome, email, perfil, urlBase = '/admin/usuarios') {
             'Nome': escaparHtml(nome),
             'Email': escaparHtml(email),
             'Perfil': `<span class="badge bg-${corBadge}">${escaparHtml(perfil)}</span>`
-        }
-    });
-}
-
-/**
- * Confirma exclusao de tarefa (helper especifico)
- *
- * @param {number} id - ID da tarefa
- * @param {string} titulo - Titulo da tarefa
- * @param {string} status - Status da tarefa
- * @param {string} [urlBase='/tarefas'] - URL base
- *
- * @example
- * excluirTarefa(1, 'Implementar funcionalidade X', 'Pendente');
- */
-function excluirTarefa(id, titulo, status, urlBase = '/tarefas') {
-    // Determinar cor do badge baseado no status
-    let corBadge = 'secondary';
-    if (status === 'Pendente') {
-        corBadge = 'warning';
-    } else if (status === 'Em Andamento') {
-        corBadge = 'primary';
-    } else if (status === 'Concluida') {
-        corBadge = 'success';
-    }
-
-    confirmarExclusao({
-        id: id,
-        nome: titulo,
-        urlBase: urlBase,
-        entidade: 'tarefa',
-        camposDetalhes: {
-            'Titulo': escaparHtml(titulo),
-            'Status': `<span class="badge bg-${corBadge}">${escaparHtml(status)}</span>`
         }
     });
 }

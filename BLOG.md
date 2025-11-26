@@ -2843,9 +2843,8 @@ O template `templates/base_privada.html` já existe no boilerplate. Precisamos a
 Localize a seção de navegação no arquivo `templates/base_privada.html` e modifique para incluir os novos itens de menu:
 
 ```html
-{#--------------------------------------------------------------
-   TEMPLATE BASE – layout.html
-   -------------------------------------------------------------- #}
+{% set erros = erros if erros is defined else {} %}
+{% set dados = dados if dados is defined else {} %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -2872,9 +2871,6 @@ Localize a seção de navegação no arquivo `templates/base_privada.html` e mod
       {% if request.session.get('usuario_logado') %}
           data-usuario-id="{{ request.session.get('usuario_logado')['id'] | e }}"
       {% endif %}>
-    {#----------------------------------------------------------
-       NAVBAR
-       ---------------------------------------------------------- #}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">{{ APP_NAME }}</a>
@@ -2937,10 +2933,6 @@ Localize a seção de navegação no arquivo `templates/base_privada.html` e mod
                                href="/artigos/meus"><i class="bi bi-file-earmark-text"></i> Meus Artigos</a>
                         </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/tarefas/' in request.path else '' }}"
-                               href="/tarefas/listar">Tarefas</a>
-                        </li>
                         <li class="nav-item">
                             <a class="nav-link {{ 'active' if '/chamados/' in request.path else '' }}"
                                href="/chamados/listar">Chamados</a>
@@ -3564,7 +3556,6 @@ from repo import (
 # Rotas
 # ------------------------------------------------------------
 from routes.auth_routes import router as auth_router
-from routes.tarefas_routes import router as tarefas_router
 from routes.chamados_routes import router as chamados_router
 from routes.admin_usuarios_routes import router as admin_usuarios_router
 from routes.admin_configuracoes_routes import router as admin_config_router
@@ -3641,7 +3632,6 @@ def create_app() -> FastAPI:
     # ------------------------------------------------------------
     routers = [
         auth_router,
-        tarefas_router,
         chamados_router,
         admin_usuarios_router,
         admin_config_router,

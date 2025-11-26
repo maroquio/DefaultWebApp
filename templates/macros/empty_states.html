@@ -1,64 +1,64 @@
 {#
-    Macros Reutilizáveis de Estados Vazios
+Macros Reutilizáveis de Estados Vazios
 
-    Este arquivo contém macros para renderizar mensagens de estado vazio (empty states)
-    quando não há dados para exibir em listagens ou seções.
+Este arquivo contém macros para renderizar mensagens de estado vazio (empty states)
+quando não há dados para exibir em listagens ou seções.
 
-    Exemplo de uso:
-    {% from 'macros/empty_states.html' import empty_state %}
+Exemplo de uso:
+{% from 'macros/empty_states.html' import empty_state %}
 
-    {% if not tarefas %}
-        {{ empty_state(
-            'Nenhuma tarefa cadastrada',
-            'Você ainda não possui tarefas cadastradas. Clique no botão abaixo para começar!',
-            action_url='/tarefas/cadastrar',
-            action_text='Cadastrar Primeira Tarefa'
-        ) }}
-    {% endif %}
+{% if not categorias %}
+{{ empty_state(
+'Nenhuma categoria cadastrada',
+'Você ainda não possui categorias cadastradas. Clique no botão abaixo para começar!',
+action_url='/categorias/cadastrar',
+action_text='Cadastrar Primeira Tarefa'
+) }}
+{% endif %}
 #}
 
 {% macro empty_state(
-    title,
-    message,
-    action_url='',
-    action_text='',
-    icon='info-circle',
-    variant='info',
-    show_icon=true
+title,
+message,
+action_url='',
+action_text='',
+icon='info-circle',
+variant='info',
+show_icon=true
 ) %}
-    {#
-        Estado vazio com mensagem e ação opcional
+{#
+Estado vazio com mensagem e ação opcional
 
-        Args:
-            title: Título da mensagem
-            message: Texto descritivo da mensagem
-            action_url: URL do botão de ação (opcional)
-            action_text: Texto do botão de ação (opcional)
-            icon: Nome do ícone Bootstrap Icons (sem o prefixo 'bi-')
-            variant: Variante do Bootstrap (info, warning, success, danger)
-            show_icon: Mostrar ícone no título (padrão: true)
+Args:
+title: Título da mensagem
+message: Texto descritivo da mensagem
+action_url: URL do botão de ação (opcional)
+action_text: Texto do botão de ação (opcional)
+icon: Nome do ícone Bootstrap Icons (sem o prefixo 'bi-')
+variant: Variante do Bootstrap (info, warning, success, danger)
+show_icon: Mostrar ícone no título (padrão: true)
 
-        Variantes comuns:
-            - info: Estado neutro (padrão)
-            - warning: Atenção necessária
-            - success: Estado positivo
-            - danger: Estado crítico
+Variantes comuns:
+- info: Estado neutro (padrão)
+- warning: Atenção necessária
+- success: Estado positivo
+- danger: Estado crítico
 
-        Exemplo básico:
-            {{ empty_state(
-                'Nenhum resultado encontrado',
-                'Não encontramos itens que correspondem aos seus critérios de busca.'
-            ) }}
+Exemplo básico:
+{{ empty_state(
+'Nenhum resultado encontrado',
+'Não encontramos itens que correspondem aos seus critérios de busca.'
+) }}
 
-        Exemplo com ação:
-            {{ empty_state(
-                'Nenhuma tarefa cadastrada',
-                'Comece criando sua primeira tarefa!',
-                action_url='/tarefas/cadastrar',
-                action_text='Nova Tarefa',
-                icon='clipboard-x'
-            ) }}
-    #}
+Exemplo com ação:
+{{ empty_state(
+'Nenhuma categoria cadastrada',
+'Comece criando sua primeira categoria!',
+action_url='/categorias/cadastrar',
+action_text='Nova Tarefa',
+icon='clipboard-x'
+) }}
+#}
 <div class="alert alert-{{ variant }}" role="alert">
     <h4 class="alert-heading">
         {% if show_icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ title }}
@@ -74,25 +74,25 @@
 {% endmacro %}
 
 {% macro empty_search_result(search_term='', back_url='') %}
-    {#
-        Estado vazio específico para resultados de busca
+{#
+Estado vazio específico para resultados de busca
 
-        Args:
-            search_term: Termo pesquisado (opcional)
-            back_url: URL para voltar/limpar busca (opcional)
+Args:
+search_term: Termo pesquisado (opcional)
+back_url: URL para voltar/limpar busca (opcional)
 
-        Exemplo:
-            {{ empty_search_result('Python', '/tarefas/listar') }}
-    #}
+Exemplo:
+{{ empty_search_result('Python', '/categorias/listar') }}
+#}
 <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">
         <i class="bi bi-search"></i> Nenhum resultado encontrado
     </h4>
     <p class="mb-0">
         {% if search_term %}
-            Não encontramos resultados para <strong>"{{ search_term }}"</strong>.
+        Não encontramos resultados para <strong>"{{ search_term }}"</strong>.
         {% else %}
-            Não encontramos resultados que correspondam aos seus critérios de busca.
+        Não encontramos resultados que correspondam aos seus critérios de busca.
         {% endif %}
     </p>
     <p class="mb-0 mt-2">
@@ -115,25 +115,25 @@
 {% endmacro %}
 
 {% macro empty_filtered_result(filter_description='', clear_url='') %}
-    {#
-        Estado vazio para listagens filtradas sem resultados
+{#
+Estado vazio para listagens filtradas sem resultados
 
-        Args:
-            filter_description: Descrição dos filtros aplicados (opcional)
-            clear_url: URL para limpar filtros (opcional)
+Args:
+filter_description: Descrição dos filtros aplicados (opcional)
+clear_url: URL para limpar filtros (opcional)
 
-        Exemplo:
-            {{ empty_filtered_result('Status: Aberto', '/chamados/listar') }}
-    #}
+Exemplo:
+{{ empty_filtered_result('Status: Aberto', '/chamados/listar') }}
+#}
 <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">
         <i class="bi bi-funnel"></i> Nenhum item encontrado com os filtros aplicados
     </h4>
     <p class="mb-0">
         {% if filter_description %}
-            Não há itens que correspondam ao filtro: <strong>{{ filter_description }}</strong>
+        Não há itens que correspondam ao filtro: <strong>{{ filter_description }}</strong>
         {% else %}
-            Não há itens que correspondam aos filtros aplicados.
+        Não há itens que correspondam aos filtros aplicados.
         {% endif %}
     </p>
     {% if clear_url %}
@@ -146,25 +146,25 @@
 {% endmacro %}
 
 {% macro empty_permission_denied(message='', back_url='') %}
-    {#
-        Estado vazio para acesso negado
+{#
+Estado vazio para acesso negado
 
-        Args:
-            message: Mensagem personalizada (opcional)
-            back_url: URL para voltar (opcional)
+Args:
+message: Mensagem personalizada (opcional)
+back_url: URL para voltar (opcional)
 
-        Exemplo:
-            {{ empty_permission_denied('Você não tem permissão para visualizar estes dados.', '/home') }}
-    #}
+Exemplo:
+{{ empty_permission_denied('Você não tem permissão para visualizar estes dados.', '/home') }}
+#}
 <div class="alert alert-danger" role="alert">
     <h4 class="alert-heading">
         <i class="bi bi-shield-exclamation"></i> Acesso Negado
     </h4>
     <p class="mb-0">
         {% if message %}
-            {{ message }}
+        {{ message }}
         {% else %}
-            Você não possui permissão para acessar este conteúdo.
+        Você não possui permissão para acessar este conteúdo.
         {% endif %}
     </p>
     {% if back_url %}

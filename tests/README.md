@@ -24,7 +24,7 @@ tests/
 ├── test_auth.py             # Testes de autenticação
 ├── test_perfil.py           # Testes de perfil do usuário
 ├── test_usuario.py          # Testes de dashboard do usuário
-├── test_tarefas.py          # Testes CRUD de tarefas
+├── test_categorias.py          # Testes CRUD de categorias
 ├── test_admin_usuarios.py   # Testes de administração de usuários
 ├── test_admin_backups.py    # Testes de backups
 ├── test_admin_configuracoes.py  # Testes de configurações
@@ -38,13 +38,13 @@ Cada arquivo de teste deve organizar testes em classes temáticas:
 
 ```python
 class TestListarTarefas:
-    """Testes de listagem de tarefas"""
+    """Testes de listagem de categorias"""
 
 class TestCriarTarefa:
-    """Testes de criação de tarefa"""
+    """Testes de criação de categoria"""
 
 class TestExcluirTarefa:
-    """Testes de exclusão de tarefa"""
+    """Testes de exclusão de categoria"""
 ```
 
 **Convenção**: Use o prefixo `Test` nas classes e agrupe testes relacionados.
@@ -377,22 +377,6 @@ assert_redirects_to(response, "/login")
 
 **SEMPRE teste isolamento de dados entre usuários:**
 
-```python
-# ✅ CORRETO - verifica isolamento
-def test_usuario_nao_ve_tarefas_de_outros(client, dois_usuarios, fazer_login):
-    usuario1, usuario2 = dois_usuarios
-
-    # Usuario 1 cria tarefa
-    fazer_login(usuario1["email"], usuario1["senha"])
-    client.post("/tarefas/cadastrar", data={"titulo": "Tarefa do Usuario 1"})
-    client.get("/logout")
-
-    # Usuario 2 não deve ver
-    fazer_login(usuario2["email"], usuario2["senha"])
-    response = client.get("/tarefas/listar")
-    assert "Tarefa do Usuario 1" not in response.text
-```
-
 ---
 
 ## 📛 Convenções de Nomenclatura
@@ -415,7 +399,7 @@ def test_usuario_nao_autenticado_nao_acessa_dashboard():
 def test_login():
     pass
 
-def test_tarefa():
+def test_categoria():
     pass
 
 def test_erro():
@@ -434,7 +418,7 @@ class TestListarUsuarios:
     """Testes de listagem de usuários"""
 
 class TestCriarTarefa:
-    """Testes de criação de tarefa"""
+    """Testes de criação de categoria"""
 
 class TestAutorizacao:
     """Testes de autorização e controle de acesso"""
@@ -616,7 +600,7 @@ def test_login():
     pass
 
 @pytest.mark.crud
-def test_criar_tarefa():
+def test_criar_categoria():
     pass
 
 @pytest.mark.integration

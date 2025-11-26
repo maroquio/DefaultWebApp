@@ -26,7 +26,7 @@ def verificar_propriedade(
     mensagem_erro: str = "Você não tem permissão para acessar este recurso",
     redirect_url: str = "/",
     campo_usuario: str = "usuario_id",
-    log_tentativa: bool = True
+    log_tentativa: bool = True,
 ) -> bool:
     """
     Verifica se um usuário é proprietário de uma entidade.
@@ -104,7 +104,7 @@ def verificar_propriedade_ou_admin(
     mensagem_erro: str = "Você não tem permissão para acessar este recurso",
     redirect_url: str = "/",
     campo_usuario: str = "usuario_id",
-    log_tentativa: bool = True
+    log_tentativa: bool = True,
 ) -> bool:
     """
     Verifica se usuário é proprietário OU administrador.
@@ -147,7 +147,7 @@ def verificar_propriedade_ou_admin(
         mensagem_erro,
         redirect_url,
         campo_usuario,
-        log_tentativa
+        log_tentativa,
     )
 
 
@@ -157,7 +157,7 @@ def verificar_perfil(
     request: Request,
     mensagem_erro: str = "Você não tem permissão para acessar esta funcionalidade",
     redirect_url: str = "/",
-    log_tentativa: bool = True
+    log_tentativa: bool = True,
 ) -> bool:
     """
     Verifica se o perfil do usuário está na lista de perfis permitidos.
@@ -210,7 +210,7 @@ def verificar_multiplas_condicoes(
     request: Request,
     mensagem_erro_padrao: str = "Você não tem permissão para acessar este recurso",
     redirect_url: str = "/",
-    operador: str = "AND"
+    operador: str = "AND",
 ) -> bool:
     """
     Verifica múltiplas condições de permissão com operador lógico.
@@ -236,10 +236,10 @@ def verificar_multiplas_condicoes(
     Example com OR:
         >>> # Verificar se usuário é dono OU é admin
         >>> if not verificar_multiplas_condicoes([
-        ...     (tarefa.usuario_id == usuario_logado["id"], "Não é sua tarefa"),
+        ...     (categoria.usuario_id == usuario_logado["id"], "Não é sua categoria"),
         ...     (usuario_logado["perfil"] == Perfil.ADMIN.value, "Não é administrador")
-        ... ], request, redirect_url="/tarefas/listar", operador="OR"):
-        ...     return RedirectResponse("/tarefas/listar", status_code=status.HTTP_303_SEE_OTHER)
+        ... ], request, redirect_url="/categorias/listar", operador="OR"):
+        ...     return RedirectResponse("/categorias/listar", status_code=status.HTTP_303_SEE_OTHER)
     """
     if operador == "AND":
         # Todas as condições devem ser True

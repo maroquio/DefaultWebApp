@@ -927,7 +927,6 @@ DefaultWebApp/
 │   ├── auth_routes.py
 │   ├── perfil_routes.py
 │   ├── usuario_routes.py
-│   ├── tarefas_routes.py
 │   ├── admin_usuarios_routes.py
 │   ├── admin_configuracoes_routes.py
 │   ├── public_routes.py
@@ -956,7 +955,6 @@ DefaultWebApp/
 │   ├── base_privada.html   # Base para páginas autenticadas
 │   ├── auth/               # Login, cadastro, recuperação
 │   ├── perfil/             # Perfil do usuário
-│   ├── tarefas/            # Exemplo CRUD
 │   ├── admin/              # Área administrativa
 │   │   ├── usuarios/
 │   │   └── configuracoes/
