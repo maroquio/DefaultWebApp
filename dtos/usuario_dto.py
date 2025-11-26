@@ -15,8 +15,6 @@ class CriarUsuarioDTO(BaseModel):
     nome: str = Field(
         ...,
         description="Nome completo do usuário",
-        min_length=4,
-        max_length=128,
         examples=["João da Silva"]
     )
     email: str = Field(
@@ -26,9 +24,7 @@ class CriarUsuarioDTO(BaseModel):
     )
     senha: str = Field(
         ...,
-        description="Senha do usuário",
-        min_length=8,
-        max_length=128
+        description="Senha do usuário"
     )
     perfil: str = Field(
         ...,
@@ -47,14 +43,11 @@ class AlterarUsuarioDTO(BaseModel):
 
     id: int = Field(
         ...,
-        description="ID do usuário a ser alterado",
-        gt=0
+        description="ID do usuário a ser alterado"
     )
     nome: str = Field(
         ...,
         description="Nome completo do usuário",
-        min_length=4,
-        max_length=128,
         examples=["João da Silva"]
     )
     email: str = Field(

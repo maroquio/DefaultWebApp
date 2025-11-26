@@ -11,16 +11,16 @@ from typing import Optional
 
 class ConfiguracaoBaseDTO(BaseModel):
     """DTO base para configurações"""
-    chave: str = Field(..., min_length=1, max_length=100, description="Chave única da configuração em snake_case")
-    valor: str = Field(..., min_length=1, max_length=1000, description="Valor da configuração")
-    descricao: Optional[str] = Field(default="", max_length=500, description="Descrição opcional da configuração")
+    chave: str = Field(..., description="Chave única da configuração em snake_case")
+    valor: str = Field(..., description="Valor da configuração")
+    descricao: Optional[str] = Field(default="", description="Descrição opcional da configuração")
 
 
 class ConfiguracaoAplicacaoDTO(BaseModel):
     """DTO para configurações de aplicação (nome, email, etc)"""
-    app_name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Nome da aplicação exibido na interface")
-    resend_from_email: Optional[str] = Field(default=None, min_length=5, max_length=255, description="Email remetente para envio de notificações")
-    resend_from_name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Nome exibido como remetente dos emails")
+    app_name: Optional[str] = Field(default=None, description="Nome da aplicação exibido na interface")
+    resend_from_email: Optional[str] = Field(default=None, description="Email remetente para envio de notificações")
+    resend_from_name: Optional[str] = Field(default=None, description="Nome exibido como remetente dos emails")
 
     @field_validator('resend_from_email')
     @classmethod
@@ -36,21 +36,36 @@ class ConfiguracaoAplicacaoDTO(BaseModel):
 
 class ConfiguracaoFotosDTO(BaseModel):
     """DTO para configurações de fotos"""
-    foto_perfil_tamanho_max: Optional[int] = Field(default=None, ge=64, le=2048, description="Tamanho máximo da foto de perfil em pixels (64-2048)")
-    foto_max_upload_bytes: Optional[int] = Field(default=None, ge=102400, le=52428800, description="Tamanho máximo de upload de foto em bytes (100KB-50MB)")
+    foto_perfil_tamanho_max: Optional[int] = Field(default=None, description="Tamanho máximo da foto de perfil em pixels (64-2048)")
+    foto_max_upload_bytes: Optional[int] = Field(default=None, description="Tamanho máximo de upload de foto em bytes (100KB-50MB)")
 
     @field_validator('foto_perfil_tamanho_max')
     @classmethod
     def validar_tamanho_foto(cls, v):
-        if v is not None and v % 2 != 0:
-            raise ValueError('Tamanho deve ser número par de pixels')
+        if v is not None:
+            if v < 64:
+                raise ValueError('Tamanho mínimo é 64 pixels')
+            if v > 2048:
+                raise ValueError('Tamanho máximo é 2048 pixels')
+            if v % 2 != 0:
+                raise ValueError('Tamanho deve ser número par de pixels')
+        return v
+
+    @field_validator('foto_max_upload_bytes')
+    @classmethod
+    def validar_max_upload(cls, v):
+        if v is not None:
+            if v < 102400:
+                raise ValueError('Tamanho mínimo de upload é 100KB (102400 bytes)')
+            if v > 52428800:
+                raise ValueError('Tamanho máximo de upload é 50MB (52428800 bytes)')
         return v
 
 
 class ConfiguracaoRateLimitDTO(BaseModel):
     """DTO genérico para configurações de rate limiting"""
-    max_tentativas: int = Field(..., ge=1, le=1000, description="Máximo de tentativas permitidas")
-    minutos: int = Field(..., ge=1, le=1440, description="Período em minutos (máx 24h)")
+    max_tentativas: int = Field(..., description="Máximo de tentativas permitidas")
+    minutos: int = Field(..., description="Período em minutos (máx 24h)")
 
     @field_validator('max_tentativas')
     @classmethod
@@ -73,25 +88,79 @@ class ConfiguracaoRateLimitDTO(BaseModel):
 
 class ConfiguracaoRateLimitLoginDTO(ConfiguracaoRateLimitDTO):
     """DTO específico para rate limit de login (validações mais restritas)"""
-    max_tentativas: int = Field(..., ge=3, le=20, description="Tentativas de login (3-20)")
-    minutos: int = Field(..., ge=1, le=60, description="Período em minutos (1-60)")
+    max_tentativas: int = Field(..., description="Tentativas de login (3-20)")
+    minutos: int = Field(..., description="Período em minutos (1-60)")
+
+    @field_validator('max_tentativas')
+    @classmethod
+    def validar_max_tentativas_login(cls, v):
+        if v < 3:
+            raise ValueError('Login deve permitir pelo menos 3 tentativas')
+        if v > 20:
+            raise ValueError('Login não deve permitir mais que 20 tentativas')
+        return v
+
+    @field_validator('minutos')
+    @classmethod
+    def validar_minutos_login(cls, v):
+        if v < 1:
+            raise ValueError('Período deve ser pelo menos 1 minuto')
+        if v > 60:
+            raise ValueError('Período de login não deve exceder 60 minutos')
+        return v
 
 
 class ConfiguracaoRateLimitCadastroDTO(ConfiguracaoRateLimitDTO):
     """DTO específico para rate limit de cadastro"""
-    max_tentativas: int = Field(..., ge=1, le=10, description="Tentativas de cadastro (1-10)")
-    minutos: int = Field(..., ge=5, le=120, description="Período em minutos (5-120)")
+    max_tentativas: int = Field(..., description="Tentativas de cadastro (1-10)")
+    minutos: int = Field(..., description="Período em minutos (5-120)")
+
+    @field_validator('max_tentativas')
+    @classmethod
+    def validar_max_tentativas_cadastro(cls, v):
+        if v < 1:
+            raise ValueError('Cadastro deve permitir pelo menos 1 tentativa')
+        if v > 10:
+            raise ValueError('Cadastro não deve permitir mais que 10 tentativas')
+        return v
+
+    @field_validator('minutos')
+    @classmethod
+    def validar_minutos_cadastro(cls, v):
+        if v < 5:
+            raise ValueError('Período de cadastro deve ser pelo menos 5 minutos')
+        if v > 120:
+            raise ValueError('Período de cadastro não deve exceder 120 minutos')
+        return v
 
 
 class ConfiguracaoRateLimitSenhaDTO(ConfiguracaoRateLimitDTO):
     """DTO específico para rate limit de recuperação/alteração de senha"""
-    max_tentativas: int = Field(..., ge=1, le=10, description="Tentativas (1-10)")
-    minutos: int = Field(..., ge=1, le=60, description="Período em minutos (1-60)")
+    max_tentativas: int = Field(..., description="Tentativas (1-10)")
+    minutos: int = Field(..., description="Período em minutos (1-60)")
+
+    @field_validator('max_tentativas')
+    @classmethod
+    def validar_max_tentativas_senha(cls, v):
+        if v < 1:
+            raise ValueError('Deve permitir pelo menos 1 tentativa')
+        if v > 10:
+            raise ValueError('Senha não deve permitir mais que 10 tentativas')
+        return v
+
+    @field_validator('minutos')
+    @classmethod
+    def validar_minutos_senha(cls, v):
+        if v < 1:
+            raise ValueError('Período deve ser pelo menos 1 minuto')
+        if v > 60:
+            raise ValueError('Período de senha não deve exceder 60 minutos')
+        return v
 
 
 class ConfiguracaoUIDTO(BaseModel):
     """DTO para configurações de interface"""
-    toast_auto_hide_delay_ms: Optional[int] = Field(default=None, ge=1000, le=30000, description="Tempo de exibição das notificações toast em milissegundos (1000-30000)")
+    toast_auto_hide_delay_ms: Optional[int] = Field(default=None, description="Tempo de exibição das notificações toast em milissegundos (1000-30000)")
 
     @field_validator('toast_auto_hide_delay_ms')
     @classmethod
@@ -106,8 +175,8 @@ class ConfiguracaoUIDTO(BaseModel):
 
 class EditarConfiguracaoDTO(BaseModel):
     """DTO para edição de uma configuração individual"""
-    chave: str = Field(..., min_length=1, max_length=100, description="Chave única da configuração em snake_case")
-    valor: str = Field(..., min_length=1, max_length=1000, description="Novo valor da configuração")
+    chave: str = Field(..., description="Chave única da configuração em snake_case")
+    valor: str = Field(..., description="Novo valor da configuração")
 
     @field_validator('valor')
     @classmethod
@@ -165,7 +234,7 @@ class SalvarConfiguracaoLoteDTO(BaseModel):
             "toast_auto_hide_delay_ms": "5000"
         }
     """
-    configs: dict[str, str] = Field(..., min_length=1, description="Dicionário de configurações")
+    configs: dict[str, str] = Field(..., description="Dicionário de configurações")
 
     @field_validator('configs')
     @classmethod

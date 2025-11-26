@@ -12,15 +12,11 @@ class CriarChamadoDTO(BaseModel):
     titulo: str = Field(
         ...,
         description="Título resumido do chamado",
-        min_length=10,
-        max_length=200,
         examples=["Erro ao acessar relatório de vendas"]
     )
     descricao: str = Field(
         ...,
         description="Descrição detalhada do problema ou solicitação",
-        min_length=20,
-        max_length=2000,
         examples=["Ao tentar acessar o relatório de vendas, aparece erro 500..."]
     )
     prioridade: str = Field(

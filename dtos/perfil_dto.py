@@ -9,7 +9,7 @@ from dtos.validators import (
 
 
 class EditarPerfilDTO(BaseModel):
-    nome: str = Field(..., description="Nome completo do usuário", min_length=4, max_length=128)
+    nome: str = Field(..., description="Nome completo do usuário")
     email: str = Field(..., description="E-mail do usuário", examples=["usuario@exemplo.com"])
 
     _validar_nome = field_validator("nome")(validar_nome_pessoa(min_palavras=2))
@@ -17,9 +17,9 @@ class EditarPerfilDTO(BaseModel):
 
 
 class AlterarSenhaDTO(BaseModel):
-    senha_atual: str = Field(..., description="Senha atual do usuário", min_length=1, max_length=128)
-    senha_nova: str = Field(..., description="Nova senha desejada", min_length=8, max_length=128)
-    confirmar_senha: str = Field(..., description="Confirmação da nova senha", min_length=8, max_length=128)
+    senha_atual: str = Field(..., description="Senha atual do usuário")
+    senha_nova: str = Field(..., description="Nova senha desejada")
+    confirmar_senha: str = Field(..., description="Confirmação da nova senha")
 
     _validar_senha_atual = field_validator("senha_atual")(
         validar_string_obrigatoria("Senha atual")

@@ -8,8 +8,6 @@ class CriarInteracaoDTO(BaseModel):
     mensagem: str = Field(
         ...,
         description="Texto da mensagem/resposta",
-        min_length=10,
-        max_length=2000,
         examples=["Obrigado pelo retorno. Já verifiquei e o problema persiste..."]
     )
 
