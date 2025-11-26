@@ -75,6 +75,7 @@ codebase.md
 .mcp/
 .aidigestignore
 codebase*
+.mcp.json
 
 # Imagens
 static/img/usuarios/*
