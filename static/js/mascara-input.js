@@ -713,21 +713,7 @@ window.App.MascaraInput.aplicar = aplicarMascara;
 window.App.MascaraInput.observador = observadorDOM; // Expor para cleanup manual se necessário
 window.App.MascaraInput.desconectar = () => observadorDOM.disconnect(); // API para parar observação
 
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.MascaraInput.Mascara em vez disso
- */
-window.InputMask = MascaraInput;
+// Expor classes e funcoes no escopo global
 window.MascaraInput = MascaraInput;
-
-/**
- * @deprecated Use window.App.MascaraInput.MascaraDecimal em vez disso
- */
-window.DecimalMask = MascaraDecimal;
 window.MascaraDecimal = MascaraDecimal;
-
-/**
- * @deprecated Use window.App.MascaraInput.aplicar() em vez disso
- */
-window.applyMask = aplicarMascara;
 window.aplicarMascara = aplicarMascara;

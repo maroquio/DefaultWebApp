@@ -277,11 +277,4 @@ window.excluirUsuario = excluirUsuario;
 window.excluirTarefa = excluirTarefa;
 window.excluirChamado = excluirChamado;
 
-// Funcao em portugues
 window.escaparHtml = escaparHtml;
-
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use escaparHtml() em vez disso
- */
-window.escapeHtml = escaparHtml;

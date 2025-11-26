@@ -37,14 +37,14 @@
 
                             <div class="col-12 col-lg-6 mb-3 mb-lg-0">
                                 {{ field(name='senha', label='Senha', type='password', required=true,
-                                append_icon='bi-eye', append_button_onclick="togglePassword('senha')",
+                                append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('senha')",
                                 attributes={'minlength': 8}) }}
                             </div>
 
                             <div class="col-12 col-lg-6 mb-1">
                                 {{ field(name='confirmar_senha', label='Confirmar Senha', type='password',
                                 required=true,
-                                append_icon='bi-eye', append_button_onclick="togglePassword('confirmar_senha')",
+                                append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('confirmar_senha')",
                                 attributes={'minlength': 8}) }}
                             </div>
                             
@@ -80,7 +80,7 @@
 {% block scripts %}
 <script>
     // Inicializar validador de senha (apenas feedback visual)
-    const passwordValidator = new PasswordValidator({
+    const validadorSenha = new ValidadorSenha({
         passwordFieldId: 'senha',
         confirmPasswordFieldId: 'confirmar_senha',
         strengthBarId: 'senha-strength',

@@ -32,11 +32,11 @@
                                     {{ badge_mensagens_nao_lidas(chamado.mensagens_nao_lidas) }}
                                 </div>
                                 <small class="text-muted">
-                                    <i class="bi bi-calendar3"></i> Aberto em: {{ chamado.data_abertura|format_data_hora
+                                    <i class="bi bi-calendar3"></i> Aberto em: {{ chamado.data_abertura|formatar_data_hora
                                     }}
                                     {% if chamado.data_fechamento %}
                                     | <i class="bi bi-check2-circle"></i> Fechado em: {{
-                                    chamado.data_fechamento|format_data_hora }}
+                                    chamado.data_fechamento|formatar_data_hora }}
                                     {% endif %}
                                 </small>
                             </div>
@@ -93,7 +93,7 @@
             urlBase: '/chamados',
             entidade: 'chamado',
             camposDetalhes: {
-                'Título': escapeHtml(chamadoTitulo)
+                'Titulo': escaparHtml(chamadoTitulo)
             }
         });
     }

@@ -74,7 +74,7 @@
 {% block scripts %}
 <script>
     // Inicializar validador de senha (apenas feedback visual)
-    const passwordValidator = new PasswordValidator({
+    const validadorSenha = new ValidadorSenha({
         passwordFieldId: 'senha',
         confirmPasswordFieldId: 'confirmar_senha',
         strengthBarId: 'senha-strength',

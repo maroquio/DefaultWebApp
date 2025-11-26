@@ -14,6 +14,11 @@
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
 
+    <!-- Chat Widget CSS (apenas para usuários logados) -->
+    {% if request.session.get('usuario_logado') %}
+    <link rel="stylesheet" href="/static/css/widget-chat.css">
+    {% endif %}
+
     {% block head %}{% endblock %}
 </head>
 
@@ -122,10 +127,23 @@
     <!-- Script de Máscaras de Input -->
     <script src="/static/js/mascara-input.js"></script>
 
-    <!-- Scripts do Chat (apenas para usuários logados) -->
+    <!-- Script de Auxiliares de Exclusão -->
+    <script src="/static/js/auxiliares-exclusao.js"></script>
+
+    <!-- Chat Widget JS (apenas para usuários logados) -->
     {% if request.session.get('usuario_logado') %}
-    <script src="/static/js/chat-manager.js"></script>
-    <script src="/static/js/chat-ui.js"></script>
+    <script src="/static/js/widget-chat.js" defer></script>
+    <script>
+        // Guardar ID do usuário logado no body para o chat
+        document.body.dataset.usuarioId = {{ request.session.get('usuario_logado')['id'] }};
+
+        // Inicializar chat quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof chatWidget !== 'undefined') {
+                chatWidget.init();
+            }
+        });
+    </script>
     {% endif %}
 
     {% block scripts %}{% endblock %}

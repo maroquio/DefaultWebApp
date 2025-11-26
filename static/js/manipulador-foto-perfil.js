@@ -96,9 +96,4 @@ window.App.FotoPerfil.abrirSeletor = function() {
     }
 };
 
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.FotoPerfil.abrirSeletor() em vez disso
- */
-window.openFileSelector = window.App.FotoPerfil.abrirSeletor;
 window.abrirSeletorArquivo = window.App.FotoPerfil.abrirSeletor;

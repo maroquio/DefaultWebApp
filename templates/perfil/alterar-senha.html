@@ -25,14 +25,14 @@
                         <!-- Campo Senha Atual -->
                         <div class="col-12 mb-3">
                             {{ field(name='senha_atual', label='Senha Atual', type='password', required=true,
-                            append_icon='bi-eye', append_button_onclick="togglePassword('senha_atual')",
+                            append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('senha_atual')",
                             attributes={'autocomplete': 'current-password'}) }}
                         </div>
 
                         <!-- Campo Nova Senha -->
                         <div class="col-lg-6 mb-3 mb-lg-1">
                             {{ field(name='senha_nova', label='Nova Senha', type='password', required=true,
-                            append_icon='bi-eye', append_button_onclick="togglePassword('senha_nova')",
+                            append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('senha_nova')",
                             attributes={'minlength': 8, 'autocomplete': 'new-password'},
                             wrapper_class='mb-0') }}
                         </div>
@@ -41,7 +41,7 @@
                         <div class="col-lg-6 mb-1 mb-lg-1">
                             {{ field(name='confirmar_senha', label='Confirmar Nova Senha', type='password',
                             required=true,
-                            append_icon='bi-eye', append_button_onclick="togglePassword('confirmar_senha')",
+                            append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('confirmar_senha')",
                             attributes={'minlength': 8, 'autocomplete': 'new-password'},
                             wrapper_class='mb-0') }}
                         </div>
@@ -88,7 +88,7 @@
 {% block scripts %}
 <script>
     // Inicializar validador de senha
-    const passwordValidator = new PasswordValidator({
+    const validadorSenha = new ValidadorSenha({
         passwordFieldId: 'senha_nova',
         confirmPasswordFieldId: 'confirmar_senha',
         strengthBarId: 'senha-strength',

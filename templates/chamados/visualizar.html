@@ -32,14 +32,14 @@
                         <small class="text-muted d-block mb-1">
                             <i class="bi bi-calendar3"></i> Data de Abertura
                         </small>
-                        <strong>{{ chamado.data_abertura|format_data_as_hora }}</strong>
+                        <strong>{{ chamado.data_abertura|formatar_data_as_hora }}</strong>
                     </div>
                     {% if chamado.data_fechamento %}
                     <div class="col-md-6 mb-3">
                         <small class="text-muted d-block mb-1">
                             <i class="bi bi-check2-circle"></i> Data de Fechamento
                         </small>
-                        <strong>{{ chamado.data_fechamento|format_data_as_hora }}</strong>
+                        <strong>{{ chamado.data_fechamento|formatar_data_as_hora }}</strong>
                     </div>
                     {% endif %}
                 </div>
@@ -79,7 +79,7 @@
                                 </div>
                                 {% if interacao.data_interacao %}
                                 <small class="text-muted text-nowrap ms-2">
-                                    <i class="bi bi-clock"></i> {{ interacao.data_interacao|format_data_as_hora }}
+                                    <i class="bi bi-clock"></i> {{ interacao.data_interacao|formatar_data_as_hora }}
                                 </small>
                                 {% endif %}
                             </div>

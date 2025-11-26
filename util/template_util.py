@@ -245,12 +245,5 @@ def criar_templates(pasta: str) -> Jinja2Templates:
     env.filters['formatar_data_as_hora'] = formatar_data_as_hora
     env.filters['formatar_hora'] = formatar_hora
 
-    # Aliases em inglês para retrocompatibilidade com templates existentes
-    # (Documentados em CLAUDE.md como API pública)
-    env.filters['format_data'] = formatar_data
-    env.filters['format_data_hora'] = formatar_data_hora
-    env.filters['format_data_as_hora'] = formatar_data_as_hora
-    env.filters['format_hora'] = formatar_hora
-
     templates = Jinja2Templates(env=env)
     return templates

@@ -47,7 +47,7 @@
                                 <td>
                                     {{ badge_prioridade(chamado.prioridade) }}
                                 </td>
-                                <td>{{ chamado.data_abertura|format_data_hora if chamado.data_abertura else '-' }}</td>
+                                <td>{{ chamado.data_abertura|formatar_data_hora if chamado.data_abertura else '-' }}</td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="/admin/chamados/{{ chamado.id }}/responder"

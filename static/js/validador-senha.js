@@ -345,15 +345,6 @@ window.App.Senha = window.App.Senha || {};
 window.App.Senha.Validador = ValidadorSenha;
 window.App.Senha.alternarVisibilidade = alternarVisibilidadeSenha;
 
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.Senha.Validador em vez disso
- */
-window.PasswordValidator = ValidadorSenha;
+// Expor classe e funcao no escopo global
 window.ValidadorSenha = ValidadorSenha;
-
-/**
- * @deprecated Use window.App.Senha.alternarVisibilidade() em vez disso
- */
-window.togglePassword = alternarVisibilidadeSenha;
 window.alternarVisibilidadeSenha = alternarVisibilidadeSenha;

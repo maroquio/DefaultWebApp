@@ -429,21 +429,8 @@ window.App.CortadorImagem.ajustarContainer = ajustarTamanhoContainerCortador;
 window.App.CortadorImagem.atualizarPreview = atualizarPreview;
 window.App.CortadorImagem.resetar = resetarCortador;
 
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.CortadorImagem em vez disso
- */
-window.cropperInstances = instanciasCortador;
-window.prepareImageForModal = prepararImagemParaModal;
-window.initializeCropperInModal = inicializarCortadorNoModal;
-window.loadImageFromFile = carregarImagemDeArquivo;
-window.initImageCropper = inicializarCortadorImagem;
-window.calculateCropperImageHeight = calcularAlturaImagemCortador;
-window.adjustCropperContainerSize = ajustarTamanhoContainerCortador;
-window.updatePreview = atualizarPreview;
-window.resetCropper = resetarCortador;
-
-// Aliases em portugues
+// Expor funcoes no escopo global
+window.instanciasCortador = instanciasCortador;
 window.prepararImagemParaModal = prepararImagemParaModal;
 window.inicializarCortadorNoModal = inicializarCortadorNoModal;
 window.carregarImagemDeArquivo = carregarImagemDeArquivo;

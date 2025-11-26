@@ -282,7 +282,7 @@
                     <pre class="bg-light p-3 rounded"><code>{% raw %}{{ field(name='email', label='E-mail', type='email', required=true) }}
 
 {{ field(name='senha', label='Senha', type='password',
-         append_icon='bi-eye', append_button_onclick="togglePassword('senha')") }}
+         append_icon='bi-eye', append_button_onclick="alternarVisibilidadeSenha('senha')") }}
 
 {{ field(name='perfil', label='Perfil', type='select',
          options={'Admin': 'Administrador', 'Cliente': 'Cliente'}) }}
