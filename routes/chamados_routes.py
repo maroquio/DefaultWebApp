@@ -8,30 +8,50 @@ Permite que usuários comuns:
 - Excluam chamados próprios
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
+
+# Standard library
 from typing import Optional
+
+# Third-party
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
+# DTOs
 from dtos.chamado_dto import CriarChamadoDTO
 from dtos.chamado_interacao_dto import CriarInteracaoDTO
+
+# Models
 from model.chamado_model import Chamado, StatusChamado, PrioridadeChamado
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
-from util.datetime_util import agora
+
+# Repositories
 from repo import chamado_repo, chamado_interacao_repo
+
+# Utilities
 from util.auth_decorator import requer_autenticacao
-from util.template_util import criar_templates
+from util.datetime_util import agora
+from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
-from util.exceptions import FormValidationError
-from util.repository_helpers import obter_ou_404
 from util.permission_helpers import verificar_propriedade
+from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+from util.repository_helpers import obter_ou_404
+from util.template_util import criar_templates
+
+# =============================================================================
+# Configuração do Router
+# =============================================================================
 
 router = APIRouter(prefix="/chamados")
 templates = criar_templates("templates/chamados")
 
-# Rate limiters
-from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+# =============================================================================
+# Rate Limiters
+# =============================================================================
 
 chamado_criar_limiter = DynamicRateLimiter(
     chave_max="rate_limit_chamado_criar_max",
@@ -149,7 +169,7 @@ async def post_cadastrar(
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     except ValidationError as e:
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="chamados/cadastrar.html",
             dados_formulario=dados_formulario,
@@ -268,7 +288,7 @@ async def post_responder(
         return RedirectResponse(f"/chamados/{id}/visualizar", status_code=status.HTTP_303_SEE_OTHER)
 
     except ValidationError as e:
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="chamados/visualizar.html",
             dados_formulario=dados_formulario,

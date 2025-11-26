@@ -19,6 +19,7 @@ import re
 from typing import Optional, Set, Callable, Any
 from datetime import datetime
 from pathlib import Path
+from util.datetime_util import agora
 
 
 # ===== VALIDAÇÕES DE CAMPOS DE TEXTO =====
@@ -684,7 +685,7 @@ def validar_data(
 
     Example:
         _validar_data = field_validator('data_nascimento')(
-            validar_data(data_maxima=datetime.now())
+            validar_data(data_maxima=agora())
         )
     """
 

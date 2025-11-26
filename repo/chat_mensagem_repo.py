@@ -15,7 +15,7 @@ from sql.chat_mensagem_sql import (
     OBTER_ULTIMA_MENSAGEM_SALA,
     EXCLUIR
 )
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.datetime_util import agora
 
 
@@ -42,7 +42,7 @@ def _row_to_mensagem(row: Row) -> ChatMensagem:
 
 def criar_tabela():
     """Cria a tabela chat_mensagem se não existir."""
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
 
@@ -61,7 +61,7 @@ def inserir(sala_id: str, usuario_id: int, mensagem: str) -> ChatMensagem:
     """
     data_envio = agora()
 
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (sala_id, usuario_id, mensagem, data_envio, None))
         mensagem_id = cursor.lastrowid
@@ -86,7 +86,7 @@ def obter_por_id(mensagem_id: int) -> Optional[ChatMensagem]:
     Returns:
         Objeto ChatMensagem ou None se não encontrada
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_ID, (mensagem_id,))
         row = cursor.fetchone()
@@ -108,7 +108,7 @@ def listar_por_sala(sala_id: str, limit: int = 50, offset: int = 0) -> List[Chat
     Returns:
         Lista de objetos ChatMensagem (ordenadas por ID crescente - mais antigas primeiro)
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(LISTAR_POR_SALA, (sala_id, limit, offset))
         rows = cursor.fetchall()
@@ -126,7 +126,7 @@ def contar_por_sala(sala_id: str) -> int:
     Returns:
         Número total de mensagens
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CONTAR_POR_SALA, (sala_id,))
         row = cursor.fetchone()
@@ -145,7 +145,7 @@ def marcar_como_lidas(sala_id: str, usuario_id: int) -> bool:
     Returns:
         True se marcadas com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(MARCAR_COMO_LIDAS, (agora(), sala_id, usuario_id))
         return cursor.rowcount >= 0  # Retorna True mesmo se nenhuma mensagem foi marcada
@@ -161,7 +161,7 @@ def obter_ultima_mensagem_sala(sala_id: str) -> Optional[ChatMensagem]:
     Returns:
         Objeto ChatMensagem ou None se não houver mensagens
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_ULTIMA_MENSAGEM_SALA, (sala_id,))
         row = cursor.fetchone()
@@ -181,7 +181,7 @@ def excluir(mensagem_id: int) -> bool:
     Returns:
         True se excluída com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR, (mensagem_id,))
         return cursor.rowcount > 0

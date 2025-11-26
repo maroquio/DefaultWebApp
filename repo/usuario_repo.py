@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from model.usuario_model import Usuario
 from sql.usuario_sql import *
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.foto_util import criar_foto_padrao_usuario
 
 
@@ -30,13 +30,13 @@ def _row_to_usuario(row) -> Usuario:
 
 
 def criar_tabela() -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
         return True
 
 def inserir(usuario: Usuario) -> Optional[int]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (
             usuario.nome,
@@ -53,7 +53,7 @@ def inserir(usuario: Usuario) -> Optional[int]:
         return usuario_id
 
 def alterar(usuario: Usuario) -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ALTERAR, (
             usuario.nome,
@@ -64,19 +64,19 @@ def alterar(usuario: Usuario) -> bool:
         return cursor.rowcount > 0
 
 def atualizar_senha(id: int, senha: str) -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ALTERAR_SENHA, (senha, id))
         return cursor.rowcount > 0
 
 def excluir(id: int) -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR, (id,))
         return cursor.rowcount > 0
 
 def obter_por_id(id: int) -> Optional[Usuario]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_ID, (id,))
         row = cursor.fetchone()
@@ -85,21 +85,21 @@ def obter_por_id(id: int) -> Optional[Usuario]:
         return None
 
 def obter_todos() -> list[Usuario]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_TODOS)
         rows = cursor.fetchall()
         return [_row_to_usuario(row) for row in rows]
 
 def obter_quantidade() -> int:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_QUANTIDADE)
         row = cursor.fetchone()
         return row["quantidade"] if row else 0
 
 def obter_por_email(email: str) -> Optional[Usuario]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_EMAIL, (email,))
         row = cursor.fetchone()
@@ -108,13 +108,13 @@ def obter_por_email(email: str) -> Optional[Usuario]:
         return None
 
 def atualizar_token(email: str, token: str, data_expiracao: datetime) -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ATUALIZAR_TOKEN, (token, data_expiracao, email))
         return cursor.rowcount > 0
 
 def obter_por_token(token: str) -> Optional[Usuario]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_TOKEN, (token,))
         row = cursor.fetchone()
@@ -123,13 +123,13 @@ def obter_por_token(token: str) -> Optional[Usuario]:
         return None
 
 def limpar_token(id: int) -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(LIMPAR_TOKEN, (id,))
         return cursor.rowcount > 0
 
 def obter_todos_por_perfil(perfil: str) -> list[Usuario]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_TODOS_POR_PERFIL, (perfil,))
         rows = cursor.fetchall()
@@ -146,7 +146,7 @@ def buscar_por_termo(termo: str, limit: int = 10) -> list[Usuario]:
     Returns:
         Lista de usuários que correspondem à busca
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """SELECT id, nome, email, senha, perfil,

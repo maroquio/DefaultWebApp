@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
 from sql.chamado_interacao_sql import *
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 
 
 def _row_to_interacao(row) -> ChamadoInteracao:
@@ -48,7 +48,7 @@ def criar_tabela() -> bool:
     Returns:
         True se operação foi bem sucedida
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
         return True
@@ -64,7 +64,7 @@ def inserir(interacao: ChamadoInteracao) -> Optional[int]:
     Returns:
         ID da interação inserida ou None em caso de erro
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (
             interacao.chamado_id,
@@ -86,7 +86,7 @@ def obter_por_chamado(chamado_id: int) -> list[ChamadoInteracao]:
     Returns:
         Lista de objetos ChamadoInteracao ordenados por data
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_CHAMADO, (chamado_id,))
         rows = cursor.fetchall()
@@ -103,7 +103,7 @@ def obter_por_id(id: int) -> Optional[ChamadoInteracao]:
     Returns:
         Objeto ChamadoInteracao ou None se não encontrado
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_ID, (id,))
         row = cursor.fetchone()
@@ -122,7 +122,7 @@ def contar_por_chamado(chamado_id: int) -> int:
     Returns:
         Número de interações
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CONTAR_POR_CHAMADO, (chamado_id,))
         row = cursor.fetchone()
@@ -142,7 +142,7 @@ def excluir_por_chamado(chamado_id: int) -> bool:
     Returns:
         True se exclusão foi bem sucedida, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR_POR_CHAMADO, (chamado_id,))
         return cursor.rowcount >= 0  # Pode ser 0 se não havia interações
@@ -165,7 +165,7 @@ def marcar_como_lidas(chamado_id: int, usuario_logado_id: int) -> bool:
     """
     from util.datetime_util import agora
 
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(MARCAR_COMO_LIDAS, (agora(), chamado_id, usuario_logado_id))
         return True
@@ -185,7 +185,7 @@ def obter_contador_nao_lidas(usuario_id: int) -> dict[int, int]:
         Exemplo: {1: 3, 5: 1, 7: 2} significa que o chamado 1 tem 3 mensagens
         não lidas de outros usuários, o chamado 5 tem 1, e o chamado 7 tem 2.
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CONTAR_NAO_LIDAS_POR_CHAMADO, (usuario_id,))
         rows = cursor.fetchall()
@@ -208,7 +208,7 @@ def tem_resposta_admin(chamado_id: int) -> bool:
     Returns:
         True se houver pelo menos uma resposta de admin, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(TEM_RESPOSTA_ADMIN, (chamado_id,))
         row = cursor.fetchone()

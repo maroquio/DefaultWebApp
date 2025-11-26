@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from util.perfis import Perfil
 from dtos.validators import (
     validar_email,
@@ -10,10 +10,31 @@ from dtos.validators import (
 
 
 class CriarUsuarioDTO(BaseModel):
-    nome: str
-    email: str
-    senha: str
-    perfil: str
+    """DTO para criação de usuário pelo administrador."""
+
+    nome: str = Field(
+        ...,
+        description="Nome completo do usuário",
+        min_length=4,
+        max_length=128,
+        examples=["João da Silva"]
+    )
+    email: str = Field(
+        ...,
+        description="E-mail do usuário",
+        examples=["usuario@exemplo.com"]
+    )
+    senha: str = Field(
+        ...,
+        description="Senha do usuário",
+        min_length=8,
+        max_length=128
+    )
+    perfil: str = Field(
+        ...,
+        description="Perfil/Role do usuário",
+        examples=["Cliente", "Vendedor", "Administrador"]
+    )
 
     _validar_nome = field_validator("nome")(validar_nome_pessoa())
     _validar_email = field_validator("email")(validar_email())
@@ -22,10 +43,30 @@ class CriarUsuarioDTO(BaseModel):
 
 
 class AlterarUsuarioDTO(BaseModel):
-    id: int
-    nome: str
-    email: str
-    perfil: str
+    """DTO para alteração de usuário pelo administrador."""
+
+    id: int = Field(
+        ...,
+        description="ID do usuário a ser alterado",
+        gt=0
+    )
+    nome: str = Field(
+        ...,
+        description="Nome completo do usuário",
+        min_length=4,
+        max_length=128,
+        examples=["João da Silva"]
+    )
+    email: str = Field(
+        ...,
+        description="E-mail do usuário",
+        examples=["usuario@exemplo.com"]
+    )
+    perfil: str = Field(
+        ...,
+        description="Perfil/Role do usuário",
+        examples=["Cliente", "Vendedor", "Administrador"]
+    )
 
     _validar_id = field_validator("id")(validar_id_positivo())
     _validar_nome = field_validator("nome")(validar_nome_pessoa())

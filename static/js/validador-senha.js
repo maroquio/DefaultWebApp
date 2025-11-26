@@ -1,30 +1,30 @@
 /**
- * PasswordValidator - Sistema de feedback visual de senha
+ * ValidadorSenha - Sistema de feedback visual de senha
  *
  * Funcionalidades:
  * - Toggle de visibilidade de senha
- * - Medição de força de senha
- * - Atualização visual de requisitos
+ * - Medidor de forca de senha
+ * - Atualizacao visual de requisitos
  * - Feedback visual de senhas coincidentes
  *
  * IMPORTANTE: Este componente fornece APENAS feedback visual.
- * A validação real é feita server-side através de DTOs Pydantic.
- * NÃO bloqueia envio do formulário com alerts.
+ * A validacao real e feita server-side atraves de DTOs Pydantic.
+ * NAO bloqueia envio do formulario com alerts.
  */
 
-class PasswordValidator {
+class ValidadorSenha {
     /**
-     * @param {Object} config - Configuração do validador
+     * @param {Object} config - Configuracao do validador
      * @param {string} config.passwordFieldId - ID do campo de senha
-     * @param {string} config.confirmPasswordFieldId - ID do campo de confirmação (opcional)
+     * @param {string} config.confirmPasswordFieldId - ID do campo de confirmacao (opcional)
      * @param {string} config.strengthBarId - ID da barra de progresso (opcional)
-     * @param {string} config.strengthTextId - ID do texto de força (opcional)
-     * @param {string} config.matchMessageId - ID da mensagem de coincidência (opcional)
+     * @param {string} config.strengthTextId - ID do texto de forca (opcional)
+     * @param {string} config.matchMessageId - ID da mensagem de coincidencia (opcional)
      * @param {Object} config.requirements - IDs dos elementos de requisitos (opcional)
-     * @param {number} config.minLength - Tamanho mínimo da senha (padrão: 8)
-     * @param {boolean} config.showStrength - Exibir medidor de força (padrão: false)
-     * @param {boolean} config.showRequirements - Exibir requisitos visuais (padrão: false)
-     * @param {Function} config.onValidate - Callback customizado de validação (opcional)
+     * @param {number} config.minLength - Tamanho minimo da senha (padrao: 8)
+     * @param {boolean} config.showStrength - Exibir medidor de forca (padrao: false)
+     * @param {boolean} config.showRequirements - Exibir requisitos visuais (padrao: false)
+     * @param {Function} config.onValidate - Callback customizado de validacao (opcional)
      */
     constructor(config) {
         this.config = {
@@ -40,7 +40,7 @@ class PasswordValidator {
             : null;
 
         if (!this.passwordField) {
-            console.error(`Campo de senha com ID "${this.config.passwordFieldId}" não encontrado`);
+            console.error(`Campo de senha com ID "${this.config.passwordFieldId}" nao encontrado`);
             return;
         }
 
@@ -48,13 +48,13 @@ class PasswordValidator {
     }
 
     init() {
-        // Configurar eventos de força de senha
+        // Configurar eventos de forca de senha
         if (this.config.showStrength) {
             this.strengthBar = document.getElementById(this.config.strengthBarId);
             this.strengthText = document.getElementById(this.config.strengthTextId);
 
             if (this.strengthBar && this.strengthText) {
-                this.passwordField.addEventListener('input', () => this.checkPasswordStrength());
+                this.passwordField.addEventListener('input', () => this.verificarForcaSenha());
             }
         }
 
@@ -63,15 +63,15 @@ class PasswordValidator {
             this.matchMessage = document.getElementById(this.config.matchMessageId);
 
             if (this.matchMessage) {
-                this.confirmPasswordField.addEventListener('input', () => this.checkPasswordMatch());
+                this.confirmPasswordField.addEventListener('input', () => this.verificarSenhasCoincidentes());
             }
         }
     }
 
     /**
-     * Verifica a força da senha e atualiza indicadores visuais
+     * Verifica a forca da senha e atualiza indicadores visuais
      */
-    checkPasswordStrength() {
+    verificarForcaSenha() {
         const password = this.passwordField.value;
         let strength = 0;
         let color = 'danger';
@@ -88,23 +88,23 @@ class PasswordValidator {
 
         // Atualizar indicadores visuais de requisitos
         if (this.config.showRequirements && this.config.requirements) {
-            this.updateRequirementIndicators(requirements);
+            this.atualizarIndicadoresRequisitos(requirements);
         }
 
-        // Calcular força (20% para cada requisito)
+        // Calcular forca (20% para cada requisito)
         if (requirements.length) strength += 20;
         if (requirements.uppercase) strength += 20;
         if (requirements.lowercase) strength += 20;
         if (requirements.number) strength += 20;
         if (requirements.special) strength += 20;
 
-        // Definir texto e cor baseado na força
+        // Definir texto e cor baseado na forca
         if (strength >= 80) {
             color = 'success';
             text = 'Forte';
         } else if (strength >= 60) {
             color = 'info';
-            text = 'Média';
+            text = 'Media';
         } else if (strength >= 40) {
             color = 'warning';
             text = 'Fraca';
@@ -116,7 +116,7 @@ class PasswordValidator {
             this.strengthBar.className = 'progress-bar bg-' + color;
         }
 
-        // Atualizar texto de força
+        // Atualizar texto de forca
         if (this.strengthText) {
             this.strengthText.textContent = text;
             this.strengthText.className = 'text-' + color;
@@ -127,9 +127,9 @@ class PasswordValidator {
 
     /**
      * Atualiza indicadores visuais de requisitos de senha
-     * SEGURANÇA: Usa createElement em vez de innerHTML para prevenir XSS
+     * SEGURANCA: Usa createElement em vez de innerHTML para prevenir XSS
      */
-    updateRequirementIndicators(requirements) {
+    atualizarIndicadoresRequisitos(requirements) {
         const reqMap = {
             length: this.config.requirements.length,
             uppercase: this.config.requirements.uppercase,
@@ -147,26 +147,26 @@ class PasswordValidator {
 
             const isMet = requirements[key];
 
-            // Extrair texto original (sem ícones)
+            // Extrair texto original (sem icones)
             const originalText = element.textContent
                 .replace(/✓ /g, '')
                 .replace(/<i.*?<\/i>/g, '')
                 .trim();
 
-            // Limpar conteúdo atual
+            // Limpar conteudo atual
             element.innerHTML = '';
 
             if (isMet) {
-                // Criar ícone de sucesso usando createElement
+                // Criar icone de sucesso usando createElement
                 const icon = document.createElement('i');
                 icon.className = 'bi bi-check-circle-fill';
                 element.appendChild(icon);
 
-                // Adicionar espaço e texto
+                // Adicionar espaco e texto
                 element.appendChild(document.createTextNode(' ' + originalText));
                 element.classList.add('text-success');
             } else {
-                // Apenas texto, sem ícone
+                // Apenas texto, sem icone
                 element.textContent = originalText;
                 element.classList.remove('text-success');
             }
@@ -175,9 +175,9 @@ class PasswordValidator {
 
     /**
      * Verifica se as senhas coincidem
-     * SEGURANÇA: Usa createElement em vez de innerHTML para prevenir XSS
+     * SEGURANCA: Usa createElement em vez de innerHTML para prevenir XSS
      */
-    checkPasswordMatch() {
+    verificarSenhasCoincidentes() {
         if (!this.confirmPasswordField || !this.matchMessage) return true;
 
         const password = this.passwordField.value;
@@ -188,7 +188,7 @@ class PasswordValidator {
             return true;
         }
 
-        // Limpar conteúdo anterior
+        // Limpar conteudo anterior
         this.matchMessage.innerHTML = '';
 
         // Criar span wrapper
@@ -206,24 +206,24 @@ class PasswordValidator {
             this.matchMessage.appendChild(span);
             return true;
         } else {
-            // Senhas não coincidem - feedback negativo
+            // Senhas nao coincidem - feedback negativo
             span.className = 'text-danger';
 
             const icon = document.createElement('i');
             icon.className = 'bi bi-x-circle';
             span.appendChild(icon);
 
-            span.appendChild(document.createTextNode(' As senhas não coincidem'));
+            span.appendChild(document.createTextNode(' As senhas nao coincidem'));
             this.matchMessage.appendChild(span);
             return false;
         }
     }
 
     /**
-     * Retorna informações sobre a força da senha (para uso programático)
-     * @returns {Object} Objeto com força (0-100) e requisitos atendidos
+     * Retorna informacoes sobre a forca da senha (para uso programatico)
+     * @returns {Object} Objeto com forca (0-100) e requisitos atendidos
      */
-    getPasswordStrength() {
+    obterForcaSenha() {
         const password = this.passwordField.value;
         let strength = 0;
 
@@ -236,7 +236,7 @@ class PasswordValidator {
             special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
         };
 
-        // Calcular força (20% para cada requisito)
+        // Calcular forca (20% para cada requisito)
         if (requirements.length) strength += 20;
         if (requirements.uppercase) strength += 20;
         if (requirements.lowercase) strength += 20;
@@ -253,10 +253,10 @@ class PasswordValidator {
     }
 
     /**
-     * Retorna se as senhas coincidem (para uso programático)
-     * @returns {boolean} True se senhas coincidem ou não há confirmação
+     * Retorna se as senhas coincidem (para uso programatico)
+     * @returns {boolean} True se senhas coincidem ou nao ha confirmacao
      */
-    doPasswordsMatch() {
+    senhasCoincidentes() {
         if (!this.confirmPasswordField) return true;
 
         const password = this.passwordField.value;
@@ -264,18 +264,57 @@ class PasswordValidator {
 
         return password === confirmPassword;
     }
+
+    // =============================================================================
+    // METODOS DEPRECADOS - Mantidos para retrocompatibilidade
+    // =============================================================================
+
+    /**
+     * @deprecated Use verificarForcaSenha() em vez disso
+     */
+    checkPasswordStrength() {
+        return this.verificarForcaSenha();
+    }
+
+    /**
+     * @deprecated Use atualizarIndicadoresRequisitos() em vez disso
+     */
+    updateRequirementIndicators(requirements) {
+        return this.atualizarIndicadoresRequisitos(requirements);
+    }
+
+    /**
+     * @deprecated Use verificarSenhasCoincidentes() em vez disso
+     */
+    checkPasswordMatch() {
+        return this.verificarSenhasCoincidentes();
+    }
+
+    /**
+     * @deprecated Use obterForcaSenha() em vez disso
+     */
+    getPasswordStrength() {
+        return this.obterForcaSenha();
+    }
+
+    /**
+     * @deprecated Use senhasCoincidentes() em vez disso
+     */
+    doPasswordsMatch() {
+        return this.senhasCoincidentes();
+    }
 }
 
 /**
- * Função global para toggle de visibilidade de senha
+ * Funcao global para toggle de visibilidade de senha
  * @param {string} fieldId - ID do campo de senha
  */
-function togglePassword(fieldId) {
+function alternarVisibilidadeSenha(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById('icon_' + fieldId);
 
     if (!field) {
-        console.error(`Campo com ID "${fieldId}" não encontrado`);
+        console.error(`Campo com ID "${fieldId}" nao encontrado`);
         return;
     }
 
@@ -298,21 +337,23 @@ function togglePassword(fieldId) {
  * Inicializar namespace global do app
  */
 window.App = window.App || {};
-window.App.Password = window.App.Password || {};
+window.App.Senha = window.App.Senha || {};
 
 /**
- * API pública do módulo Password
+ * API publica do modulo Senha
  */
-window.App.Password.Validator = PasswordValidator;
-window.App.Password.toggle = togglePassword;
+window.App.Senha.Validador = ValidadorSenha;
+window.App.Senha.alternarVisibilidade = alternarVisibilidadeSenha;
 
 /**
  * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.Password.Validator em vez disso
+ * @deprecated Use window.App.Senha.Validador em vez disso
  */
-window.PasswordValidator = PasswordValidator;
+window.PasswordValidator = ValidadorSenha;
+window.ValidadorSenha = ValidadorSenha;
 
 /**
- * @deprecated Use window.App.Password.toggle() em vez disso
+ * @deprecated Use window.App.Senha.alternarVisibilidade() em vez disso
  */
-window.togglePassword = togglePassword;
+window.togglePassword = alternarVisibilidadeSenha;
+window.alternarVisibilidadeSenha = alternarVisibilidadeSenha;

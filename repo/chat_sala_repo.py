@@ -12,7 +12,7 @@ from sql.chat_sala_sql import (
     ATUALIZAR_ULTIMA_ATIVIDADE,
     EXCLUIR
 )
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.datetime_util import agora
 
 
@@ -36,7 +36,7 @@ def _row_to_sala(row: Row) -> ChatSala:
 
 def criar_tabela():
     """Cria a tabela chat_sala se não existir."""
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
 
@@ -85,7 +85,7 @@ def criar_ou_obter_sala(usuario1_id: int, usuario2_id: int) -> ChatSala:
     # Criar nova sala
     agora_timestamp = agora()
 
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (sala_id, agora_timestamp, agora_timestamp))
 
@@ -107,7 +107,7 @@ def obter_por_id(sala_id: str) -> Optional[ChatSala]:
     Returns:
         Objeto ChatSala ou None se não encontrada
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_ID, (sala_id,))
         row = cursor.fetchone()
@@ -127,7 +127,7 @@ def atualizar_ultima_atividade(sala_id: str) -> bool:
     Returns:
         True se atualizado com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ATUALIZAR_ULTIMA_ATIVIDADE, (agora(), sala_id))
         return cursor.rowcount > 0
@@ -143,7 +143,7 @@ def excluir(sala_id: str) -> bool:
     Returns:
         True se excluído com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR, (sala_id,))
         return cursor.rowcount > 0

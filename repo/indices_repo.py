@@ -1,7 +1,7 @@
 """
 Repository para criação de índices do banco de dados
 """
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.logger_config import logger
 from sql import indices_sql
 
@@ -14,7 +14,7 @@ def criar_indices() -> None:
     Índices melhoram performance de queries frequentes.
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
 
             for indice_sql in indices_sql.TODOS_INDICES:

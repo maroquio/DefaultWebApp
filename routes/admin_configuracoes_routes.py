@@ -1,27 +1,46 @@
-from typing import Optional
+# =============================================================================
+# Imports
+# =============================================================================
+
+# Standard library
 import shutil
 from pathlib import Path
+from typing import Optional
+
+# Third-party
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
+# DTOs
+from dtos.configuracao_dto import EditarConfiguracaoDTO, SalvarConfiguracaoLoteDTO
+
+# Repositories
 from repo import configuracao_repo
-from util.config_cache import config
+
+# Utilities
 from util.auth_decorator import requer_autenticacao
-from util.template_util import criar_templates
+from util.config_cache import config
+from util.datetime_util import agora
+from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro, informar_aviso
 from util.logger_config import logger
 from util.perfis import Perfil
-from util.datetime_util import agora
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
-from util.exceptions import FormValidationError
+from util.template_util import criar_templates
 from util.validation_util import processar_erros_validacao
-from dtos.configuracao_dto import EditarConfiguracaoDTO, SalvarConfiguracaoLoteDTO
+
+# =============================================================================
+# Configuração do Router
+# =============================================================================
 
 router = APIRouter(prefix="/admin")
 templates = criar_templates("templates/admin")
 
-# Rate limiter para operações de configuração
+# =============================================================================
+# Rate Limiters
+# =============================================================================
+
 admin_config_limiter = DynamicRateLimiter(
     chave_max="rate_limit_admin_config_max",
     chave_minutos="rate_limit_admin_config_minutos",

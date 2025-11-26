@@ -19,7 +19,7 @@ from util.exception_handlers import (
     generic_exception_handler,
     form_validation_exception_handler,
 )
-from util.exceptions import FormValidationError
+from util.exceptions import ErroValidacaoFormulario
 
 # Repositórios
 from repo import usuario_repo, configuracao_repo, chamado_repo, chamado_interacao_repo, indices_repo
@@ -47,14 +47,14 @@ app = FastAPI(title=APP_NAME, version=VERSION)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 # Configurar CSRF Protection Middleware
-from util.csrf_protection import CSRFProtectionMiddleware
-app.add_middleware(CSRFProtectionMiddleware)
+from util.csrf_protection import MiddlewareProtecaoCSRF
+app.add_middleware(MiddlewareProtecaoCSRF)
 logger.info("CSRF Protection habilitado")
 
 # Registrar Exception Handlers
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
-app.add_exception_handler(FormValidationError, form_validation_exception_handler)  # type: ignore[arg-type]
+app.add_exception_handler(ErroValidacaoFormulario, form_validation_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, generic_exception_handler)
 logger.info("Exception handlers registrados")
 

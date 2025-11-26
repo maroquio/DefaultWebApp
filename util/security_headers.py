@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+class MiddlewareSegurancaHeaders(BaseHTTPMiddleware):
     """
     Middleware que adiciona headers de segurança a todas as respostas HTTP
 
@@ -85,7 +85,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class CORSSecurityMiddleware(BaseHTTPMiddleware):
+class MiddlewareSegurancaCORS(BaseHTTPMiddleware):
     """
     Middleware alternativo para CORS mais restritivo
     Use apenas se precisar de controle fino sobre CORS

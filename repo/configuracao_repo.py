@@ -2,7 +2,7 @@ from typing import Optional
 import sqlite3
 from model.configuracao_model import Configuracao
 from sql.configuracao_sql import *
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.logger_config import logger
 
 
@@ -25,13 +25,13 @@ def _row_to_configuracao(row) -> Configuracao:
 
 
 def criar_tabela() -> bool:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
         return True
 
 def obter_por_chave(chave: str) -> Optional[Configuracao]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_CHAVE, (chave,))
         row = cursor.fetchone()
@@ -40,7 +40,7 @@ def obter_por_chave(chave: str) -> Optional[Configuracao]:
         return None
 
 def obter_todos() -> list[Configuracao]:
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_TODOS)
         rows = cursor.fetchall()
@@ -121,7 +121,7 @@ def atualizar(chave: str, valor: str) -> bool:
     Returns:
         True se atualização foi bem-sucedida, False se configuração não existe
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ATUALIZAR, (valor, chave))
         return cursor.rowcount > 0
@@ -160,7 +160,7 @@ def atualizar_multiplas(configs: dict[str, str]) -> tuple[int, list[str]]:
     quantidade_atualizada = 0
     chaves_nao_encontradas = []
 
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
 
         for chave, valor in configs.items():
@@ -220,7 +220,7 @@ def inserir_ou_atualizar(chave: str, valor: str, descricao: str = "") -> bool:
         else:
             # Configuração não existe - inserir
             logger.debug(f"Inserindo nova configuração: {chave} = {valor}")
-            with get_connection() as conn:
+            with obter_conexao() as conn:
                 cursor = conn.cursor()
                 cursor.execute(INSERIR, (chave, valor, descricao))
                 return cursor.rowcount > 0
@@ -238,7 +238,7 @@ def inserir_padrao() -> None:
         ("theme", "original", "Tema visual da aplicação (Bootswatch)"),
     ]
 
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         for chave, valor, descricao in configs_padrao:
             try:

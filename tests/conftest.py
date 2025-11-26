@@ -92,11 +92,11 @@ def limpar_rate_limiter():
 def limpar_banco_dados():
     """Limpa todas as tabelas do banco antes de cada teste para evitar interferência"""
     # Importar após configuração do banco de dados
-    from util.db_util import get_connection
+    from util.db_util import obter_conexao
 
     def _limpar_tabelas():
         """Limpa tabelas se elas existirem e reseta autoincrement"""
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             # Verificar se tabelas existem antes de limpar
             cursor.execute(

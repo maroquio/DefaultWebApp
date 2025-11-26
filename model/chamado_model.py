@@ -1,15 +1,36 @@
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
-class StatusChamado(Enum):
+from util.enum_base import EnumEntidade
+
+
+class StatusChamado(EnumEntidade):
+    """
+    Enum para status de chamados.
+
+    Herda de EnumEntidade que fornece métodos úteis:
+        - valores(): Lista todos os valores
+        - existe(valor): Verifica se valor existe
+        - from_valor(valor): Converte string para enum
+        - validar(valor): Valida e retorna ou levanta ValueError
+    """
     ABERTO = "Aberto"
     EM_ANALISE = "Em Análise"
     RESOLVIDO = "Resolvido"
     FECHADO = "Fechado"
 
-class PrioridadeChamado(Enum):
+
+class PrioridadeChamado(EnumEntidade):
+    """
+    Enum para prioridade de chamados.
+
+    Herda de EnumEntidade que fornece métodos úteis:
+        - valores(): Lista todos os valores
+        - existe(valor): Verifica se valor existe
+        - from_valor(valor): Converte string para enum
+        - validar(valor): Valida e retorna ou levanta ValueError
+    """
     BAIXA = "Baixa"
     MEDIA = "Média"
     ALTA = "Alta"

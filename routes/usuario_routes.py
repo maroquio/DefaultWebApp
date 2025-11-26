@@ -1,26 +1,44 @@
+# =============================================================================
+# Imports
+# =============================================================================
+
+# Standard library
 from typing import Optional
+
+# Third-party
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
+# DTOs
 from dtos.perfil_dto import EditarPerfilDTO, AlterarSenhaDTO
+
+# Repositories
 from repo import usuario_repo, chamado_repo
+
+# Utilities
 from util.auth_decorator import requer_autenticacao
-from util.perfis import Perfil
-from util.template_util import criar_templates
+from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro
-from util.security import criar_hash_senha, verificar_senha
 from util.foto_util import salvar_foto_cropada_usuario
 from util.logger_config import logger
-from util.exceptions import FormValidationError
-from util.validation_helpers import verificar_email_disponivel
+from util.perfis import Perfil
+from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.repository_helpers import obter_ou_404
+from util.security import criar_hash_senha, verificar_senha
+from util.template_util import criar_templates
+from util.validation_helpers import verificar_email_disponivel
+
+# =============================================================================
+# Configuração do Router
+# =============================================================================
 
 router = APIRouter()
 templates_usuario = criar_templates("templates")
 
-# Rate limiters dinâmicos
-from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+# =============================================================================
+# Rate Limiters
+# =============================================================================
 
 upload_foto_limiter = DynamicRateLimiter(
     chave_max="rate_limit_upload_foto_max",
@@ -193,7 +211,7 @@ async def post_editar_perfil(
     except ValidationError as e:
         # Incluir dados do usuário para o template
         dados_formulario["usuario"] = usuario
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="perfil/editar.html",
             dados_formulario=dados_formulario,
@@ -315,7 +333,7 @@ async def post_alterar_senha(
 
     except ValidationError as e:
         # Não preservar senhas no formulário por segurança
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="perfil/alterar-senha.html",
             dados_formulario={},

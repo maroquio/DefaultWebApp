@@ -8,7 +8,7 @@ exception handlers globais para centralizar o tratamento de erros.
 from pydantic import ValidationError
 
 
-class FormValidationError(Exception):
+class ErroValidacaoFormulario(Exception):
     """
     Exceção customizada para erros de validação de formulários DTO.
 
@@ -32,7 +32,7 @@ class FormValidationError(Exception):
         >>> try:
         ...     dto = LoginDTO(email=email, senha=senha)
         ... except ValidationError as e:
-        ...     raise FormValidationError(
+        ...     raise ErroValidacaoFormulario(
         ...         validation_error=e,
         ...         template_path="auth/login.html",
         ...         dados_formulario={"email": email},

@@ -11,16 +11,16 @@ from typing import Optional
 
 class ConfiguracaoBaseDTO(BaseModel):
     """DTO base para configurações"""
-    chave: str = Field(..., min_length=1, max_length=100)
-    valor: str = Field(..., min_length=1, max_length=1000)
-    descricao: Optional[str] = Field(default="", max_length=500)
+    chave: str = Field(..., min_length=1, max_length=100, description="Chave única da configuração em snake_case")
+    valor: str = Field(..., min_length=1, max_length=1000, description="Valor da configuração")
+    descricao: Optional[str] = Field(default="", max_length=500, description="Descrição opcional da configuração")
 
 
 class ConfiguracaoAplicacaoDTO(BaseModel):
     """DTO para configurações de aplicação (nome, email, etc)"""
-    app_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
-    resend_from_email: Optional[str] = Field(default=None, min_length=5, max_length=255)
-    resend_from_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    app_name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Nome da aplicação exibido na interface")
+    resend_from_email: Optional[str] = Field(default=None, min_length=5, max_length=255, description="Email remetente para envio de notificações")
+    resend_from_name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Nome exibido como remetente dos emails")
 
     @field_validator('resend_from_email')
     @classmethod
@@ -36,8 +36,8 @@ class ConfiguracaoAplicacaoDTO(BaseModel):
 
 class ConfiguracaoFotosDTO(BaseModel):
     """DTO para configurações de fotos"""
-    foto_perfil_tamanho_max: Optional[int] = Field(default=None, ge=64, le=2048)
-    foto_max_upload_bytes: Optional[int] = Field(default=None, ge=102400, le=52428800)  # 100KB - 50MB
+    foto_perfil_tamanho_max: Optional[int] = Field(default=None, ge=64, le=2048, description="Tamanho máximo da foto de perfil em pixels (64-2048)")
+    foto_max_upload_bytes: Optional[int] = Field(default=None, ge=102400, le=52428800, description="Tamanho máximo de upload de foto em bytes (100KB-50MB)")
 
     @field_validator('foto_perfil_tamanho_max')
     @classmethod
@@ -91,7 +91,7 @@ class ConfiguracaoRateLimitSenhaDTO(ConfiguracaoRateLimitDTO):
 
 class ConfiguracaoUIDTO(BaseModel):
     """DTO para configurações de interface"""
-    toast_auto_hide_delay_ms: Optional[int] = Field(default=None, ge=1000, le=30000)
+    toast_auto_hide_delay_ms: Optional[int] = Field(default=None, ge=1000, le=30000, description="Tempo de exibição das notificações toast em milissegundos (1000-30000)")
 
     @field_validator('toast_auto_hide_delay_ms')
     @classmethod
@@ -106,8 +106,8 @@ class ConfiguracaoUIDTO(BaseModel):
 
 class EditarConfiguracaoDTO(BaseModel):
     """DTO para edição de uma configuração individual"""
-    chave: str = Field(..., min_length=1, max_length=100)
-    valor: str = Field(..., min_length=1, max_length=1000)
+    chave: str = Field(..., min_length=1, max_length=100, description="Chave única da configuração em snake_case")
+    valor: str = Field(..., min_length=1, max_length=1000, description="Novo valor da configuração")
 
     @field_validator('valor')
     @classmethod

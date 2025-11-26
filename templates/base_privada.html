@@ -14,8 +14,8 @@
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
 
-    <!-- Chat Widget CSS -->
-    <link rel="stylesheet" href="/static/css/chat-widget.css">
+    <!-- Widget de Chat CSS -->
+    <link rel="stylesheet" href="/static/css/widget-chat.css">
 
     {% block head %}{% endblock %}
 </head>
@@ -135,16 +135,16 @@
     <script src="/static/js/modal-alerta.js"></script>
 
     <!-- Script de Validação de Senha -->
-    <script src="/static/js/password-validator.js"></script>
+    <script src="/static/js/validador-senha.js"></script>
 
     <!-- Script de Máscaras de Input -->
-    <script src="/static/js/input-mask.js"></script>
+    <script src="/static/js/mascara-input.js"></script>
 
-    <!-- Script de Delete Helpers -->
-    <script src="/static/js/delete-helpers.js"></script>
+    <!-- Script de Auxiliares de Exclusão -->
+    <script src="/static/js/auxiliares-exclusao.js"></script>
 
     <!-- Chat Widget JS -->
-    <script src="/static/js/chat-widget.js" defer></script>
+    <script src="/static/js/widget-chat.js" defer></script>
     <script>
         // Guardar ID do usuário logado no body para o chat
         {% if request.session.get('usuario_logado') %}

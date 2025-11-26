@@ -7,7 +7,7 @@ from util.flash_messages import informar_erro, informar_aviso
 from util.logger_config import logger
 from util.config import IS_DEVELOPMENT
 from util.validation_util import processar_erros_validacao
-from util.exceptions import FormValidationError
+from util.exceptions import ErroValidacaoFormulario
 import traceback
 
 # Configurar templates de erro
@@ -185,11 +185,11 @@ async def generic_exception_handler(request: Request, exc: Exception) -> Respons
     )
 
 
-async def form_validation_exception_handler(request: Request, exc: FormValidationError) -> Response:
+async def form_validation_exception_handler(request: Request, exc: ErroValidacaoFormulario) -> Response:
     """
     Handler centralizado para erros de validação de formulários DTO.
 
-    Captura exceções FormValidationError lançadas nas rotas e:
+    Captura exceções ErroValidacaoFormulario lançadas nas rotas e:
     1. Processa os erros de validação usando processar_erros_validacao()
     2. Exibe mensagem flash ao usuário
     3. Renderiza o template especificado com dados e erros
@@ -199,7 +199,7 @@ async def form_validation_exception_handler(request: Request, exc: FormValidatio
 
     Args:
         request: Request do FastAPI
-        exc: FormValidationError contendo ValidationError e contexto
+        exc: ErroValidacaoFormulario contendo ValidationError e contexto
 
     Returns:
         TemplateResponse renderizando o formulário com erros
@@ -213,7 +213,7 @@ async def form_validation_exception_handler(request: Request, exc: FormValidatio
 
         Simplesmente faça:
         >>> except ValidationError as e:
-        ...     raise FormValidationError(e, "auth/login.html", dados, "senha")
+        ...     raise ErroValidacaoFormulario(e, "auth/login.html", dados, "senha")
     """
     # Processar erros de validação
     erros = processar_erros_validacao(

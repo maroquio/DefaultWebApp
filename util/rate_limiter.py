@@ -50,6 +50,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from util.logger_config import logger
 from util.config_cache import config
+from util.datetime_util import agora as obter_agora
 
 
 class RateLimiter:
@@ -104,11 +105,11 @@ class RateLimiter:
             True se dentro do limite (permitido)
             False se excedeu limite (bloqueado)
         """
-        agora = datetime.now()
+        momento_atual = obter_agora()
 
         # Limpar tentativas antigas (fora da janela)
         self.tentativas[identificador] = [
-            t for t in self.tentativas[identificador] if agora - t < self.janela
+            t for t in self.tentativas[identificador] if momento_atual - t < self.janela
         ]
 
         # Verificar se excedeu limite
@@ -121,7 +122,7 @@ class RateLimiter:
             return False
 
         # Registrar nova tentativa
-        self.tentativas[identificador].append(agora)
+        self.tentativas[identificador].append(momento_atual)
         return True
 
     def limpar(self, identificador: Optional[str] = None) -> None:
@@ -150,11 +151,11 @@ class RateLimiter:
         Returns:
             Número de tentativas restantes (0 se bloqueado)
         """
-        agora = datetime.now()
+        momento_atual = obter_agora()
 
         # Limpar tentativas antigas
         self.tentativas[identificador] = [
-            t for t in self.tentativas[identificador] if agora - t < self.janela
+            t for t in self.tentativas[identificador] if momento_atual - t < self.janela
         ]
 
         tentativas_atuais = len(self.tentativas[identificador])
@@ -173,18 +174,18 @@ class RateLimiter:
         if identificador not in self.tentativas or not self.tentativas[identificador]:
             return None
 
-        agora = datetime.now()
+        momento_atual = obter_agora()
 
         # Limpar tentativas antigas
         self.tentativas[identificador] = [
-            t for t in self.tentativas[identificador] if agora - t < self.janela
+            t for t in self.tentativas[identificador] if momento_atual - t < self.janela
         ]
 
         # Se ainda está bloqueado, calcular tempo até reset
         if len(self.tentativas[identificador]) >= self.max_tentativas:
             # Reset quando a tentativa mais antiga sair da janela
             tentativa_mais_antiga = self.tentativas[identificador][0]
-            tempo_reset = (tentativa_mais_antiga + self.janela) - agora
+            tempo_reset = (tentativa_mais_antiga + self.janela) - momento_atual
             return tempo_reset if tempo_reset.total_seconds() > 0 else None
 
         return None
@@ -348,3 +349,189 @@ def obter_identificador_cliente(request) -> str:
     if hasattr(request, "client") and request.client:
         return request.client.host
     return "unknown"
+
+
+# =============================================================================
+# Registry de Rate Limiters
+# =============================================================================
+
+class RegistroLimiters:
+    """
+    Registry global para gerenciar e monitorar todos os rate limiters.
+
+    Permite:
+    - Listar todos os limiters registrados
+    - Obter estatísticas globais
+    - Limpar todos os limiters de uma vez (útil para testes)
+
+    Example:
+        >>> from util.rate_limiter import registro_limiters
+        >>> registro_limiters.listar()
+        ['login', 'cadastro', 'esqueci_senha']
+        >>> registro_limiters.obter_estatisticas()
+        {'total_limiters': 3, 'limiters': {...}}
+    """
+
+    def __init__(self):
+        """Inicializa o registry vazio."""
+        self._limiters: dict[str, RateLimiter] = {}
+
+    def registrar(self, limiter: RateLimiter) -> None:
+        """
+        Registra um rate limiter no registry.
+
+        Args:
+            limiter: Instância de RateLimiter ou DynamicRateLimiter
+        """
+        self._limiters[limiter.nome] = limiter
+        logger.debug(f"Rate limiter registrado: {limiter.nome}")
+
+    def obter(self, nome: str) -> Optional[RateLimiter]:
+        """
+        Obtém um rate limiter pelo nome.
+
+        Args:
+            nome: Nome do limiter
+
+        Returns:
+            RateLimiter ou None se não existir
+        """
+        return self._limiters.get(nome)
+
+    def listar(self) -> list[str]:
+        """
+        Lista nomes de todos os limiters registrados.
+
+        Returns:
+            Lista de nomes dos limiters
+        """
+        return list(self._limiters.keys())
+
+    def obter_estatisticas(self) -> dict:
+        """
+        Retorna estatísticas de todos os limiters.
+
+        Returns:
+            Dict com total e detalhes de cada limiter
+        """
+        stats = {
+            "total_limiters": len(self._limiters),
+            "limiters": {}
+        }
+
+        for nome, limiter in self._limiters.items():
+            stats["limiters"][nome] = {
+                "max_tentativas": limiter.max_tentativas,
+                "janela_minutos": limiter.janela_minutos,
+                "identificadores_ativos": len(limiter.tentativas),
+                "tipo": "dinamico" if isinstance(limiter, DynamicRateLimiter) else "estatico"
+            }
+
+        return stats
+
+    def limpar_todos(self) -> None:
+        """
+        Limpa tentativas de todos os limiters registrados.
+
+        Útil para testes ou reset administrativo.
+        """
+        for limiter in self._limiters.values():
+            limiter.limpar()
+        logger.info("Todos os rate limiters foram limpos")
+
+
+# Instância global do registry
+registro_limiters = RegistroLimiters()
+
+
+# =============================================================================
+# Decorator @com_rate_limit
+# =============================================================================
+
+def com_rate_limit(
+    limiter: RateLimiter,
+    mensagem_erro: str = "Muitas requisições. Aguarde alguns minutos.",
+    registrar: bool = True
+):
+    """
+    Decorator que aplica rate limiting a uma rota FastAPI.
+
+    Simplifica o código repetitivo de rate limiting, extraindo automaticamente
+    o IP do cliente e verificando o limiter. Se exceder o limite, levanta
+    HTTPException 429.
+
+    Args:
+        limiter: Instância de RateLimiter ou DynamicRateLimiter
+        mensagem_erro: Mensagem de erro para HTTPException (default: mensagem genérica)
+        registrar: Se True, registra o limiter no registry global (default: True)
+
+    Returns:
+        Decorator function
+
+    Example:
+        >>> from util.rate_limiter import DynamicRateLimiter, com_rate_limit
+        >>>
+        >>> meu_limiter = DynamicRateLimiter(
+        ...     chave_max="rate_limit_minha_rota_max",
+        ...     chave_minutos="rate_limit_minha_rota_minutos",
+        ...     padrao_max=10,
+        ...     padrao_minutos=1,
+        ...     nome="minha_rota"
+        ... )
+        >>>
+        >>> @router.post("/minha-rota")
+        >>> @com_rate_limit(meu_limiter)
+        >>> async def post_minha_rota(request: Request, ...):
+        ...     # A verificação de rate limit é feita automaticamente
+        ...     pass
+
+    Note:
+        - O decorator deve vir APÓS o decorator de rota (@router.get/post/etc)
+        - A função decorada DEVE ter 'request: Request' como parâmetro
+        - Para rotas que renderizam templates com erro customizado,
+          use a verificação manual no handler
+    """
+    from functools import wraps
+    from fastapi import HTTPException
+
+    # Registrar no registry se solicitado
+    if registrar and limiter.nome not in registro_limiters.listar():
+        registro_limiters.registrar(limiter)
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Encontrar o request nos argumentos
+            request = kwargs.get('request')
+
+            # Se não encontrar em kwargs, procurar em args
+            if request is None:
+                for arg in args:
+                    if hasattr(arg, 'client') and hasattr(arg, 'session'):
+                        request = arg
+                        break
+
+            if request is None:
+                logger.error(
+                    f"[{limiter.nome}] Decorator @com_rate_limit não encontrou "
+                    "objeto Request. Certifique-se que a função tem 'request: Request'."
+                )
+                # Continuar sem rate limiting se não encontrar request
+                return await func(*args, **kwargs)
+
+            # Verificar rate limit
+            ip = obter_identificador_cliente(request)
+            if not limiter.verificar(ip):
+                logger.warning(
+                    f"Rate limit excedido [{limiter.nome}] - IP: {ip}"
+                )
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"{mensagem_erro} (aguarde {limiter.janela_minutos} minuto(s))"
+                )
+
+            # Continuar com a função original
+            return await func(*args, **kwargs)
+
+        return wrapper
+    return decorator

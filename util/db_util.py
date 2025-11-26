@@ -13,9 +13,9 @@ TIMEZONE = os.getenv('TIMEZONE', 'America/Sao_Paulo')
 APP_TIMEZONE = ZoneInfo(TIMEZONE)
 
 @contextmanager
-def get_connection():
+def obter_conexao():
     """Context manager para conexão com banco de dados"""
-    register_adapters()
+    registrar_adaptadores()
     conn = sqlite3.connect(
         DATABASE_PATH,
         detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
@@ -32,7 +32,7 @@ def get_connection():
         conn.close()
 
 
-def adapt_datetime(dt: datetime) -> str:
+def adaptar_datetime(dt: datetime) -> str:
     """
     Adaptador para converter datetime para string, armazenando em UTC naive.
 
@@ -59,7 +59,7 @@ def adapt_datetime(dt: datetime) -> str:
     return dt_naive.isoformat(' ')
 
 
-def convert_datetime(s: bytes) -> datetime:
+def converter_datetime(s: bytes) -> datetime:
     """
     Conversor para converter string do banco em datetime com timezone.
 
@@ -87,7 +87,7 @@ def convert_datetime(s: bytes) -> datetime:
     return dt_local
 
 
-def register_adapters() -> None:
+def registrar_adaptadores() -> None:
     """Registra os adaptadores customizados para datetime no sqlite3"""
-    sqlite3.register_adapter(datetime, adapt_datetime)
-    sqlite3.register_converter("TIMESTAMP", convert_datetime)
+    sqlite3.register_adapter(datetime, adaptar_datetime)
+    sqlite3.register_converter("TIMESTAMP", converter_datetime)

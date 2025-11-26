@@ -1,8 +1,8 @@
 /**
- * Perfil Photo Handler
+ * Manipulador de Foto de Perfil
  *
- * Gerencia o fluxo de seleção e crop de foto de perfil
- * Abre o seletor de arquivos diretamente ao clicar na foto ou botão
+ * Gerencia o fluxo de selecao e crop de foto de perfil
+ * Abre o seletor de arquivos diretamente ao clicar na foto ou botao
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,30 +11,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const profilePhoto = document.getElementById('profile-photo');
     const changePhotoBtn = document.getElementById('btn-change-photo');
 
-    // Configuração do modal (deve existir no window)
+    // Configuracao do modal (deve existir no window)
     const modalConfig = window.config_modalFotoPerfil;
 
     if (!photoInput || !modalConfig) {
-        console.warn('Elementos necessários para photo handler não encontrados');
+        console.warn('Elementos necessarios para photo handler nao encontrados');
         return;
     }
 
-    // Função para abrir o seletor de arquivos
-    function openFileSelector() {
+    // Funcao para abrir o seletor de arquivos
+    function abrirSeletorArquivo() {
         photoInput.click();
     }
 
     // Adicionar click handler na foto de perfil (se existir)
     if (profilePhoto) {
         profilePhoto.style.cursor = 'pointer';
-        profilePhoto.addEventListener('click', openFileSelector);
+        profilePhoto.addEventListener('click', abrirSeletorArquivo);
     }
 
-    // Adicionar click handler no botão de alterar foto
+    // Adicionar click handler no botao de alterar foto
     if (changePhotoBtn) {
         changePhotoBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            openFileSelector();
+            abrirSeletorArquivo();
         });
     }
 
@@ -47,27 +47,27 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // 1. PREPARAR a imagem ANTES de abrir o modal
             // Isso carrega a imagem e define o tamanho do container
-            await prepareImageForModal(
+            await prepararImagemParaModal(
                 modalConfig.modalId,
                 file,
                 modalConfig.maxFileSizeMB
             );
 
-            // 2. AGORA abrir o modal (imagem já está carregada e container já está dimensionado)
+            // 2. AGORA abrir o modal (imagem ja esta carregada e container ja esta dimensionado)
             const modalElement = document.getElementById(modalConfig.modalId);
             const modal = new bootstrap.Modal(modalElement);
             modal.show();
 
-            // 3. Quando o modal estiver completamente visível, INICIALIZAR o Cropper
+            // 3. Quando o modal estiver completamente visivel, INICIALIZAR o Cropper
             modalElement.addEventListener('shown.bs.modal', function() {
-                initializeCropperInModal(
+                inicializarCortadorNoModal(
                     modalConfig.modalId,
                     modalConfig.aspectRatio
                 );
             }, { once: true });
 
         } catch (error) {
-            // Se houver erro (arquivo inválido, muito grande, etc.), exibir mensagem
+            // Se houver erro (arquivo invalido, muito grande, etc.), exibir mensagem
             exibirErro(error.message || error, 'Erro ao Processar Imagem');
             photoInput.value = '';
         }
@@ -78,3 +78,27 @@ document.addEventListener('DOMContentLoaded', function() {
         photoInput.value = '';
     });
 });
+
+/**
+ * Inicializar namespace global do app
+ */
+window.App = window.App || {};
+window.App.FotoPerfil = window.App.FotoPerfil || {};
+
+/**
+ * Expor funcao abrirSeletorArquivo para uso externo se necessario
+ * Note: A funcao real e definida dentro do DOMContentLoaded
+ */
+window.App.FotoPerfil.abrirSeletor = function() {
+    const photoInput = document.getElementById('hidden-photo-input');
+    if (photoInput) {
+        photoInput.click();
+    }
+};
+
+/**
+ * DEPRECATED: Manter retrocompatibilidade
+ * @deprecated Use window.App.FotoPerfil.abrirSeletor() em vez disso
+ */
+window.openFileSelector = window.App.FotoPerfil.abrirSeletor;
+window.abrirSeletorArquivo = window.App.FotoPerfil.abrirSeletor;

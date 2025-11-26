@@ -1,28 +1,28 @@
 /**
- * Image Cropper
+ * Cortador de Imagem
  *
- * Sistema reutilizável de crop de imagens usando Cropper.js
+ * Sistema reutilizavel de crop de imagens usando Cropper.js
  *
  * Uso:
  * 1. Incluir Cropper.js no template: <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
  * 2. Incluir script: <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
- * 3. Incluir este arquivo: <script src="/static/js/image-cropper.js"></script>
+ * 3. Incluir este arquivo: <script src="/static/js/cortador-imagem.js"></script>
  * 4. Configurar window.config_{modalId} com modalId, aspectRatio e maxFileSizeMB
  */
 
-// Armazenar instâncias do Cropper para cada modal
-const cropperInstances = {};
+// Armazenar instancias do Cropper para cada modal
+const instanciasCortador = {};
 
 /**
  * Prepara uma imagem para o modal SEM inicializar o Cropper
- * Útil para pré-carregar antes de abrir o modal
+ * Util para pre-carregar antes de abrir o modal
  *
  * @param {string} modalId - ID do modal
  * @param {File} file - Arquivo de imagem
- * @param {number} maxFileSizeMB - Tamanho máximo em MB (default: 5)
+ * @param {number} maxFileSizeMB - Tamanho maximo em MB (default: 5)
  * @returns {Promise} - Resolve quando a imagem estiver carregada
  */
-function prepareImageForModal(modalId, file, maxFileSizeMB = 5) {
+function prepararImagemParaModal(modalId, file, maxFileSizeMB = 5) {
     return new Promise((resolve, reject) => {
         const uploadSection = document.getElementById(`upload-section-${modalId}`);
         const cropperContainer = document.getElementById(`cropper-container-${modalId}`);
@@ -38,20 +38,20 @@ function prepareImageForModal(modalId, file, maxFileSizeMB = 5) {
         // Validar tamanho
         const maxBytes = maxFileSizeMB * 1024 * 1024;
         if (file.size > maxBytes) {
-            reject(`Arquivo muito grande! Tamanho máximo: ${maxFileSizeMB}MB`);
+            reject(`Arquivo muito grande! Tamanho maximo: ${maxFileSizeMB}MB`);
             return;
         }
 
         // Validar tipo
         if (!file.type.startsWith('image/')) {
-            reject('Por favor, selecione um arquivo de imagem válido.');
+            reject('Por favor, selecione um arquivo de imagem valido.');
             return;
         }
 
         // Ler arquivo
         const reader = new FileReader();
         reader.onload = function(event) {
-            // Ocultar seção de upload e mostrar cropper
+            // Ocultar secao de upload e mostrar cropper
             if (uploadSection) uploadSection.classList.add('d-none');
             if (cropperContainer) cropperContainer.classList.remove('d-none');
             if (btnSubmit) btnSubmit.disabled = false;
@@ -59,8 +59,8 @@ function prepareImageForModal(modalId, file, maxFileSizeMB = 5) {
             // Definir imagem no cropper
             cropperImage.src = event.target.result;
 
-            // Pré-calcular e aplicar altura ideal ANTES do modal abrir
-            // Usar estimativa baseada em viewport já que o modal ainda não está visível
+            // Pre-calcular e aplicar altura ideal ANTES do modal abrir
+            // Usar estimativa baseada em viewport ja que o modal ainda nao esta visivel
             const viewportHeight = window.innerHeight;
             const estimatedHeight = Math.max(200, Math.min(600, viewportHeight * 0.5));
             cropperImageArea.style.height = `${estimatedHeight}px`;
@@ -81,32 +81,32 @@ function prepareImageForModal(modalId, file, maxFileSizeMB = 5) {
 }
 
 /**
- * Inicializa o Cropper no modal (deve ser chamado após o modal estar visível)
+ * Inicializa o Cropper no modal (deve ser chamado apos o modal estar visivel)
  *
  * @param {string} modalId - ID do modal
- * @param {number} aspectRatio - Proporção do crop (default: 1.0)
+ * @param {number} aspectRatio - Proporcao do crop (default: 1.0)
  * @param {Function} onReady - Callback chamado quando o cropper estiver pronto (opcional)
  */
-function initializeCropperInModal(modalId, aspectRatio = 1.0, onReady = null) {
+function inicializarCortadorNoModal(modalId, aspectRatio = 1.0, onReady = null) {
     const cropperImage = document.getElementById(`cropper-image-${modalId}`);
     const previewImage = document.getElementById(`preview-${modalId}`);
 
     if (!cropperImage || !cropperImage.src) {
-        console.error(`Imagem não preparada para o modal ${modalId}`);
+        console.error(`Imagem nao preparada para o modal ${modalId}`);
         return;
     }
 
     // Destruir cropper anterior se existir
-    if (cropperInstances[modalId]) {
-        cropperInstances[modalId].destroy();
+    if (instanciasCortador[modalId]) {
+        instanciasCortador[modalId].destroy();
     }
 
     // Inicializar Cropper.js
-    cropperInstances[modalId] = new Cropper(cropperImage, {
+    instanciasCortador[modalId] = new Cropper(cropperImage, {
         aspectRatio: aspectRatio,
-        viewMode: 1,  // Permite crop box crescer até os limites do container
+        viewMode: 1,  // Permite crop box crescer ate os limites do container
         dragMode: 'move',
-        autoCropArea: 0.8,  // Área inicial de 80% para dar espaço para expansão
+        autoCropArea: 0.8,  // Area inicial de 80% para dar espaco para expansao
         restore: false,
         guides: true,
         center: true,
@@ -114,11 +114,11 @@ function initializeCropperInModal(modalId, aspectRatio = 1.0, onReady = null) {
         cropBoxMovable: true,
         cropBoxResizable: true,
         toggleDragModeOnDblclick: false,
-        minContainerWidth: 200,  // Container mínimo
+        minContainerWidth: 200,  // Container minimo
         minContainerHeight: 200,
         ready: function() {
-            // Ajustar tamanho baseado nas dimensões reais do modal agora visível
-            adjustCropperContainerSize(modalId);
+            // Ajustar tamanho baseado nas dimensoes reais do modal agora visivel
+            ajustarTamanhoContainerCortador(modalId);
             // Chamar callback se fornecido
             if (onReady && typeof onReady === 'function') {
                 onReady();
@@ -126,22 +126,22 @@ function initializeCropperInModal(modalId, aspectRatio = 1.0, onReady = null) {
         },
         crop: function(event) {
             // Atualizar preview em tempo real
-            if (previewImage) updatePreview(modalId, previewImage);
+            if (previewImage) atualizarPreview(modalId, previewImage);
         }
     });
 }
 
 /**
  * Carrega uma imagem de um arquivo File e inicializa o cropper
- * Função pública que pode ser chamada externamente
+ * Funcao publica que pode ser chamada externamente
  *
  * @param {string} modalId - ID do modal
  * @param {File} file - Arquivo de imagem
- * @param {number} aspectRatio - Proporção do crop (default: 1.0)
- * @param {number} maxFileSizeMB - Tamanho máximo em MB (default: 5)
+ * @param {number} aspectRatio - Proporcao do crop (default: 1.0)
+ * @param {number} maxFileSizeMB - Tamanho maximo em MB (default: 5)
  * @param {Function} onReady - Callback chamado quando o cropper estiver pronto (opcional)
  */
-function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, onReady = null) {
+function carregarImagemDeArquivo(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, onReady = null) {
     const uploadSection = document.getElementById(`upload-section-${modalId}`);
     const cropperContainer = document.getElementById(`cropper-container-${modalId}`);
     const cropperImage = document.getElementById(`cropper-image-${modalId}`);
@@ -154,7 +154,7 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
     const maxBytes = maxFileSizeMB * 1024 * 1024;
     if (file.size > maxBytes) {
         exibirErro(
-            `O arquivo selecionado é muito grande. Tamanho máximo permitido: ${maxFileSizeMB}MB.`,
+            `O arquivo selecionado e muito grande. Tamanho maximo permitido: ${maxFileSizeMB}MB.`,
             'Arquivo Muito Grande'
         );
         return;
@@ -163,8 +163,8 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
     // Validar tipo
     if (!file.type.startsWith('image/')) {
         exibirErro(
-            'Por favor, selecione um arquivo de imagem válido (JPG, PNG, GIF, etc.).',
-            'Tipo de Arquivo Inválido'
+            'Por favor, selecione um arquivo de imagem valido (JPG, PNG, GIF, etc.).',
+            'Tipo de Arquivo Invalido'
         );
         return;
     }
@@ -172,7 +172,7 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
     // Ler arquivo
     const reader = new FileReader();
     reader.onload = function(event) {
-        // Ocultar seção de upload e mostrar cropper
+        // Ocultar secao de upload e mostrar cropper
         if (uploadSection) uploadSection.classList.add('d-none');
         if (cropperContainer) cropperContainer.classList.remove('d-none');
         if (btnSubmit) btnSubmit.disabled = false;
@@ -181,16 +181,16 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
         cropperImage.src = event.target.result;
 
         // Destruir cropper anterior se existir
-        if (cropperInstances[modalId]) {
-            cropperInstances[modalId].destroy();
+        if (instanciasCortador[modalId]) {
+            instanciasCortador[modalId].destroy();
         }
 
         // Inicializar Cropper.js
-        cropperInstances[modalId] = new Cropper(cropperImage, {
+        instanciasCortador[modalId] = new Cropper(cropperImage, {
             aspectRatio: aspectRatio,
-            viewMode: 1,  // Permite crop box crescer até os limites do container
+            viewMode: 1,  // Permite crop box crescer ate os limites do container
             dragMode: 'move',
-            autoCropArea: 0.8,  // Área inicial de 80% para dar espaço para expansão
+            autoCropArea: 0.8,  // Area inicial de 80% para dar espaco para expansao
             restore: false,
             guides: true,
             center: true,
@@ -198,12 +198,12 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
             cropBoxMovable: true,
             cropBoxResizable: true,
             toggleDragModeOnDblclick: false,
-            minContainerWidth: 200,  // Container mínimo
+            minContainerWidth: 200,  // Container minimo
             minContainerHeight: 200,
             ready: function() {
                 // Aguardar 100ms para garantir que o DOM foi atualizado
                 setTimeout(() => {
-                    adjustCropperContainerSize(modalId);
+                    ajustarTamanhoContainerCortador(modalId);
                     // Chamar callback se fornecido
                     if (onReady && typeof onReady === 'function') {
                         onReady();
@@ -212,7 +212,7 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
             },
             crop: function(event) {
                 // Atualizar preview em tempo real
-                if (previewImage) updatePreview(modalId, previewImage);
+                if (previewImage) atualizarPreview(modalId, previewImage);
             }
         });
     };
@@ -220,9 +220,9 @@ function loadImageFromFile(modalId, file, aspectRatio = 1.0, maxFileSizeMB = 5, 
 }
 
 /**
- * Inicializa o cropper para um modal específico
+ * Inicializa o cropper para um modal especifico
  */
-function initImageCropper(modalId, aspectRatio = 1.0, maxFileSizeMB = 5) {
+function inicializarCortadorImagem(modalId, aspectRatio = 1.0, maxFileSizeMB = 5) {
     const inputFile = document.getElementById(`input-${modalId}`);
     const uploadSection = document.getElementById(`upload-section-${modalId}`);
     const cropperContainer = document.getElementById(`cropper-container-${modalId}`);
@@ -233,32 +233,32 @@ function initImageCropper(modalId, aspectRatio = 1.0, maxFileSizeMB = 5) {
     const form = document.getElementById(`form-${modalId}`);
 
     if (!cropperContainer || !cropperImage) {
-        console.error(`Elementos do modal ${modalId} não encontrados`);
+        console.error(`Elementos do modal ${modalId} nao encontrados`);
         return;
     }
 
-    // Evento: Seleção de arquivo (apenas se input file existir)
+    // Evento: Selecao de arquivo (apenas se input file existir)
     if (inputFile) {
         inputFile.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                loadImageFromFile(modalId, file, aspectRatio, maxFileSizeMB);
+                carregarImagemDeArquivo(modalId, file, aspectRatio, maxFileSizeMB);
             }
         });
     }
 
-    // Evento: Submit do formulário
+    // Evento: Submit do formulario
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (!cropperInstances[modalId]) {
+            if (!instanciasCortador[modalId]) {
                 exibirAviso('Por favor, selecione uma imagem antes de salvar.', 'Nenhuma Imagem Selecionada');
                 return;
             }
 
             // Obter canvas da imagem cropada
-            const canvas = cropperInstances[modalId].getCroppedCanvas({
+            const canvas = instanciasCortador[modalId].getCroppedCanvas({
                 maxWidth: 1000,
                 maxHeight: 1000,
                 fillColor: '#fff',
@@ -272,7 +272,7 @@ function initImageCropper(modalId, aspectRatio = 1.0, maxFileSizeMB = 5) {
             // Definir no campo hidden
             fotoBase64Input.value = base64;
 
-            // Submeter formulário
+            // Submeter formulario
             form.submit();
         });
     }
@@ -281,16 +281,16 @@ function initImageCropper(modalId, aspectRatio = 1.0, maxFileSizeMB = 5) {
     const modalElement = document.getElementById(modalId);
     if (modalElement) {
         modalElement.addEventListener('hidden.bs.modal', function() {
-            resetCropper(modalId, uploadSection, cropperContainer, inputFile, btnSubmit);
+            resetarCortador(modalId, uploadSection, cropperContainer, inputFile, btnSubmit);
         });
     }
 }
 
 /**
- * Calcula a altura disponível para a área de imagem do cropper
- * Mede os elementos reais do DOM para precisão
+ * Calcula a altura disponivel para a area de imagem do cropper
+ * Mede os elementos reais do DOM para precisao
  */
-function calculateCropperImageHeight(modalId) {
+function calcularAlturaImagemCortador(modalId) {
     // Obter elementos
     const modalElement = document.getElementById(modalId);
     const modalHeader = modalElement?.querySelector('.modal-header');
@@ -298,8 +298,8 @@ function calculateCropperImageHeight(modalId) {
     const controlsArea = document.getElementById(`cropper-controls-area-${modalId}`);
 
     if (!modalElement || !modalHeader || !modalBody || !controlsArea) {
-        console.warn(`Elementos do modal ${modalId} não encontrados para cálculo de altura`);
-        return 300; // Valor padrão de fallback
+        console.warn(`Elementos do modal ${modalId} nao encontrados para calculo de altura`);
+        return 300; // Valor padrao de fallback
     }
 
     // Medir alturas reais
@@ -312,13 +312,13 @@ function calculateCropperImageHeight(modalId) {
     const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
     const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
 
-    // Margem de segurança para espaçamentos internos e scroll
+    // Margem de seguranca para espacamentos internos e scroll
     const safetyMargin = 100;
 
-    // Calcular altura disponível
+    // Calcular altura disponivel
     const availableHeight = viewportHeight - headerHeight - controlsHeight - bodyPaddingTop - bodyPaddingBottom - safetyMargin;
 
-    // Aplicar limites: mínimo 200px, máximo 600px
+    // Aplicar limites: minimo 200px, maximo 600px
     const finalHeight = Math.max(200, Math.min(600, availableHeight));
 
     return finalHeight;
@@ -327,29 +327,29 @@ function calculateCropperImageHeight(modalId) {
 /**
  * Ajusta o tamanho do container do cropper dinamicamente
  */
-function adjustCropperContainerSize(modalId) {
+function ajustarTamanhoContainerCortador(modalId) {
     const cropperImageArea = document.getElementById(`cropper-image-area-${modalId}`);
     if (!cropperImageArea) return;
 
-    // Calcular altura usando medição real dos elementos
-    const calculatedHeight = calculateCropperImageHeight(modalId);
+    // Calcular altura usando medicao real dos elementos
+    const calculatedHeight = calcularAlturaImagemCortador(modalId);
 
     // Aplicar altura calculada
     cropperImageArea.style.height = `${calculatedHeight}px`;
 
-    // Forçar o cropper a recalcular suas dimensões
-    if (cropperInstances[modalId]) {
-        cropperInstances[modalId].resize();
+    // Forcar o cropper a recalcular suas dimensoes
+    if (instanciasCortador[modalId]) {
+        instanciasCortador[modalId].resize();
     }
 }
 
 /**
  * Atualiza o preview da imagem cropada
  */
-function updatePreview(modalId, previewImage) {
-    if (!cropperInstances[modalId]) return;
+function atualizarPreview(modalId, previewImage) {
+    if (!instanciasCortador[modalId]) return;
 
-    const canvas = cropperInstances[modalId].getCroppedCanvas({
+    const canvas = instanciasCortador[modalId].getCroppedCanvas({
         width: 120,
         height: 120,
         imageSmoothingEnabled: true,
@@ -364,11 +364,11 @@ function updatePreview(modalId, previewImage) {
 /**
  * Reseta o cropper para estado inicial
  */
-function resetCropper(modalId, uploadSection, cropperContainer, inputFile, btnSubmit) {
+function resetarCortador(modalId, uploadSection, cropperContainer, inputFile, btnSubmit) {
     // Destruir cropper
-    if (cropperInstances[modalId]) {
-        cropperInstances[modalId].destroy();
-        delete cropperInstances[modalId];
+    if (instanciasCortador[modalId]) {
+        instanciasCortador[modalId].destroy();
+        delete instanciasCortador[modalId];
     }
 
     // Resetar UI para estado inicial
@@ -379,15 +379,15 @@ function resetCropper(modalId, uploadSection, cropperContainer, inputFile, btnSu
 }
 
 /**
- * Auto-inicialização de modais com configuração
+ * Auto-inicializacao de modais com configuracao
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Procurar por todas as configurações de modal no window
+    // Procurar por todas as configuracoes de modal no window
     for (const key in window) {
         if (key.startsWith('config_modal')) {
             const config = window[key];
             if (config && config.modalId) {
-                initImageCropper(
+                inicializarCortadorImagem(
                     config.modalId,
                     config.aspectRatio || 1.0,
                     config.maxFileSizeMB || 5
@@ -401,11 +401,54 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            for (const modalId in cropperInstances) {
-                if (cropperInstances[modalId]) {
-                    adjustCropperContainerSize(modalId);
+            for (const modalId in instanciasCortador) {
+                if (instanciasCortador[modalId]) {
+                    ajustarTamanhoContainerCortador(modalId);
                 }
             }
         }, 150);
     });
 });
+
+/**
+ * Inicializar namespace global do app
+ */
+window.App = window.App || {};
+window.App.CortadorImagem = window.App.CortadorImagem || {};
+
+/**
+ * API publica do modulo CortadorImagem
+ */
+window.App.CortadorImagem.instancias = instanciasCortador;
+window.App.CortadorImagem.prepararImagem = prepararImagemParaModal;
+window.App.CortadorImagem.inicializarNoModal = inicializarCortadorNoModal;
+window.App.CortadorImagem.carregarDeArquivo = carregarImagemDeArquivo;
+window.App.CortadorImagem.inicializar = inicializarCortadorImagem;
+window.App.CortadorImagem.calcularAltura = calcularAlturaImagemCortador;
+window.App.CortadorImagem.ajustarContainer = ajustarTamanhoContainerCortador;
+window.App.CortadorImagem.atualizarPreview = atualizarPreview;
+window.App.CortadorImagem.resetar = resetarCortador;
+
+/**
+ * DEPRECATED: Manter retrocompatibilidade
+ * @deprecated Use window.App.CortadorImagem em vez disso
+ */
+window.cropperInstances = instanciasCortador;
+window.prepareImageForModal = prepararImagemParaModal;
+window.initializeCropperInModal = inicializarCortadorNoModal;
+window.loadImageFromFile = carregarImagemDeArquivo;
+window.initImageCropper = inicializarCortadorImagem;
+window.calculateCropperImageHeight = calcularAlturaImagemCortador;
+window.adjustCropperContainerSize = ajustarTamanhoContainerCortador;
+window.updatePreview = atualizarPreview;
+window.resetCropper = resetarCortador;
+
+// Aliases em portugues
+window.prepararImagemParaModal = prepararImagemParaModal;
+window.inicializarCortadorNoModal = inicializarCortadorNoModal;
+window.carregarImagemDeArquivo = carregarImagemDeArquivo;
+window.inicializarCortadorImagem = inicializarCortadorImagem;
+window.calcularAlturaImagemCortador = calcularAlturaImagemCortador;
+window.ajustarTamanhoContainerCortador = ajustarTamanhoContainerCortador;
+window.atualizarPreview = atualizarPreview;
+window.resetarCortador = resetarCortador;

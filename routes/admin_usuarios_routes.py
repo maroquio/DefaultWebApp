@@ -1,26 +1,47 @@
+# =============================================================================
+# Imports
+# =============================================================================
+
+# Standard library
 from typing import Optional
+
+# Third-party
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
+# DTOs
 from dtos.usuario_dto import CriarUsuarioDTO, AlterarUsuarioDTO
+
+# Models
 from model.usuario_model import Usuario
+
+# Repositories
 from repo import usuario_repo
+
+# Utilities
 from util.auth_decorator import requer_autenticacao
-from util.template_util import criar_templates
+from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
 from util.perfis import Perfil
-from util.security import criar_hash_senha
-from util.exceptions import FormValidationError
-from util.validation_helpers import verificar_email_disponivel
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.repository_helpers import obter_ou_404
+from util.security import criar_hash_senha
+from util.template_util import criar_templates
+from util.validation_helpers import verificar_email_disponivel
+
+# =============================================================================
+# Configuração do Router
+# =============================================================================
 
 router = APIRouter(prefix="/admin/usuarios")
 templates = criar_templates("templates/admin/usuarios")
 
-# Rate limiter para operações admin (mais restritivo)
+# =============================================================================
+# Rate Limiters
+# =============================================================================
+
 admin_usuarios_limiter = DynamicRateLimiter(
     chave_max="rate_limit_admin_usuarios_max",
     chave_minutos="rate_limit_admin_usuarios_minutos",
@@ -121,7 +142,7 @@ async def post_cadastrar(
     except ValidationError as e:
         # Adicionar perfis aos dados para renderizar o select no template
         dados_formulario["perfis"] = Perfil.valores()
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="admin/usuarios/cadastro.html",
             dados_formulario=dados_formulario,
@@ -232,7 +253,7 @@ async def post_editar(
         # Adicionar perfis e usuario aos dados para renderizar o template
         dados_formulario["perfis"] = Perfil.valores()
         dados_formulario["usuario"] = usuario_repo.obter_por_id(id)
-        raise FormValidationError(
+        raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="admin/usuarios/editar.html",
             dados_formulario=dados_formulario,

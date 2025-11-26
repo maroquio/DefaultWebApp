@@ -1,5 +1,5 @@
 /**
- * InputMask - Sistema de máscaras de digitação reutilizável
+ * MascaraInput - Sistema de máscaras de digitação reutilizável
  *
  * Funcionalidades:
  * - Máscaras customizadas com padrões: 0 (número), A (maiúscula), a (minúscula)
@@ -23,7 +23,7 @@
  * - Cartão: "0000 0000 0000 0000"
  */
 
-class InputMask {
+class MascaraInput {
     // Máscaras pré-definidas para uso comum
     static MASKS = {
         CPF: '000.000.000-00',
@@ -268,7 +268,7 @@ class InputMask {
 }
 
 /**
- * DecimalMask - Sistema de formatação de valores decimais/monetários
+ * MascaraDecimal - Sistema de formatação de valores decimais/monetários
  *
  * Funcionalidades:
  * - Formatação automática com separadores de milhar e decimais
@@ -282,7 +282,7 @@ class InputMask {
  * - Separador de milhares: ponto (.)
  * - Exemplo: 1.234,56
  */
-class DecimalMask {
+class MascaraDecimal {
     /**
      * @param {HTMLInputElement} input - Elemento input
      * @param {Object} options - Opções de configuração
@@ -566,7 +566,7 @@ class DecimalMask {
      * Método estático para formatar valor
      */
     static format(value, options = {}) {
-        const mask = new DecimalMask(document.createElement('input'), options);
+        const mask = new MascaraDecimal(document.createElement('input'), options);
         return mask.format(value);
     }
 
@@ -574,7 +574,7 @@ class DecimalMask {
      * Método estático para parsear valor
      */
     static parse(value, options = {}) {
-        const mask = new DecimalMask(document.createElement('input'), options);
+        const mask = new MascaraDecimal(document.createElement('input'), options);
         return mask.parse(value);
     }
 }
@@ -584,36 +584,36 @@ class DecimalMask {
  * @param {string} fieldId - ID do campo
  * @param {string} mask - Padrão da máscara
  * @param {Object} options - Opções adicionais
- * @returns {InputMask} Instância do InputMask
+ * @returns {MascaraInput} Instância do MascaraInput
  */
-function applyMask(fieldId, mask, options = {}) {
+function aplicarMascara(fieldId, mask, options = {}) {
     const input = document.getElementById(fieldId);
     if (!input) {
         console.error(`Campo com ID "${fieldId}" não encontrado`);
         return null;
     }
-    return new InputMask(input, mask, options);
+    return new MascaraInput(input, mask, options);
 }
 
 /**
  * Inicializa automaticamente todos os campos com data-mask
  */
-function initMasks() {
+function inicializarMascaras() {
     document.querySelectorAll('input[data-mask]').forEach(input => {
         const mask = input.getAttribute('data-mask');
         const unmask = input.getAttribute('data-unmask') === 'true';
 
         // Verificar se é uma máscara pré-definida
-        const maskPattern = InputMask.MASKS[mask.toUpperCase()] || mask;
+        const maskPattern = MascaraInput.MASKS[mask.toUpperCase()] || mask;
 
-        new InputMask(input, maskPattern, { unmask });
+        new MascaraInput(input, maskPattern, { unmask });
     });
 }
 
 /**
  * Inicializa automaticamente todos os campos decimais com data-decimal
  */
-function initDecimalFields() {
+function inicializarCamposDecimais() {
     document.querySelectorAll('input[data-decimal]').forEach(input => {
         const options = {
             decimal_places: parseInt(input.getAttribute('data-decimal-places')) || 2,
@@ -623,23 +623,23 @@ function initDecimalFields() {
             suffix: input.getAttribute('data-decimal-suffix') || ''
         };
 
-        new DecimalMask(input, options);
+        new MascaraDecimal(input, options);
     });
 }
 
 // Inicializar máscaras e campos decimais quando DOM estiver pronto
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        initMasks();
-        initDecimalFields();
+        inicializarMascaras();
+        inicializarCamposDecimais();
     });
 } else {
-    initMasks();
-    initDecimalFields();
+    inicializarMascaras();
+    inicializarCamposDecimais();
 }
 
 // Observar mudanças no DOM para inicializar máscaras e campos decimais em novos elementos
-const observer = new MutationObserver((mutations) => {
+const observadorDOM = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
             if (node.nodeType === 1) { // Element node
@@ -647,8 +647,8 @@ const observer = new MutationObserver((mutations) => {
                 if (node.matches && node.matches('input[data-mask]')) {
                     const mask = node.getAttribute('data-mask');
                     const unmask = node.getAttribute('data-unmask') === 'true';
-                    const maskPattern = InputMask.MASKS[mask.toUpperCase()] || mask;
-                    new InputMask(node, maskPattern, { unmask });
+                    const maskPattern = MascaraInput.MASKS[mask.toUpperCase()] || mask;
+                    new MascaraInput(node, maskPattern, { unmask });
                 }
 
                 // Verificar campos decimais
@@ -660,7 +660,7 @@ const observer = new MutationObserver((mutations) => {
                         prefix: node.getAttribute('data-decimal-prefix') || '',
                         suffix: node.getAttribute('data-decimal-suffix') || ''
                     };
-                    new DecimalMask(node, options);
+                    new MascaraDecimal(node, options);
                 }
 
                 // Verificar elementos filhos
@@ -668,8 +668,8 @@ const observer = new MutationObserver((mutations) => {
                     node.querySelectorAll('input[data-mask]').forEach(input => {
                         const mask = input.getAttribute('data-mask');
                         const unmask = input.getAttribute('data-unmask') === 'true';
-                        const maskPattern = InputMask.MASKS[mask.toUpperCase()] || mask;
-                        new InputMask(input, maskPattern, { unmask });
+                        const maskPattern = MascaraInput.MASKS[mask.toUpperCase()] || mask;
+                        new MascaraInput(input, maskPattern, { unmask });
                     });
 
                     node.querySelectorAll('input[data-decimal]').forEach(input => {
@@ -680,7 +680,7 @@ const observer = new MutationObserver((mutations) => {
                             prefix: input.getAttribute('data-decimal-prefix') || '',
                             suffix: input.getAttribute('data-decimal-suffix') || ''
                         };
-                        new DecimalMask(input, options);
+                        new MascaraDecimal(input, options);
                     });
                 }
             }
@@ -688,43 +688,46 @@ const observer = new MutationObserver((mutations) => {
     });
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
+observadorDOM.observe(document.body, { childList: true, subtree: true });
 
 /**
- * Cleanup do observer quando página é descarregada
+ * Cleanup do observador quando página é descarregada
  * Previne memory leaks em SPAs
  */
 window.addEventListener('beforeunload', () => {
-    observer.disconnect();
+    observadorDOM.disconnect();
 });
 
 /**
  * Inicializar namespace global do app
  */
 window.App = window.App || {};
-window.App.InputMask = window.App.InputMask || {};
+window.App.MascaraInput = window.App.MascaraInput || {};
 
 /**
- * API pública do módulo InputMask
+ * API pública do módulo MascaraInput
  */
-window.App.InputMask.Mask = InputMask;
-window.App.InputMask.DecimalMask = DecimalMask;
-window.App.InputMask.apply = applyMask;
-window.App.InputMask.observer = observer; // Expor para cleanup manual se necessário
-window.App.InputMask.disconnect = () => observer.disconnect(); // API para parar observação
+window.App.MascaraInput.Mascara = MascaraInput;
+window.App.MascaraInput.MascaraDecimal = MascaraDecimal;
+window.App.MascaraInput.aplicar = aplicarMascara;
+window.App.MascaraInput.observador = observadorDOM; // Expor para cleanup manual se necessário
+window.App.MascaraInput.desconectar = () => observadorDOM.disconnect(); // API para parar observação
 
 /**
  * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.InputMask.Mask em vez disso
+ * @deprecated Use window.App.MascaraInput.Mascara em vez disso
  */
-window.InputMask = InputMask;
+window.InputMask = MascaraInput;
+window.MascaraInput = MascaraInput;
 
 /**
- * @deprecated Use window.App.InputMask.DecimalMask em vez disso
+ * @deprecated Use window.App.MascaraInput.MascaraDecimal em vez disso
  */
-window.DecimalMask = DecimalMask;
+window.DecimalMask = MascaraDecimal;
+window.MascaraDecimal = MascaraDecimal;
 
 /**
- * @deprecated Use window.App.InputMask.apply() em vez disso
+ * @deprecated Use window.App.MascaraInput.aplicar() em vez disso
  */
-window.applyMask = applyMask;
+window.applyMask = aplicarMascara;
+window.aplicarMascara = aplicarMascara;

@@ -7,12 +7,12 @@ from typing import Dict, Set
 from util.logger_config import logger
 
 
-class ChatManager:
+class GerenciadorChat:
     """
     Gerencia conexões SSE para o sistema de chat.
 
     Cada usuário tem UMA conexão SSE que recebe mensagens de TODAS as suas salas.
-    Quando uma mensagem é enviada em uma sala, o ChatManager faz broadcast
+    Quando uma mensagem é enviada em uma sala, o GerenciadorChat faz broadcast
     para ambos os participantes da sala (se estiverem conectados).
     """
 
@@ -22,7 +22,7 @@ class ChatManager:
         # Set de usuários com conexão ativa
         self._active_connections: Set[int] = set()
 
-    async def connect(self, usuario_id: int) -> asyncio.Queue:
+    async def conectar(self, usuario_id: int) -> asyncio.Queue:
         """
         Registra nova conexão SSE para um usuário.
 
@@ -36,11 +36,11 @@ class ChatManager:
         self._connections[usuario_id] = queue
         self._active_connections.add(usuario_id)
 
-        logger.info(f"[ChatManager] Usuário {usuario_id} conectado. Total conexões: {len(self._active_connections)}")
+        logger.info(f"[GerenciadorChat] Usuário {usuario_id} conectado. Total conexões: {len(self._active_connections)}")
 
         return queue
 
-    async def disconnect(self, usuario_id: int):
+    async def desconectar(self, usuario_id: int):
         """
         Remove conexão SSE de um usuário.
 
@@ -53,7 +53,7 @@ class ChatManager:
         if usuario_id in self._active_connections:
             self._active_connections.remove(usuario_id)
 
-        logger.info(f"[ChatManager] Usuário {usuario_id} desconectado. Total conexões: {len(self._active_connections)}")
+        logger.info(f"[GerenciadorChat] Usuário {usuario_id} desconectado. Total conexões: {len(self._active_connections)}")
 
     async def broadcast_para_sala(self, sala_id: str, mensagem_dict: dict):
         """
@@ -84,7 +84,7 @@ class ChatManager:
             else:
                 logger.debug(f"[ChatManager] Usuário {usuario_id} não está conectado (não receberá via SSE)")
 
-    def is_connected(self, usuario_id: int) -> bool:
+    def esta_conectado(self, usuario_id: int) -> bool:
         """
         Verifica se um usuário está conectado.
 
@@ -111,4 +111,4 @@ class ChatManager:
 
 
 # Instância singleton global
-chat_manager = ChatManager()
+gerenciador_chat = GerenciadorChat()

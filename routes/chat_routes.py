@@ -1,26 +1,45 @@
 """
 Rotas para o sistema de chat em tempo real.
 """
+
+# =============================================================================
+# Imports
+# =============================================================================
+
+# Standard library
 import json
 import asyncio
+from typing import Optional
+
+# Third-party
 from fastapi import APIRouter, Request, status, HTTPException, Form
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import ValidationError
-from typing import Optional
 
+# DTOs
 from dtos.chat_dto import CriarSalaDTO, EnviarMensagemDTO
+
+# Repositories
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, usuario_repo
+
+# Utilities
 from util.auth_decorator import requer_autenticacao
-from util.chat_manager import chat_manager
-from util.foto_util import obter_caminho_foto_usuario
+from util.chat_manager import gerenciador_chat
 from util.datetime_util import agora
+from util.foto_util import obter_caminho_foto_usuario
 from util.logger_config import logger
 from util.perfis import Perfil
+from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+
+# =============================================================================
+# Configuração do Router
+# =============================================================================
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
-# Rate limiters
-from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
+# =============================================================================
+# Rate Limiters
+# =============================================================================
 
 chat_mensagem_limiter = DynamicRateLimiter(
     chave_max="rate_limit_chat_message_max",
@@ -62,8 +81,8 @@ async def stream_mensagens(request: Request, usuario_logado: Optional[dict] = No
     usuario_id = usuario_logado["id"]
 
     async def event_generator():
-        # Conectar usuário ao ChatManager
-        queue = await chat_manager.connect(usuario_id)
+        # Conectar usuário ao GerenciadorChat
+        queue = await gerenciador_chat.conectar(usuario_id)
         try:
             while True:
                 # Aguardar mensagem na fila
@@ -79,7 +98,7 @@ async def stream_mensagens(request: Request, usuario_logado: Optional[dict] = No
             logger.info(f"[SSE] Conexão cancelada para usuário {usuario_id}")
         finally:
             # Desconectar ao fechar stream
-            await chat_manager.disconnect(usuario_id)
+            await gerenciador_chat.desconectar(usuario_id)
 
     return StreamingResponse(
         event_generator(),
@@ -349,7 +368,7 @@ async def enviar_mensagem(
                 "lida_em": None
             }
         }
-        await chat_manager.broadcast_para_sala(dto.sala_id, mensagem_sse)
+        await gerenciador_chat.broadcast_para_sala(dto.sala_id, mensagem_sse)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -397,7 +416,7 @@ async def marcar_como_lidas(
     chat_participante_repo.atualizar_ultima_leitura(sala_id, usuario_id)
 
     # Notificar via SSE para atualizar contador
-    await chat_manager.broadcast_para_sala(sala_id, {
+    await gerenciador_chat.broadcast_para_sala(sala_id, {
         "tipo": "atualizar_contador",
         "sala_id": sala_id
     })
@@ -491,7 +510,7 @@ async def contar_nao_lidas_total(
 @router.get("/health")
 async def chat_health():
     """Health check do sistema de chat."""
-    estatisticas = chat_manager.obter_estatisticas()
+    estatisticas = gerenciador_chat.obter_estatisticas()
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

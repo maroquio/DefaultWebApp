@@ -1,7 +1,7 @@
 """
 DTOs para validação de dados do sistema de chat.
 """
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -10,7 +10,7 @@ from dtos.validators import validar_string_obrigatoria, validar_comprimento
 
 class CriarSalaDTO(BaseModel):
     """DTO para criar ou obter uma sala de chat."""
-    outro_usuario_id: int
+    outro_usuario_id: int = Field(..., gt=0, description="ID do outro usuário participante da conversa")
 
     @field_validator('outro_usuario_id')
     @classmethod
@@ -22,8 +22,8 @@ class CriarSalaDTO(BaseModel):
 
 class EnviarMensagemDTO(BaseModel):
     """DTO para enviar uma mensagem em uma sala."""
-    sala_id: str
-    mensagem: str
+    sala_id: str = Field(..., min_length=1, description="Identificador único da sala de chat")
+    mensagem: str = Field(..., min_length=1, max_length=5000, description="Conteúdo da mensagem a ser enviada")
 
     _validar_sala_id = field_validator('sala_id')(validar_string_obrigatoria())
     _validar_mensagem = field_validator('mensagem')(validar_string_obrigatoria())
@@ -32,16 +32,16 @@ class EnviarMensagemDTO(BaseModel):
 
 class ConversaResumoDTO(BaseModel):
     """DTO para resumo de uma conversa na lista."""
-    sala_id: str
-    outro_usuario: dict  # {id, nome, email, foto_url}
-    ultima_mensagem: Optional[dict] = None  # {mensagem, data_envio, usuario_id}
-    nao_lidas: int = 0
-    ultima_atividade: datetime
+    sala_id: str = Field(..., description="Identificador único da sala de chat")
+    outro_usuario: dict = Field(..., description="Dados do outro participante {id, nome, email, foto_url}")
+    ultima_mensagem: Optional[dict] = Field(default=None, description="Última mensagem da conversa {mensagem, data_envio, usuario_id}")
+    nao_lidas: int = Field(default=0, ge=0, description="Quantidade de mensagens não lidas")
+    ultima_atividade: datetime = Field(..., description="Data/hora da última atividade na conversa")
 
 
 class UsuarioBuscaDTO(BaseModel):
     """DTO para resultado de busca de usuários."""
-    id: int
-    nome: str
-    email: str
-    foto_url: str
+    id: int = Field(..., gt=0, description="ID único do usuário")
+    nome: str = Field(..., min_length=1, description="Nome completo do usuário")
+    email: str = Field(..., description="Email do usuário")
+    foto_url: str = Field(..., description="URL da foto de perfil do usuário")

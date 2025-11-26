@@ -15,7 +15,7 @@ from sql.chat_participante_sql import (
     CONTAR_MENSAGENS_NAO_LIDAS,
     EXCLUIR
 )
-from util.db_util import get_connection
+from util.db_util import obter_conexao
 from util.datetime_util import agora
 
 
@@ -35,7 +35,7 @@ def _row_to_participante(row: Row) -> ChatParticipante:
 
 def criar_tabela():
     """Cria a tabela chat_participante se não existir."""
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
 
@@ -51,7 +51,7 @@ def adicionar_participante(sala_id: str, usuario_id: int) -> ChatParticipante:
     Returns:
         Objeto ChatParticipante criado
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (sala_id, usuario_id, None))
 
@@ -73,7 +73,7 @@ def obter_por_sala_e_usuario(sala_id: str, usuario_id: int) -> Optional[ChatPart
     Returns:
         Objeto ChatParticipante ou None se não encontrado
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_SALA_E_USUARIO, (sala_id, usuario_id))
         row = cursor.fetchone()
@@ -93,7 +93,7 @@ def listar_por_sala(sala_id: str) -> List[ChatParticipante]:
     Returns:
         Lista de objetos ChatParticipante
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(LISTAR_POR_SALA, (sala_id,))
         rows = cursor.fetchall()
@@ -111,7 +111,7 @@ def listar_por_usuario(usuario_id: int) -> List[ChatParticipante]:
     Returns:
         Lista de objetos ChatParticipante
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(LISTAR_POR_USUARIO, (usuario_id,))
         rows = cursor.fetchall()
@@ -130,7 +130,7 @@ def atualizar_ultima_leitura(sala_id: str, usuario_id: int) -> bool:
     Returns:
         True se atualizado com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ATUALIZAR_ULTIMA_LEITURA, (agora(), sala_id, usuario_id))
         return cursor.rowcount > 0
@@ -147,7 +147,7 @@ def contar_mensagens_nao_lidas(sala_id: str, usuario_id: int) -> int:
     Returns:
         Número de mensagens não lidas
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         # Passar usuario_id 3 vezes: para sala_id, usuario_id != ?, e duas vezes na subquery
         cursor.execute(CONTAR_MENSAGENS_NAO_LIDAS, (sala_id, usuario_id, usuario_id, usuario_id))
@@ -167,7 +167,7 @@ def excluir(sala_id: str, usuario_id: int) -> bool:
     Returns:
         True se excluído com sucesso, False caso contrário
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR, (sala_id, usuario_id))
         return cursor.rowcount > 0

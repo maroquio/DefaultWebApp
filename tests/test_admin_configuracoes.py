@@ -5,7 +5,7 @@ Testa seleção de temas visuais e sistema de auditoria de logs
 import pytest
 from fastapi import status
 from pathlib import Path
-from datetime import datetime
+from util.datetime_util import agora
 
 
 class TestTema:
@@ -97,7 +97,7 @@ class TestAuditoria:
 
     def test_filtrar_logs_por_data(self, admin_autenticado):
         """Deve permitir filtrar logs por data"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
@@ -108,7 +108,7 @@ class TestAuditoria:
 
     def test_filtrar_logs_nivel_info(self, admin_autenticado):
         """Deve permitir filtrar logs por nível INFO"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
@@ -119,7 +119,7 @@ class TestAuditoria:
 
     def test_filtrar_logs_nivel_warning(self, admin_autenticado):
         """Deve permitir filtrar logs por nível WARNING"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
@@ -130,7 +130,7 @@ class TestAuditoria:
 
     def test_filtrar_logs_nivel_error(self, admin_autenticado):
         """Deve permitir filtrar logs por nível ERROR"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
@@ -141,7 +141,7 @@ class TestAuditoria:
 
     def test_filtrar_logs_nivel_todos(self, admin_autenticado):
         """Deve permitir filtrar logs sem filtro de nível (TODOS)"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
@@ -165,7 +165,7 @@ class TestAuditoria:
     def test_filtrar_logs_registra_acao(self, admin_autenticado):
         """Filtrar logs deve registrar a própria ação de auditoria"""
         from util.logger_config import logger
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         # Fazer auditoria
         admin_autenticado.post("/admin/auditoria/filtrar", data={
@@ -183,7 +183,7 @@ class TestAuditoria:
 
     def test_cliente_nao_pode_filtrar_logs(self, cliente_autenticado):
         """Cliente não deve poder filtrar logs"""
-        data_hoje = datetime.now().strftime('%Y-%m-%d')
+        data_hoje = agora().strftime('%Y-%m-%d')
 
         response = cliente_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
