@@ -9,30 +9,6 @@ Este módulo fornece um decorator que:
 - Exibe mensagem de erro padronizada quando o limite é excedido
 - Registra no log tentativas bloqueadas
 - Redireciona para URL especificada quando bloqueado
-
-Exemplo de uso:
-    from util.rate_limit_decorator import aplicar_rate_limit
-    from util.rate_limiter import RateLimiter
-
-    tarefa_criar_limiter = RateLimiter(
-        nome="tarefa_criar",
-        limite=10,
-        janela_segundos=60
-    )
-
-    @router.post("/cadastrar")
-    @aplicar_rate_limit(
-        limiter=tarefa_criar_limiter,
-        mensagem_erro="Muitas tentativas de criação. Aguarde um momento.",
-        redirect_url="/tarefas/listar"
-    )
-    @requer_autenticacao()
-    async def post_cadastrar(request: Request, ...):
-        # Lógica da rota sem código de rate limiting
-        pass
-
-@version 1.0.0
-@author DefaultWebApp
 """
 
 from functools import wraps
@@ -230,44 +206,3 @@ def aplicar_rate_limit_async(
         log_detalhes=log_detalhes
     )
 
-
-# Exemplo de uso em um módulo de rotas:
-"""
-from util.rate_limit_decorator import aplicar_rate_limit
-from util.rate_limiter import RateLimiter
-
-# Criar limiters (uma vez, nível de módulo)
-tarefa_criar_limiter = RateLimiter(
-    nome="tarefa_criar",
-    limite=10,
-    janela_segundos=60
-)
-
-tarefa_alterar_limiter = RateLimiter(
-    nome="tarefa_alterar",
-    limite=20,
-    janela_segundos=60
-)
-
-# Aplicar em rotas
-@router.post("/cadastrar")
-@aplicar_rate_limit(
-    limiter=tarefa_criar_limiter,
-    mensagem_erro="Muitas tentativas de criação de tarefas",
-    redirect_url="/tarefas/listar"
-)
-@requer_autenticacao()
-async def post_cadastrar(request: Request, titulo: str = Form()):
-    # Lógica da rota sem código de rate limiting
-    pass
-
-@router.post("/alterar/{id}")
-@aplicar_rate_limit(
-    limiter=tarefa_alterar_limiter,
-    redirect_url="/tarefas/listar"
-)
-@requer_autenticacao()
-async def post_alterar(request: Request, id: int, titulo: str = Form()):
-    # Lógica da rota
-    pass
-"""

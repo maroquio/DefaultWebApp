@@ -408,9 +408,6 @@ Padrão: `test_<acao>_<condicao>_<resultado_esperado>`
 def test_login_com_credenciais_validas_redireciona_para_dashboard():
     pass
 
-def test_criar_tarefa_sem_titulo_retorna_erro():
-    pass
-
 def test_usuario_nao_autenticado_nao_acessa_dashboard():
     pass
 
@@ -535,42 +532,6 @@ def test_cliente_nao_acessa_area_admin(cliente_autenticado):
     if response.status_code == status.HTTP_303_SEE_OTHER:
         location = response.headers.get("location")
         assert location in ["/login", "/usuario", "/"]
-```
-
-### Exemplo 3: Teste de Isolamento de Dados
-
-```python
-def test_usuario_nao_pode_excluir_tarefa_de_outro(client, dois_usuarios, fazer_login):
-    """Usuário não deve poder excluir tarefas de outros usuários."""
-
-    usuario1, usuario2 = dois_usuarios
-
-    # Usuario 1 cria tarefa
-    fazer_login(usuario1["email"], usuario1["senha"])
-    response = client.post("/tarefas/cadastrar", data={
-        "titulo": "Tarefa Privada",
-        "descricao": "Esta é minha tarefa"
-    }, follow_redirects=False)
-    assert_redirects_to(response, "/tarefas/listar")
-
-    # Obter ID da tarefa criada
-    from repo import tarefa_repo
-    tarefas = tarefa_repo.obter_por_usuario(usuario1["id"])  # Precisa ajustar
-    tarefa_id = tarefas[0].id
-
-    # Logout do usuario 1
-    client.get("/logout")
-
-    # Usuario 2 tenta excluir tarefa do usuario 1
-    fazer_login(usuario2["email"], usuario2["senha"])
-    response = client.post(f"/tarefas/{tarefa_id}/excluir", follow_redirects=False)
-
-    # Deve negar (redirect)
-    assert_redirects_to(response, "/tarefas/listar")
-
-    # Verificar que tarefa ainda existe
-    tarefa = tarefa_repo.obter_por_id(tarefa_id)
-    assert tarefa is not None
 ```
 
 ### Exemplo 4: Teste com Fixtures Avançadas

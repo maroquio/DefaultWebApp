@@ -77,29 +77,6 @@ def obter_ou_404(
         T: A entidade se existir
         RedirectResponse: Redirecionamento se entidade não existir
 
-    Example:
-        >>> # Uso básico
-        >>> usuario = obter_ou_404(
-        ...     usuario_repo.obter_por_id(id),
-        ...     request,
-        ...     "Usuário não encontrado",
-        ...     "/admin/usuarios/listar"
-        ... )
-        >>> if isinstance(usuario, RedirectResponse):
-        ...     return usuario
-        >>> # usuario existe e pode ser usado
-
-    Example:
-        >>> # Uso com type guard automático
-        >>> tarefa = obter_ou_404(
-        ...     tarefa_repo.obter_por_id(id),
-        ...     request,
-        ...     "Tarefa não encontrada",
-        ...     "/tarefas/listar"
-        ... )
-        >>> # Se não houve return, tarefa existe
-        >>> print(tarefa.titulo)  # Safe to use
-
     Note:
         Para uso correto, verifique se o retorno é RedirectResponse:
 
@@ -142,16 +119,6 @@ def obter_lista_ou_vazia(
 
     Returns:
         list: A lista original ou lista vazia
-
-    Example:
-        >>> tarefas = obter_lista_ou_vazia(
-        ...     tarefa_repo.obter_por_usuario(usuario_id),
-        ...     request,
-        ...     "Nenhuma tarefa encontrada"
-        ... )
-        >>> # tarefas sempre será uma lista, mesmo que vazia
-        >>> for tarefa in tarefas:  # Safe, nunca dá erro
-        ...     print(tarefa.titulo)
     """
     # Se lista for None ou não for list, retornar lista vazia
     if lista is None or not isinstance(lista, list):
@@ -276,38 +243,3 @@ def executar_operacao_repo(
         # Redirecionar
         return RedirectResponse(redirect_url, status_code=status.HTTP_303_SEE_OTHER)
 
-
-# Exemplo de uso completo em uma rota:
-"""
-from util.repository_helpers import obter_ou_404, validar_inteiro_positivo
-from repo import tarefa_repo
-
-@router.get("/editar/{id}")
-@requer_autenticacao()
-async def get_editar(request: Request, id: int, usuario_logado: dict):
-    # Validar ID (opcional, FastAPI já valida tipo)
-    id_valido = validar_inteiro_positivo(id, request, "ID da tarefa", "/tarefas/listar")
-    if isinstance(id_valido, RedirectResponse):
-        return id_valido
-
-    # Obter tarefa ou retornar 404
-    tarefa = obter_ou_404(
-        tarefa_repo.obter_por_id(id_valido),
-        request,
-        "Tarefa não encontrada",
-        "/tarefas/listar"
-    )
-    if isinstance(tarefa, RedirectResponse):
-        return tarefa
-
-    # Verificar propriedade
-    if tarefa.usuario_id != usuario_logado["id"]:
-        informar_erro(request, "Você não tem permissão para editar esta tarefa")
-        return RedirectResponse("/tarefas/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Tarefa existe e usuário tem permissão
-    return templates.TemplateResponse("tarefas/editar.html", {
-        "request": request,
-        "tarefa": tarefa
-    })
-"""

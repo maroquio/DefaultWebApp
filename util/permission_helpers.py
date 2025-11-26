@@ -8,30 +8,6 @@ Este módulo fornece funções para:
 - Verificar se um usuário é dono de uma entidade
 - Validar permissões de perfis
 - Lidar com acessos negados de forma padronizada
-
-Exemplo de uso:
-    from util.permission_helpers import verificar_propriedade, requer_perfis
-
-    @router.post("/tarefas/excluir/{id}")
-    @requer_autenticacao()
-    async def post_excluir(request: Request, id: int, usuario_logado: dict):
-        tarefa = tarefa_repo.obter_por_id(id)
-
-        # Verificar se usuário é dono da tarefa
-        if not verificar_propriedade(
-            tarefa,
-            usuario_logado["id"],
-            request,
-            "Você não tem permissão para excluir esta tarefa",
-            "/tarefas/listar"
-        ):
-            return  # Já retornou RedirectResponse
-
-        # Usuário é dono, pode excluir
-        tarefa_repo.excluir(id)
-
-@version 1.0.0
-@author DefaultWebApp
 """
 
 from typing import Optional, List, Union, Any
@@ -69,21 +45,6 @@ def verificar_propriedade(
 
     Returns:
         bool: True se usuário é proprietário, False caso contrário
-
-    Example:
-        >>> tarefa = tarefa_repo.obter_por_id(id)
-        >>> if not verificar_propriedade(
-        ...     tarefa,
-        ...     usuario_logado["id"],
-        ...     request,
-        ...     "Você não pode editar esta tarefa",
-        ...     "/tarefas/listar"
-        ... ):
-        ...     # Acesso negado, já mostrou erro e está redirecionando
-        ...     # IMPORTANTE: Você DEVE fazer return aqui
-        ...     return RedirectResponse(...)
-        >>> # Acesso permitido, continuar
-        >>> # ... lógica da rota ...
 
     Note:
         A função retorna bool, mas TEM EFEITO COLATERAL:
