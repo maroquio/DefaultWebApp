@@ -934,6 +934,7 @@ Crie o arquivo `templates/admin/categorias/cadastro.html`:
 
         <div class="card shadow-sm">
             <form method="POST" action="/admin/categorias/cadastrar">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
@@ -1000,6 +1001,7 @@ Crie o arquivo `templates/admin/categorias/editar.html`:
 
         <div class="card shadow-sm">
             <form method="POST" action="/admin/categorias/editar/{{ dados.id if dados is defined and dados.id else categoria.id }}">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
@@ -2231,6 +2233,7 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
 
         <div class="card shadow-sm">
             <form method="POST" action="/artigos/cadastrar" id="formArtigo">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
@@ -2376,6 +2379,7 @@ Crie o arquivo `templates/artigos/editar.html`:
 
         <div class="card shadow-sm">
             <form method="POST" action="/artigos/editar/{{ artigo.id }}" id="formArtigo">
+                {{ csrf_input() }}
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-12">
