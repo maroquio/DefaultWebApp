@@ -46,7 +46,7 @@ class DailyRotatingFileHandler(TimedRotatingFileHandler):
         """Override do rollover para criar novo arquivo com nome correto"""
         if self.stream:
             self.stream.close()
-            self.stream = None  # type: ignore[assignment]
+            self.stream = None
 
         # Novo arquivo com data atual (após meia-noite)
         self.baseFilename = self._get_filename_for_date(agora())

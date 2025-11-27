@@ -115,11 +115,11 @@ def salvar_foto_cropada_usuario(id: int, conteudo_base64: str) -> bool:
             # Criar fundo branco
             fundo: Image.Image = Image.new("RGB", imagem.size, (255, 255, 255))
             if imagem.mode == "P":
-                imagem = imagem.convert("RGBA")  # type: ignore
+                imagem = imagem.convert("RGBA")
             fundo.paste(imagem, mask=imagem.split()[-1] if "A" in imagem.mode else None)
-            imagem = fundo  # type: ignore
+            imagem = fundo
         elif imagem.mode != "RGB":
-            imagem = imagem.convert("RGB")  # type: ignore
+            imagem = imagem.convert("RGB")
 
         # Redimensionar se necessário (mantendo aspect ratio)
         # Lê tamanho máximo do cache (database → .env)

@@ -52,9 +52,9 @@ app.add_middleware(MiddlewareProtecaoCSRF)
 logger.info("CSRF Protection habilitado")
 
 # Registrar Exception Handlers
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
-app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
-app.add_exception_handler(ErroValidacaoFormulario, form_validation_exception_handler)  # type: ignore[arg-type]
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(ErroValidacaoFormulario, form_validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 logger.info("Exception handlers registrados")
 

@@ -142,8 +142,8 @@ async def post_responder(
     dados_formulario: dict = {
         "mensagem": mensagem,
         "status_chamado": status_chamado,
-        "chamado": chamado,  # type: ignore[dict-item]
-        "interacoes": interacoes  # type: ignore[dict-item]
+        "chamado": chamado,
+        "interacoes": interacoes
     }
 
     try:

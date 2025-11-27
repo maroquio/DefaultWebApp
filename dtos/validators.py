@@ -34,7 +34,7 @@ def validar_string_obrigatoria(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or (truncar and not v.strip()):
             raise ValueError(f"{nome_campo} é obrigatório.")
 
@@ -72,7 +72,7 @@ def validar_comprimento(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v:
             return "" if truncar else v
 
@@ -106,7 +106,7 @@ def validar_texto_minimo_palavras(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError(f"{nome_campo} é obrigatório.")
 
@@ -147,7 +147,7 @@ def validar_nome_pessoa(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("Nome é obrigatório.")
 
@@ -183,7 +183,7 @@ def validar_email(
         Retorna e-mail em lowercase
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("E-mail é obrigatório.")
 
@@ -215,7 +215,7 @@ def validar_cpf(formatar: bool = False) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("CPF é obrigatório.")
 
@@ -264,7 +264,7 @@ def validar_cnpj(formatar: bool = False) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("CNPJ é obrigatório.")
 
@@ -322,7 +322,7 @@ def validar_telefone_br(formatar: bool = False) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("Telefone é obrigatório.")
 
@@ -364,7 +364,7 @@ def validar_cep(formatar: bool = True) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("CEP é obrigatório.")
 
@@ -410,7 +410,7 @@ def validar_senha_forte(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("Senha é obrigatória.")
 
@@ -459,7 +459,7 @@ def validar_senhas_coincidem(
         Função validadora para uso com @model_validator(mode="after")
     """
 
-    def validator(model: Any) -> Any:  # noqa: ANN401
+    def validator(model: Any) -> Any:
         senha = getattr(model, campo_senha, None)
         confirmacao = getattr(model, campo_confirmacao, None)
 
@@ -485,7 +485,7 @@ def validar_id_positivo(nome_campo: str = "Identificador") -> Callable[[Any, Any
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not isinstance(v, int) or v <= 0:
             raise ValueError(f"{nome_campo} deve ser um número positivo.")
         return v
@@ -504,7 +504,7 @@ def validar_slug(tamanho_maximo: int = 128) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("Slug é obrigatório.")
 
@@ -541,7 +541,7 @@ def validar_extensao_arquivo(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError(f"Nenhum {nome_campo.lower()} selecionado.")
 
@@ -571,7 +571,7 @@ def validar_tamanho_arquivo(
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if v <= 0:
             raise ValueError(f"{nome_campo} vazio.")
 
@@ -605,7 +605,7 @@ def validar_data(
         Retorna string da data validada
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("Data é obrigatória.")
 
@@ -640,7 +640,7 @@ def validar_url(requer_protocolo: bool = True) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         if not v or not v.strip():
             raise ValueError("URL é obrigatória.")
 
@@ -671,7 +671,7 @@ def validar_tipo(nome_campo: str, tipo_enum: Any) -> Callable[[Any, Any], Any]:
         Função validadora para uso com field_validator
     """
 
-    def validator(cls: Any, v: Any) -> Any:  # noqa: N805
+    def validator(cls: Any, v: Any) -> Any:
         valores_validos = [t.value for t in tipo_enum]
         if v not in valores_validos:
             tipos_validos = ", ".join([f"'{t.value}'" for t in tipo_enum])

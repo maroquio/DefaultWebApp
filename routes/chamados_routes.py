@@ -260,8 +260,8 @@ async def post_responder(
     interacoes = chamado_interacao_repo.obter_por_chamado(id)
     dados_formulario: dict = {
         "mensagem": mensagem,
-        "chamado": chamado,  # type: ignore[dict-item]
-        "interacoes": interacoes  # type: ignore[dict-item]
+        "chamado": chamado,
+        "interacoes": interacoes
     }
 
     try:
