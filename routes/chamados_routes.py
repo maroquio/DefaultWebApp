@@ -27,6 +27,7 @@ from dtos.chamado_interacao_dto import CriarInteracaoDTO
 # Models
 from model.chamado_model import Chamado, StatusChamado, PrioridadeChamado
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
+from model.usuario_logado_model import UsuarioLogado
 
 # Repositories
 from repo import chamado_repo, chamado_interacao_repo
@@ -71,12 +72,12 @@ chamado_responder_limiter = DynamicRateLimiter(
 
 @router.get("/listar")
 @requer_autenticacao()
-async def listar(request: Request, usuario_logado: Optional[dict] = None):
+async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os chamados do usuário logado."""
     assert usuario_logado is not None
     # Passa usuario_id para obter_por_usuario - a função já usa esse ID
     # para contar apenas mensagens de OUTROS usuários
-    chamados = chamado_repo.obter_por_usuario(usuario_logado["id"])
+    chamados = chamado_repo.obter_por_usuario(usuario_logado.id)
     return templates.TemplateResponse(
         "chamados/listar.html",
         {"request": request, "chamados": chamados}
@@ -85,7 +86,7 @@ async def listar(request: Request, usuario_logado: Optional[dict] = None):
 
 @router.get("/cadastrar")
 @requer_autenticacao()
-async def get_cadastrar(request: Request, usuario_logado: Optional[dict] = None):
+async def get_cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário de abertura de chamado."""
     return templates.TemplateResponse(
         "chamados/cadastrar.html",
@@ -100,7 +101,7 @@ async def post_cadastrar(
     titulo: str = Form(),
     descricao: str = Form(),
     prioridade: str = Form(default="Média"),
-    usuario_logado: Optional[dict] = None
+    usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Cadastra um novo chamado."""
     assert usuario_logado is not None
@@ -144,7 +145,7 @@ async def post_cadastrar(
             titulo=dto.titulo,
             prioridade=PrioridadeChamado(dto.prioridade),
             status=StatusChamado.ABERTO,
-            usuario_id=usuario_logado["id"]
+            usuario_id=usuario_logado.id
         )
 
         chamado_id = chamado_repo.inserir(chamado)
@@ -153,7 +154,7 @@ async def post_cadastrar(
         interacao = ChamadoInteracao(
             id=0,
             chamado_id=chamado_id,
-            usuario_id=usuario_logado["id"],
+            usuario_id=usuario_logado.id,
             mensagem=dto.descricao,
             tipo=TipoInteracao.ABERTURA,
             data_interacao=agora(),
@@ -162,7 +163,7 @@ async def post_cadastrar(
         chamado_interacao_repo.inserir(interacao)
 
         logger.info(
-            f"Chamado #{chamado_id} '{dto.titulo}' criado por usuário {usuario_logado['id']}"
+            f"Chamado #{chamado_id} '{dto.titulo}' criado por usuário {usuario_logado.id}"
         )
 
         informar_sucesso(request, "Chamado aberto com sucesso! Em breve responderemos.")
@@ -179,7 +180,7 @@ async def post_cadastrar(
 
 @router.get("/{id}/visualizar")
 @requer_autenticacao()
-async def visualizar(request: Request, id: int, usuario_logado: Optional[dict] = None):
+async def visualizar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe detalhes de um chamado específico com histórico de interações."""
     assert usuario_logado is not None
 
@@ -196,7 +197,7 @@ async def visualizar(request: Request, id: int, usuario_logado: Optional[dict] =
     # Verificar se usuário é proprietário do chamado
     if not verificar_propriedade(
         chamado,
-        usuario_logado["id"],
+        usuario_logado.id,
         request,
         "Você não tem permissão para acessar este chamado",
         "/chamados/listar"
@@ -204,7 +205,7 @@ async def visualizar(request: Request, id: int, usuario_logado: Optional[dict] =
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     # Marcar mensagens como lidas (apenas as de outros usuários)
-    chamado_interacao_repo.marcar_como_lidas(id, usuario_logado["id"])
+    chamado_interacao_repo.marcar_como_lidas(id, usuario_logado.id)
 
     # Obter histórico de interações
     interacoes = chamado_interacao_repo.obter_por_chamado(id)
@@ -221,7 +222,7 @@ async def post_responder(
     request: Request,
     id: int,
     mensagem: str = Form(),
-    usuario_logado: Optional[dict] = None
+    usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Permite que o usuário adicione uma resposta/mensagem ao seu próprio chamado."""
     assert usuario_logado is not None
@@ -249,7 +250,7 @@ async def post_responder(
     # Verificar se usuário é proprietário do chamado
     if not verificar_propriedade(
         chamado,
-        usuario_logado["id"],
+        usuario_logado.id,
         request,
         "Você não tem permissão para responder a este chamado",
         "/chamados/listar"
@@ -272,7 +273,7 @@ async def post_responder(
         interacao = ChamadoInteracao(
             id=0,
             chamado_id=id,
-            usuario_id=usuario_logado["id"],
+            usuario_id=usuario_logado.id,
             mensagem=dto.mensagem,
             tipo=TipoInteracao.RESPOSTA_USUARIO,
             data_interacao=agora(),
@@ -281,7 +282,7 @@ async def post_responder(
         chamado_interacao_repo.inserir(interacao)
 
         logger.info(
-            f"Usuário {usuario_logado['id']} respondeu ao chamado {id}"
+            f"Usuário {usuario_logado.id} respondeu ao chamado {id}"
         )
 
         informar_sucesso(request, "Resposta adicionada com sucesso!")
@@ -298,7 +299,7 @@ async def post_responder(
 
 @router.post("/{id}/excluir")
 @requer_autenticacao()
-async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict] = None):
+async def post_excluir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exclui um chamado do usuário (apenas se aberto e sem respostas de admin)."""
     assert usuario_logado is not None
 
@@ -315,7 +316,7 @@ async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict]
     # Verificar se usuário é proprietário do chamado
     if not verificar_propriedade(
         chamado,
-        usuario_logado["id"],
+        usuario_logado.id,
         request,
         "Você não tem permissão para excluir este chamado",
         "/chamados/listar"
@@ -326,7 +327,7 @@ async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict]
     if chamado.status != StatusChamado.ABERTO:
         informar_erro(request, "Apenas chamados abertos podem ser excluídos")
         logger.warning(
-            f"Usuário {usuario_logado['id']} tentou excluir chamado {id} com status {chamado.status.value}"
+            f"Usuário {usuario_logado.id} tentou excluir chamado {id} com status {chamado.status.value}"
         )
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -334,13 +335,13 @@ async def post_excluir(request: Request, id: int, usuario_logado: Optional[dict]
     if chamado_interacao_repo.tem_resposta_admin(id):
         informar_erro(request, "Não é possível excluir chamados que já possuem resposta do administrador")
         logger.warning(
-            f"Usuário {usuario_logado['id']} tentou excluir chamado {id} que possui respostas de admin"
+            f"Usuário {usuario_logado.id} tentou excluir chamado {id} que possui respostas de admin"
         )
         return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
 
     # Tudo OK, pode excluir
     chamado_repo.excluir(id)
-    logger.info(f"Chamado {id} excluído por usuário {usuario_logado['id']}")
+    logger.info(f"Chamado {id} excluído por usuário {usuario_logado.id}")
     informar_sucesso(request, "Chamado excluído com sucesso!")
 
     return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)

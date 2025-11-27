@@ -7,6 +7,15 @@ from model.chamado_model import StatusChamado
 
 
 class TipoInteracao(Enum):
+    """
+    Enum para tipos de interação em um chamado.
+
+    Herda de EnumEntidade que fornece métodos úteis:
+        - valores(): Lista todos os valores
+        - existe(valor): Verifica se valor existe
+        - from_valor(valor): Converte string para enum
+        - validar(valor): Valida e retorna ou levanta ValueError
+    """
     ABERTURA = "Abertura"
     RESPOSTA_USUARIO = "Resposta do Usuário"
     RESPOSTA_ADMIN = "Resposta do Administrador"

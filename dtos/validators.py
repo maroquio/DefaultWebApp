@@ -1,10 +1,3 @@
-"""
-Módulo de validadores reutilizáveis para DTOs.
-
-Este módulo contém funções de validação comuns que podem ser usadas
-em múltiplos DTOs para evitar duplicação de código.
-"""
-
 import re
 from typing import Optional, Set, Callable, Any
 from datetime import datetime

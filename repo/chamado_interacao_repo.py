@@ -1,10 +1,3 @@
-"""
-Repositório para operações de banco de dados relacionadas a interações de chamados.
-
-Implementa a camada de acesso a dados (DAL) para a entidade ChamadoInteracao,
-seguindo o padrão de Repository com funções CRUD.
-"""
-
 from typing import Optional
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
 from sql.chamado_interacao_sql import *

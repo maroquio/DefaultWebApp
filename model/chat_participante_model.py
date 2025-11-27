@@ -1,6 +1,3 @@
-"""
-Model para representar um participante de uma sala de chat.
-"""
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional

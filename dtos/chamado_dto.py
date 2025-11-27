@@ -9,20 +9,12 @@ from model.chamado_model import StatusChamado, PrioridadeChamado
 class CriarChamadoDTO(BaseModel):
     """DTO para criação de chamado de suporte."""
 
-    titulo: str = Field(
-        ...,
-        description="Título resumido do chamado",
-        examples=["Erro ao acessar relatório de vendas"]
-    )
+    titulo: str = Field(..., description="Título resumido do chamado")
     descricao: str = Field(
-        ...,
-        description="Descrição detalhada do problema ou solicitação",
-        examples=["Ao tentar acessar o relatório de vendas, aparece erro 500..."]
+        ..., description="Descrição detalhada do problema ou solicitação"
     )
     prioridade: str = Field(
-        default="Média",
-        description="Nível de prioridade do chamado",
-        examples=["Baixa", "Média", "Alta", "Urgente"]
+        default="Média", description="Nível de prioridade do chamado"
     )
 
     _validar_titulo = field_validator("titulo")(
@@ -45,12 +37,6 @@ class CriarChamadoDTO(BaseModel):
 class AlterarStatusDTO(BaseModel):
     """DTO para alteração de status do chamado."""
 
-    status: str = Field(
-        ...,
-        description="Novo status do chamado",
-        examples=["Aberto", "Em Análise", "Resolvido", "Fechado"]
-    )
+    status: str = Field(..., description="Novo status do chamado")
 
-    _validar_status = field_validator("status")(
-        validar_tipo("Status", StatusChamado)
-    )
+    _validar_status = field_validator("status")(validar_tipo("Status", StatusChamado))

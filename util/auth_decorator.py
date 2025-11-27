@@ -4,11 +4,18 @@ from functools import wraps
 from typing import List, Optional
 from util.logger_config import logger
 from util.flash_messages import informar_erro
+from model.usuario_logado_model import UsuarioLogado
 
 
-def criar_sessao(request: Request, usuario: dict):
-    """Cria sessão de usuário"""
-    request.session["usuario_logado"] = usuario
+def criar_sessao(request: Request, usuario_logado: UsuarioLogado):
+    """
+    Cria sessão de usuário.
+
+    Args:
+        request: Objeto Request do FastAPI
+        usuario_logado: Instância de UsuarioLogado
+    """
+    request.session["usuario_logado"] = usuario_logado.to_dict()
 
 
 def destruir_sessao(request: Request):
@@ -16,9 +23,15 @@ def destruir_sessao(request: Request):
     request.session.clear()
 
 
-def obter_usuario_logado(request: Request) -> Optional[dict]:
-    """Obtém usuário logado da sessão"""
-    return request.session.get("usuario_logado")
+def obter_usuario_logado(request: Request) -> Optional[UsuarioLogado]:
+    """
+    Obtém usuário logado da sessão.
+
+    Returns:
+        Instância de UsuarioLogado ou None se não logado
+    """
+    dados = request.session.get("usuario_logado")
+    return UsuarioLogado.from_dict(dados)
 
 
 def esta_logado(request: Request) -> bool:
@@ -50,11 +63,10 @@ def requer_autenticacao(perfis_permitidos: Optional[List[str]] = None):
 
             # Verificar perfil se especificado
             if perfis_permitidos:
-                perfil_usuario = usuario.get("perfil")
-                if perfil_usuario not in perfis_permitidos:
+                if usuario.perfil not in perfis_permitidos:
                     logger.warning(
-                        f"Usuário {usuario.get('email')} tentou acessar {request.url.path} "
-                        f"sem permissão (perfil: {perfil_usuario})"
+                        f"Usuário {usuario.email} tentou acessar {request.url.path} "
+                        f"sem permissão (perfil: {usuario.perfil})"
                     )
                     informar_erro(request, "Você não tem permissão para acessar esta página.")
                     return RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)

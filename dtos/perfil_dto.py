@@ -10,7 +10,7 @@ from dtos.validators import (
 
 class EditarPerfilDTO(BaseModel):
     nome: str = Field(..., description="Nome completo do usuário")
-    email: str = Field(..., description="E-mail do usuário", examples=["usuario@exemplo.com"])
+    email: str = Field(..., description="E-mail do usuário")
 
     _validar_nome = field_validator("nome")(validar_nome_pessoa(min_palavras=2))
     _validar_email = field_validator("email")(validar_email())

@@ -11,7 +11,7 @@ from util.perfis import Perfil
 
 
 class LoginDTO(BaseModel):
-    email: str = Field(..., description="E-mail do usuário", examples=["usuario@exemplo.com"])
+    email: str = Field(..., description="E-mail do usuário")
     senha: str = Field(..., description="Senha do usuário")
 
     _validar_email = field_validator("email")(validar_email())
@@ -19,9 +19,9 @@ class LoginDTO(BaseModel):
 
 
 class CadastroDTO(BaseModel):
-    perfil: str = Field(..., description="Perfil/Role do usuário", examples=["Cliente", "Vendedor"])
+    perfil: str = Field(..., description="Perfil/Role do usuário")
     nome: str = Field(..., description="Nome completo do usuário")
-    email: str = Field(..., description="E-mail do usuário", examples=["usuario@exemplo.com"])
+    email: str = Field(..., description="E-mail do usuário")
     senha: str = Field(..., description="Senha do usuário")
     confirmar_senha: str = Field(..., description="Confirmação da senha")
 
@@ -39,7 +39,7 @@ class CadastroDTO(BaseModel):
 
 
 class EsqueciSenhaDTO(BaseModel):
-    email: str = Field(..., description="E-mail cadastrado do usuário", examples=["usuario@exemplo.com"])
+    email: str = Field(..., description="E-mail cadastrado do usuário")
 
     _validar_email = field_validator("email")(validar_email())
 

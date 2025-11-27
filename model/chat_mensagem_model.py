@@ -1,6 +1,3 @@
-"""
-Model para representar uma mensagem de chat.
-"""
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional

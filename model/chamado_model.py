@@ -15,6 +15,7 @@ class StatusChamado(EnumEntidade):
         - from_valor(valor): Converte string para enum
         - validar(valor): Valida e retorna ou levanta ValueError
     """
+
     ABERTO = "Aberto"
     EM_ANALISE = "Em Análise"
     RESOLVIDO = "Resolvido"
@@ -31,6 +32,7 @@ class PrioridadeChamado(EnumEntidade):
         - from_valor(valor): Converte string para enum
         - validar(valor): Valida e retorna ou levanta ValueError
     """
+
     BAIXA = "Baixa"
     MEDIA = "Média"
     ALTA = "Alta"

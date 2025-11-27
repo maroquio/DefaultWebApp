@@ -12,25 +12,10 @@ from dtos.validators import (
 class CriarUsuarioDTO(BaseModel):
     """DTO para criação de usuário pelo administrador."""
 
-    nome: str = Field(
-        ...,
-        description="Nome completo do usuário",
-        examples=["João da Silva"]
-    )
-    email: str = Field(
-        ...,
-        description="E-mail do usuário",
-        examples=["usuario@exemplo.com"]
-    )
-    senha: str = Field(
-        ...,
-        description="Senha do usuário"
-    )
-    perfil: str = Field(
-        ...,
-        description="Perfil/Role do usuário",
-        examples=["Cliente", "Vendedor", "Administrador"]
-    )
+    nome: str = Field(..., description="Nome completo do usuário")
+    email: str = Field(..., description="E-mail do usuário")
+    senha: str = Field(..., description="Senha do usuário")
+    perfil: str = Field(..., description="Perfil/Role do usuário")
 
     _validar_nome = field_validator("nome")(validar_nome_pessoa())
     _validar_email = field_validator("email")(validar_email())
@@ -41,25 +26,10 @@ class CriarUsuarioDTO(BaseModel):
 class AlterarUsuarioDTO(BaseModel):
     """DTO para alteração de usuário pelo administrador."""
 
-    id: int = Field(
-        ...,
-        description="ID do usuário a ser alterado"
-    )
-    nome: str = Field(
-        ...,
-        description="Nome completo do usuário",
-        examples=["João da Silva"]
-    )
-    email: str = Field(
-        ...,
-        description="E-mail do usuário",
-        examples=["usuario@exemplo.com"]
-    )
-    perfil: str = Field(
-        ...,
-        description="Perfil/Role do usuário",
-        examples=["Cliente", "Vendedor", "Administrador"]
-    )
+    id: int = Field(..., description="ID do usuário a ser alterado")
+    nome: str = Field(..., description="Nome completo do usuário")
+    email: str = Field(..., description="E-mail do usuário")
+    perfil: str = Field(..., description="Perfil/Role do usuário")
 
     _validar_id = field_validator("id")(validar_id_positivo())
     _validar_nome = field_validator("nome")(validar_nome_pessoa())

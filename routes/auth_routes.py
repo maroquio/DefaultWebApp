@@ -20,6 +20,7 @@ from model.usuario_model import Usuario
 from repo import usuario_repo
 
 # Utilities
+from util.auth_decorator import criar_sessao
 from util.datetime_util import agora
 from util.email_service import servico_email
 from util.exceptions import ErroValidacaoFormulario
@@ -34,6 +35,7 @@ from util.security import (
 )
 from util.template_util import criar_templates
 from util.validation_helpers import verificar_email_disponivel
+from model.usuario_logado_model import UsuarioLogado
 
 # =============================================================================
 # Configuração do Router
@@ -138,12 +140,8 @@ async def post_login(
             )
 
         # Salvar sessão
-        request.session["usuario_logado"] = {
-            "id": usuario.id,
-            "nome": usuario.nome,
-            "email": usuario.email,
-            "perfil": usuario.perfil,
-        }
+        usuario_logado = UsuarioLogado.from_usuario(usuario)
+        criar_sessao(request, usuario_logado)
 
         logger.info(f"Usuário {usuario.email} autenticado com sucesso")
         informar_sucesso(request, f"Bem-vindo(a), {usuario.nome}!")

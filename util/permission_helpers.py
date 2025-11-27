@@ -10,12 +10,15 @@ Este módulo fornece funções para:
 - Lidar com acessos negados de forma padronizada
 """
 
-from typing import List, Any
+from typing import List, Any, TYPE_CHECKING
 from fastapi import Request
 
 from util.flash_messages import informar_erro
 from util.logger_config import logger
 from util.perfis import Perfil
+
+if TYPE_CHECKING:
+    from model.usuario_logado_model import UsuarioLogado
 
 
 def verificar_propriedade(
@@ -98,7 +101,7 @@ def verificar_propriedade(
 
 def verificar_propriedade_ou_admin(
     entity: Any,
-    usuario_logado: dict,
+    usuario_logado: 'UsuarioLogado',
     request: Request,
     mensagem_erro: str = "Você não tem permissão para acessar este recurso",
     redirect_url: str = "/",
@@ -112,7 +115,7 @@ def verificar_propriedade_ou_admin(
 
     Args:
         entity: Entidade a verificar
-        usuario_logado: Dict com dados do usuário logado (id, perfil, etc)
+        usuario_logado: Instância de UsuarioLogado
         request: Objeto Request do FastAPI
         mensagem_erro: Mensagem de erro a exibir
         redirect_url: URL para redirecionar se acesso negado
@@ -123,13 +126,13 @@ def verificar_propriedade_ou_admin(
         bool: True se usuário é proprietário OU admin, False caso contrário
     """
     # Se é admin, permitir acesso
-    if usuario_logado.get("perfil") == Perfil.ADMIN.value:
+    if usuario_logado.is_admin():
         return True
 
     # Se não é admin, verificar propriedade normal
     return verificar_propriedade(
         entity,
-        usuario_logado["id"],
+        usuario_logado.id,
         request,
         mensagem_erro,
         redirect_url,

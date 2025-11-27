@@ -27,6 +27,7 @@ from dtos.chamado_interacao_dto import CriarInteracaoDTO
 # Models
 from model.chamado_model import StatusChamado
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
+from model.usuario_logado_model import UsuarioLogado
 
 # Repositories
 from repo import chamado_repo, chamado_interacao_repo
@@ -64,11 +65,11 @@ admin_chamado_responder_limiter = DynamicRateLimiter(
 
 @router.get("/listar")
 @requer_autenticacao([Perfil.ADMIN.value])
-async def listar(request: Request, usuario_logado: Optional[dict] = None):
+async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os chamados do sistema (apenas administradores)."""
     assert usuario_logado is not None
     # Passa ID do admin para contar apenas mensagens de OUTROS usuários
-    chamados = chamado_repo.obter_todos(usuario_logado["id"])
+    chamados = chamado_repo.obter_todos(usuario_logado.id)
     return templates.TemplateResponse(
         "admin/chamados/listar.html",
         {"request": request, "chamados": chamados}
@@ -77,7 +78,7 @@ async def listar(request: Request, usuario_logado: Optional[dict] = None):
 
 @router.get("/{id}/responder")
 @requer_autenticacao([Perfil.ADMIN.value])
-async def get_responder(request: Request, id: int, usuario_logado: Optional[dict] = None):
+async def get_responder(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário para responder um chamado com histórico completo."""
     assert usuario_logado is not None
 
@@ -92,7 +93,7 @@ async def get_responder(request: Request, id: int, usuario_logado: Optional[dict
         return chamado
 
     # Marcar mensagens como lidas (apenas as de outros usuários)
-    chamado_interacao_repo.marcar_como_lidas(id, usuario_logado["id"])
+    chamado_interacao_repo.marcar_como_lidas(id, usuario_logado.id)
 
     # Obter histórico de interações
     interacoes = chamado_interacao_repo.obter_por_chamado(id)
@@ -110,7 +111,7 @@ async def post_responder(
     id: int,
     mensagem: str = Form(),
     status_chamado: str = Form(),
-    usuario_logado: Optional[dict] = None
+    usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Salva resposta do administrador ao chamado e atualiza status."""
     assert usuario_logado is not None
@@ -155,7 +156,7 @@ async def post_responder(
         interacao = ChamadoInteracao(
             id=0,
             chamado_id=id,
-            usuario_id=usuario_logado["id"],
+            usuario_id=usuario_logado.id,
             mensagem=dto_mensagem.mensagem,
             tipo=TipoInteracao.RESPOSTA_ADMIN,
             data_interacao=agora(),
@@ -173,7 +174,7 @@ async def post_responder(
 
         if sucesso:
             logger.info(
-                f"Chamado {id} respondido por admin {usuario_logado['id']}, status: {dto_status.status}"
+                f"Chamado {id} respondido por admin {usuario_logado.id}, status: {dto_status.status}"
             )
             informar_sucesso(request, "Resposta salva com sucesso!")
             return RedirectResponse("/admin/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
@@ -192,7 +193,7 @@ async def post_responder(
 
 @router.post("/{id}/fechar")
 @requer_autenticacao([Perfil.ADMIN.value])
-async def fechar(request: Request, id: int, usuario_logado: Optional[dict] = None):
+async def fechar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Fecha um chamado alterando apenas o status, sem adicionar mensagem."""
     assert usuario_logado is not None
 
@@ -213,7 +214,7 @@ async def fechar(request: Request, id: int, usuario_logado: Optional[dict] = Non
     )
 
     if sucesso:
-        logger.info(f"Chamado {id} fechado por admin {usuario_logado['id']}")
+        logger.info(f"Chamado {id} fechado por admin {usuario_logado.id}")
         informar_sucesso(request, "Chamado fechado com sucesso!")
     else:
         informar_erro(request, "Erro ao fechar chamado")
@@ -223,7 +224,7 @@ async def fechar(request: Request, id: int, usuario_logado: Optional[dict] = Non
 
 @router.post("/{id}/reabrir")
 @requer_autenticacao([Perfil.ADMIN.value])
-async def reabrir(request: Request, id: int, usuario_logado: Optional[dict] = None):
+async def reabrir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Reabre um chamado fechado, alterando status para 'Em Análise'."""
     assert usuario_logado is not None
 
@@ -249,7 +250,7 @@ async def reabrir(request: Request, id: int, usuario_logado: Optional[dict] = No
     )
 
     if sucesso:
-        logger.info(f"Chamado {id} reaberto por admin {usuario_logado['id']}")
+        logger.info(f"Chamado {id} reaberto por admin {usuario_logado.id}")
         informar_sucesso(request, "Chamado reaberto com sucesso!")
     else:
         informar_erro(request, "Erro ao reabrir chamado")
