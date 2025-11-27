@@ -13,14 +13,6 @@
  * - "A" = letra maiúscula (A-Z)
  * - "a" = letra minúscula (a-z)
  * - Qualquer outro caractere = literal (será inserido automaticamente)
- *
- * Exemplos:
- * - CPF: "000.000.000-00"
- * - CNPJ: "00.000.000/0000-00"
- * - Telefone: "(00) 00000-0000"
- * - CEP: "00000-000"
- * - Placa Mercosul: "AAA-0A00"
- * - Cartão: "0000 0000 0000 0000"
  */
 
 class MascaraInput {
@@ -276,11 +268,6 @@ class MascaraInput {
  * - Configurável: casas decimais, separadores, prefixo/sufixo
  * - Formato brasileiro (vírgula para decimal, ponto para milhares)
  * - Remove formatação no submit para enviar valor numérico
- *
- * Padrão de formatação brasileiro:
- * - Separador decimal: vírgula (,)
- * - Separador de milhares: ponto (.)
- * - Exemplo: 1.234,56
  */
 class MascaraDecimal {
     /**

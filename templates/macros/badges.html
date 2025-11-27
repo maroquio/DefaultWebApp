@@ -3,13 +3,6 @@
 
     Este arquivo contém macros para renderizar badges com cores e estilos consistentes
     em todo o sistema. Use estes macros ao invés de criar badges manualmente.
-
-    Exemplo de uso:
-    {% from 'macros/badges.html' import badge_status_chamado, badge_prioridade, badge_perfil %}
-
-    {{ badge_status_chamado(chamado.status) }}
-    {{ badge_prioridade(chamado.prioridade) }}
-    {{ badge_perfil(usuario.perfil) }}
 #}
 
 {% macro badge_status_chamado(status) %}
@@ -115,10 +108,6 @@
             texto: Texto a ser exibido no badge
             cor: Cor do Bootstrap (primary, secondary, success, danger, warning, info, light, dark)
             icon: Nome do ícone Bootstrap Icons (opcional, sem o prefixo 'bi-')
-
-        Exemplo:
-            {{ badge('Novo', 'success', 'star-fill') }}
-            {{ badge('Pendente', 'warning') }}
     #}
     <span class="badge bg-{{ cor }}">
         {% if icon %}<i class="bi bi-{{ icon }}"></i> {% endif %}{{ texto }}
@@ -135,9 +124,6 @@
             texto_false: Texto quando falso (padrão: 'Não')
             cor_true: Cor quando verdadeiro (padrão: 'success')
             cor_false: Cor quando falso (padrão: 'secondary')
-
-        Exemplo:
-            {{ badge_booleano(usuario.ativo, 'Ativo', 'Inativo') }}
     #}
     {% if valor %}
         <span class="badge bg-{{ cor_true }}">{{ texto_true }}</span>

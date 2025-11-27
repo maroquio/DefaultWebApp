@@ -27,21 +27,6 @@ class ErroValidacaoFormulario(Exception):
         dados_formulario: Dicionário com dados do formulário para reexibição
         campo_padrao: Campo a usar quando erro não tem campo específico (erros de @model_validator)
         mensagem_flash: Mensagem a exibir no toast de erro
-
-    Example:
-        >>> try:
-        ...     dto = LoginDTO(email=email, senha=senha)
-        ... except ValidationError as e:
-        ...     raise ErroValidacaoFormulario(
-        ...         validation_error=e,
-        ...         template_path="auth/login.html",
-        ...         dados_formulario={"email": email},
-        ...         campo_padrao="senha"
-        ...     )
-
-    Note:
-        Esta exceção deve ser usada APENAS em rotas que renderizam templates.
-        Para APIs JSON, continue usando ValidationError diretamente.
     """
 
     def __init__(

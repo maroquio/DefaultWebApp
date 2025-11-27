@@ -122,18 +122,6 @@ def verificar_propriedade_ou_admin(
 
     Returns:
         bool: True se usuário é proprietário OU admin, False caso contrário
-
-    Example:
-        >>> chamado = chamado_repo.obter_por_id(id)
-        >>> if not verificar_propriedade_ou_admin(
-        ...     chamado,
-        ...     usuario_logado,
-        ...     request,
-        ...     "Você não pode acessar este chamado",
-        ...     "/chamados/listar"
-        ... ):
-        ...     return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-        >>> # Usuário é dono OU admin, pode continuar
     """
     # Se é admin, permitir acesso
     if usuario_logado.get("perfil") == Perfil.ADMIN.value:
@@ -172,22 +160,6 @@ def verificar_perfil(
 
     Returns:
         bool: True se perfil permitido, False caso contrário
-
-    Example:
-        >>> # Permitir apenas Admin e Vendedor
-        >>> if not verificar_perfil(
-        ...     usuario_logado["perfil"],
-        ...     [Perfil.ADMIN.value, Perfil.VENDEDOR.value],
-        ...     request,
-        ...     "Apenas administradores e vendedores podem acessar",
-        ...     "/home"
-        ... ):
-        ...     return RedirectResponse("/home", status_code=status.HTTP_303_SEE_OTHER)
-        >>> # Perfil OK, continuar
-
-    Note:
-        Considere usar o decorator @requer_autenticacao([perfis]) ao invés desta função,
-        pois ele já faz esta verificação automaticamente.
     """
     if usuario_perfil not in perfis_permitidos:
         informar_erro(request, mensagem_erro)
@@ -224,22 +196,6 @@ def verificar_multiplas_condicoes(
 
     Returns:
         bool: True se condições satisfeitas, False caso contrário
-
-    Example:
-        >>> # Verificar se usuário é dono E status não é "Fechado"
-        >>> if not verificar_multiplas_condicoes([
-        ...     (chamado.usuario_id == usuario_logado["id"], "Não é seu chamado"),
-        ...     (chamado.status != "Fechado", "Chamado já está fechado")
-        ... ], request, redirect_url="/chamados/listar"):
-        ...     return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    Example com OR:
-        >>> # Verificar se usuário é dono OU é admin
-        >>> if not verificar_multiplas_condicoes([
-        ...     (categoria.usuario_id == usuario_logado["id"], "Não é sua categoria"),
-        ...     (usuario_logado["perfil"] == Perfil.ADMIN.value, "Não é administrador")
-        ... ], request, redirect_url="/categorias/listar", operador="OR"):
-        ...     return RedirectResponse("/categorias/listar", status_code=status.HTTP_303_SEE_OTHER)
     """
     if operador == "AND":
         # Todas as condições devem ser True
@@ -263,92 +219,3 @@ def verificar_multiplas_condicoes(
 
     else:
         raise ValueError(f"Operador inválido: {operador}. Use 'AND' ou 'OR'.")
-
-
-# Exemplo de uso completo em uma rota:
-"""
-from util.permission_helpers import verificar_propriedade, verificar_propriedade_ou_admin
-from util.repository_helpers import obter_ou_404
-from repo import chamado_repo
-
-@router.post("/chamados/excluir/{id}")
-@requer_autenticacao()
-async def post_excluir_chamado(request: Request, id: int, usuario_logado: dict):
-    # Obter chamado ou 404
-    chamado = obter_ou_404(
-        chamado_repo.obter_por_id(id),
-        request,
-        "Chamado não encontrado",
-        "/chamados/listar"
-    )
-    if isinstance(chamado, RedirectResponse):
-        return chamado
-
-    # Verificar propriedade (apenas dono pode excluir)
-    if not verificar_propriedade(
-        chamado,
-        usuario_logado["id"],
-        request,
-        "Você não pode excluir um chamado que não é seu",
-        "/chamados/listar"
-    ):
-        return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Verificar se chamado não está fechado
-    if chamado.status == "Fechado":
-        informar_erro(request, "Não é possível excluir chamados fechados")
-        return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Todas as verificações passaram, pode excluir
-    chamado_repo.excluir(id)
-    informar_sucesso(request, "Chamado excluído com sucesso")
-    return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-
-@router.get("/admin/chamados/{id}")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def get_visualizar_qualquer_chamado(request: Request, id: int, usuario_logado: dict):
-    # Admin pode ver qualquer chamado
-    chamado = obter_ou_404(
-        chamado_repo.obter_por_id(id),
-        request,
-        "Chamado não encontrado",
-        "/admin/chamados/listar"
-    )
-    if isinstance(chamado, RedirectResponse):
-        return chamado
-
-    return templates.TemplateResponse("admin/chamados/visualizar.html", {
-        "request": request,
-        "chamado": chamado
-    })
-
-
-@router.get("/chamados/editar/{id}")
-@requer_autenticacao()
-async def get_editar_chamado(request: Request, id: int, usuario_logado: dict):
-    # Obter chamado
-    chamado = obter_ou_404(
-        chamado_repo.obter_por_id(id),
-        request,
-        "Chamado não encontrado",
-        "/chamados/listar"
-    )
-    if isinstance(chamado, RedirectResponse):
-        return chamado
-
-    # Dono OU admin pode editar
-    if not verificar_propriedade_ou_admin(
-        chamado,
-        usuario_logado,
-        request,
-        "Você não pode editar este chamado",
-        "/chamados/listar"
-    ):
-        return RedirectResponse("/chamados/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    return templates.TemplateResponse("chamados/editar.html", {
-        "request": request,
-        "chamado": chamado
-    })
-"""

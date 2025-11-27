@@ -15,19 +15,6 @@ class EnumEntidade(str, Enum):
 
     Herda de str para permitir comparação direta com strings.
     Fornece métodos utilitários para validação, listagem e conversão.
-
-    Example:
-        >>> class StatusPedido(EnumEntidade):
-        ...     PENDENTE = "Pendente"
-        ...     PAGO = "Pago"
-        ...     ENVIADO = "Enviado"
-        ...
-        >>> StatusPedido.valores()
-        ['Pendente', 'Pago', 'Enviado']
-        >>> StatusPedido.existe("Pago")
-        True
-        >>> StatusPedido.from_valor("Pago")
-        <StatusPedido.PAGO: 'Pago'>
     """
 
     def __str__(self) -> str:
@@ -77,12 +64,6 @@ class EnumEntidade(str, Enum):
 
         Returns:
             Enum correspondente ou None se inválido
-
-        Examples:
-            >>> StatusPedido.from_valor("Pago")
-            <StatusPedido.PAGO: 'Pago'>
-            >>> StatusPedido.from_valor("invalido")
-            None
         """
         try:
             return cls(valor)
@@ -120,10 +101,6 @@ class EnumEntidade(str, Enum):
 
         Returns:
             Enum correspondente ou None se inválido
-
-        Example:
-            >>> StatusPedido.obter_por_nome("PAGO")
-            <StatusPedido.PAGO: 'Pago'>
         """
         try:
             return cls[nome]
@@ -137,9 +114,5 @@ class EnumEntidade(str, Enum):
 
         Returns:
             Lista de tuplas [(valor, label), ...]
-
-        Example:
-            >>> StatusPedido.para_opcoes_select()
-            [('Pendente', 'Pendente'), ('Pago', 'Pago'), ('Enviado', 'Enviado')]
         """
         return [(item.value, item.value) for item in cls]

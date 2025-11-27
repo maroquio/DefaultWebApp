@@ -29,9 +29,6 @@ def adicionar_mensagem(
         request: Request object do FastAPI
         mensagem: Texto da mensagem a ser exibida
         tipo: Tipo da mensagem (sucesso, erro, aviso, info)
-
-    Example:
-        >>> adicionar_mensagem(request, "Operação realizada!", "sucesso")
     """
     if "mensagens" not in request.session:
         request.session["mensagens"] = []
@@ -99,11 +96,6 @@ def obter_mensagens(request: Request) -> list[MensagemFlash]:
     Returns:
         Lista de dicionários com mensagens flash, cada um contendo
         'texto' (str) e 'tipo' (TipoMensagem)
-
-    Example:
-        >>> mensagens = obter_mensagens(request)
-        >>> for msg in mensagens:
-        ...     print(f"{msg['tipo']}: {msg['texto']}")
     """
     mensagens: list[MensagemFlash] = request.session.pop("mensagens", [])
     return mensagens

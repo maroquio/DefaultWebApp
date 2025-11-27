@@ -34,12 +34,6 @@ def formatar_data_br(
 
     Returns:
         String formatada no padrão brasileiro ou string vazia se inválido
-
-    Examples:
-        >>> formatar_data_br("2025-10-22")
-        "22/10/2025"
-        >>> formatar_data_br("2025-10-22 14:30:00", com_hora=True)
-        "22/10/2025 14:30:00"
     """
     if not data_str:
         return ""
@@ -176,15 +170,6 @@ def csrf_input(request: Optional[Request] = None) -> str:
 
     Returns:
         String HTML com input hidden contendo token CSRF
-
-    Example:
-        No template Jinja2:
-        ```html
-        <form method="POST">
-            {{ csrf_input(request) | safe }}
-            <!-- outros campos -->
-        </form>
-        ```
     """
     if not request:
         # Fallback se request não estiver disponível

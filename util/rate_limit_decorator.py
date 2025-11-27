@@ -36,11 +36,6 @@ def obter_identificador_cliente(request: Request) -> str:
 
     Returns:
         String com o IP do cliente
-
-    Example:
-        >>> ip = obter_identificador_cliente(request)
-        >>> print(ip)
-        '192.168.1.100'
     """
     # Verificar header X-Forwarded-For (comum em load balancers/proxies)
     forwarded_for = request.headers.get("X-Forwarded-For")
@@ -87,32 +82,6 @@ def aplicar_rate_limit(
 
     Raises:
         TypeError: Se limiter não for uma instância de RateLimiter
-
-    Example:
-        >>> @aplicar_rate_limit(
-        ...     limiter=login_limiter,
-        ...     mensagem_erro="Muitas tentativas de login",
-        ...     redirect_url="/auth/login"
-        ... )
-        ... async def post_login(request: Request, ...):
-        ...     pass
-
-    Example com log_detalhes:
-        >>> def log_func(ip):
-        ...     return f"Usuário {usuario_id} - IP {ip}"
-        >>>
-        >>> @aplicar_rate_limit(
-        ...     limiter=limiter,
-        ...     redirect_url="/home",
-        ...     log_detalhes=log_func
-        ... )
-        ... async def minha_rota(request: Request, ...):
-        ...     pass
-
-    Note:
-        - O decorator deve ser aplicado ANTES de @requer_autenticacao()
-        - Para rotas que retornam JSON, deixe redirect_url=None
-        - O limiter deve ser criado uma vez (nível de módulo) e reutilizado
     """
     # Validação do parâmetro
     if not isinstance(limiter, RateLimiter):
@@ -189,15 +158,6 @@ def aplicar_rate_limit_async(
 
     Returns:
         Decorator function que retorna JSONResponse
-
-    Example:
-        >>> @router.post("/api/tasks")
-        >>> @aplicar_rate_limit_async(
-        ...     limiter=api_limiter,
-        ...     mensagem_erro="API rate limit exceeded"
-        ... )
-        >>> async def create_task(request: Request, ...):
-        ...     pass
     """
     return aplicar_rate_limit(
         limiter=limiter,

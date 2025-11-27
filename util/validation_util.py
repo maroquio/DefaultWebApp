@@ -26,19 +26,6 @@ def processar_erros_validacao(
 
     Returns:
         Dicionário mapeando nome do campo para mensagem de erro.
-        Exemplo: {"email": "E-mail inválido", "senha": "Senha muito fraca"}
-
-    Example:
-        >>> try:
-        ...     dto = CadastroDTO(email="invalido", senha="123", confirmar_senha="456")
-        ... except ValidationError as e:
-        ...     erros = processar_erros_validacao(e, campo_padrao="confirmar_senha")
-        ...     # erros = {"email": "E-mail inválido", "confirmar_senha": "As senhas não coincidem"}
-
-    Note:
-        - Erros de @field_validator têm loc não-vazia: erro["loc"] = ("campo",)
-        - Erros de @model_validator têm loc vazia: erro["loc"] = ()
-        - Remove prefixo "Value error, " das mensagens para melhor legibilidade
     """
     erros = {}
     for erro in e.errors():

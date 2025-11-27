@@ -13,19 +13,6 @@ Parâmetros:
   - minutos_recomendados: Valor recomendado para minutos (opcional)
   - descricao: Descrição adicional (opcional)
   - erros: Dict com erros de validação (opcional)
-
-Exemplo de uso:
-  {% from 'components/rate_limit_field.html' import rate_limit_field %}
-  {{ rate_limit_field(
-      prefixo='rate_limit_login',
-      label='Login',
-      max_atual=5,
-      minutos_atuais=5,
-      max_recomendado=5,
-      minutos_recomendados=5,
-      descricao='Limite de tentativas de login por IP',
-      erros=erros
-  ) }}
 #}
 
 {% macro rate_limit_field(prefixo, label, max_atual, minutos_atuais, max_recomendado=None, minutos_recomendados=None, descricao=None, erros={}) %}

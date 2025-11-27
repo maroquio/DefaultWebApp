@@ -3,17 +3,6 @@ Macros Reutilizáveis de Botões de Ação
 
 Este arquivo contém macros para renderizar botões de ação (view, edit, delete, etc.)
 com estilos e acessibilidade consistentes.
-
-Exemplo de uso:
-{% from 'macros/action_buttons.html' import btn_icon, btn_group_crud %}
-
-{{ btn_group_crud(
-usuario.id,
-'usuário ' ~ usuario.nome,
-'/admin/usuarios',
-"excluirUsuario(%d, '%s', '%s', '%s')" | format(usuario.id, usuario.nome|replace("'", "\\'"), usuario.email,
-usuario.perfil)
-) }}
 #}
 
 {% macro btn_icon(url, icon, variant='primary', title='', aria_label='', size='sm', onclick='', extra_classes='') %}
@@ -73,28 +62,6 @@ Link (<a>) se onclick vazio, Button (<button>) se onclick presente
         show_delete: Mostrar botão de exclusão (padrão: true)
         extra_buttons: HTML adicional de botões entre edit e delete
         size: Tamanho dos botões ('sm', 'md', 'lg')
-
-        Exemplo:
-        {{ btn_group_crud(
-        usuario.id,
-        'usuário ' ~ usuario.nome,
-        '/admin/usuarios',
-        "excluirUsuario(%d, '%s', '%s', '%s')" | format(
-        usuario.id,
-        usuario.nome|replace("'", "\\'"),
-        usuario.email,
-        usuario.perfil
-        )
-        ) }}
-
-        Com botão extra:
-        {{ btn_group_crud(
-        chamado.id,
-        'chamado #' ~ chamado.id,
-        '/chamados',
-        "excluirChamado(%d)" | format(chamado.id),
-        extra_buttons=btn_icon('/chamados/' ~ chamado.id ~ '/mensagens', 'chat', 'info', 'Mensagens')
-        ) }}
         #}
         <div class="btn-group btn-group-{{ size }}" role="group">
             {% if show_view %}
@@ -146,9 +113,6 @@ Link (<a>) se onclick vazio, Button (<button>) se onclick presente
         size: Tamanho do botão ('sm', 'md', 'lg')
         onclick: JavaScript a executar ao clicar (cria button ao invés de link)
         extra_classes: Classes CSS adicionais
-
-        Exemplo:
-        {{ btn_text('/categorias/cadastrar', 'Nova Tarefa', 'plus-circle', 'success') }}
         #}
         {% if onclick %}
         <button type="button"
@@ -173,10 +137,6 @@ Link (<a>) se onclick vazio, Button (<button>) se onclick presente
         texto: Texto do botão (padrão: 'Voltar')
         variant: Variante do Bootstrap (padrão: 'secondary')
         size: Tamanho do botão ('sm', 'md', 'lg')
-
-        Exemplo:
-        {{ btn_voltar('/categorias/listar') }}
-        {{ btn_voltar('/admin/usuarios/listar', 'Cancelar') }}
         #}
         {{ btn_text(url, texto, 'arrow-left', variant, size) }}
         {% endmacro %}

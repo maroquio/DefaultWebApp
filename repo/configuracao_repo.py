@@ -56,13 +56,6 @@ def obter_por_categoria() -> dict[str, list[Configuracao]]:
 
     Returns:
         Dicionário {categoria: [configuracoes]}
-
-    Example:
-        {
-            "Aplicação": [config1, config2],
-            "Segurança - Autenticação": [config3, config4],
-            "Chat": [config5]
-        }
     """
     import re
 
@@ -100,10 +93,6 @@ def obter_multiplas(chaves: list[str]) -> dict[str, Optional[Configuracao]]:
 
     Returns:
         Dicionário {chave: Configuracao ou None}
-
-    Example:
-        >>> obter_multiplas(["app_name", "theme", "inexistente"])
-        {"app_name": Configuracao(...), "theme": Configuracao(...), "inexistente": None}
     """
     resultado = {}
     for chave in chaves:
@@ -139,20 +128,6 @@ def atualizar_multiplas(configs: dict[str, str]) -> tuple[int, list[str]]:
 
     Returns:
         Tupla (quantidade_atualizada, chaves_nao_encontradas)
-        - quantidade_atualizada: Número de configurações atualizadas com sucesso
-        - chaves_nao_encontradas: Lista de chaves que não existem no banco
-
-    Examples:
-        >>> atualizar_multiplas({
-        ...     "app_name": "Meu Sistema",
-        ...     "rate_limit_login_max": "10",
-        ...     "chave_inexistente": "valor"
-        ... })
-        (2, ["chave_inexistente"])
-
-    Note:
-        A operação é atômica: ou todas as configurações válidas são atualizadas,
-        ou nenhuma é (em caso de erro de banco de dados).
     """
     if not configs:
         return (0, [])
@@ -199,15 +174,6 @@ def inserir_ou_atualizar(chave: str, valor: str, descricao: str = "") -> bool:
 
     Returns:
         True se operação foi bem-sucedida, False caso contrário
-
-    Examples:
-        >>> # Primeira vez - insere
-        >>> inserir_ou_atualizar("theme", "darkly", "Tema visual")
-        True
-
-        >>> # Segunda vez - atualiza
-        >>> inserir_ou_atualizar("theme", "flatly", "Tema visual")
-        True
     """
     try:
         # Verificar se configuração já existe

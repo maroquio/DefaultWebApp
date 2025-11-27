@@ -2,12 +2,6 @@
  * Cortador de Imagem
  *
  * Sistema reutilizavel de crop de imagens usando Cropper.js
- *
- * Uso:
- * 1. Incluir Cropper.js no template: <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
- * 2. Incluir script: <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
- * 3. Incluir este arquivo: <script src="/static/js/cortador-imagem.js"></script>
- * 4. Configurar window.config_{modalId} com modalId, aspectRatio e maxFileSizeMB
  */
 
 // Armazenar instancias do Cropper para cada modal

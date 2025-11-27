@@ -7,42 +7,6 @@ rotas contra abuso, brute force e DDoS.
 Oferece duas classes:
     - RateLimiter: Rate limiter estático (valores fixos na inicialização)
     - DynamicRateLimiter: Rate limiter dinâmico (lê valores do config_cache)
-
-Uso do RateLimiter (estático):
-    from util.rate_limiter import RateLimiter
-
-    # Criar instância global
-    login_limiter = RateLimiter(max_tentativas=5, janela_minutos=5)
-
-    # Em rota FastAPI
-    @router.post("/login")
-    async def post_login(request: Request, ...):
-        ip = request.client.host if request.client else "unknown"
-
-        if not login_limiter.verificar(ip):
-            raise HTTPException(status_code=429, detail="Muitas tentativas")
-
-Uso do DynamicRateLimiter (recomendado):
-    from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
-
-    # Criar instância global (lê valores do banco de dados)
-    login_limiter = DynamicRateLimiter(
-        chave_max="rate_limit_login_max",
-        chave_minutos="rate_limit_login_minutos",
-        padrao_max=5,
-        padrao_minutos=5,
-        nome="login"
-    )
-
-    # Em rota FastAPI (igual ao uso estático)
-    @router.post("/login")
-    async def post_login(request: Request, ...):
-        ip = obter_identificador_cliente(request)
-
-        if not login_limiter.verificar(ip):
-            raise HTTPException(status_code=429, detail="Muitas tentativas")
-
-    # Mudanças nas configurações no banco são aplicadas automaticamente!
 """
 
 from collections import defaultdict
@@ -363,13 +327,6 @@ class RegistroLimiters:
     - Listar todos os limiters registrados
     - Obter estatísticas globais
     - Limpar todos os limiters de uma vez (útil para testes)
-
-    Example:
-        >>> from util.rate_limiter import registro_limiters
-        >>> registro_limiters.listar()
-        ['login', 'cadastro', 'esqueci_senha']
-        >>> registro_limiters.obter_estatisticas()
-        {'total_limiters': 3, 'limiters': {...}}
     """
 
     def __init__(self):
@@ -467,29 +424,6 @@ def com_rate_limit(
 
     Returns:
         Decorator function
-
-    Example:
-        >>> from util.rate_limiter import DynamicRateLimiter, com_rate_limit
-        >>>
-        >>> meu_limiter = DynamicRateLimiter(
-        ...     chave_max="rate_limit_minha_rota_max",
-        ...     chave_minutos="rate_limit_minha_rota_minutos",
-        ...     padrao_max=10,
-        ...     padrao_minutos=1,
-        ...     nome="minha_rota"
-        ... )
-        >>>
-        >>> @router.post("/minha-rota")
-        >>> @com_rate_limit(meu_limiter)
-        >>> async def post_minha_rota(request: Request, ...):
-        ...     # A verificação de rate limit é feita automaticamente
-        ...     pass
-
-    Note:
-        - O decorator deve vir APÓS o decorator de rota (@router.get/post/etc)
-        - A função decorada DEVE ter 'request: Request' como parâmetro
-        - Para rotas que renderizam templates com erro customizado,
-          use a verificação manual no handler
     """
     from functools import wraps
     from fastapi import HTTPException

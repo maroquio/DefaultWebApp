@@ -3,18 +3,6 @@ Macros Reutilizáveis de Estados Vazios
 
 Este arquivo contém macros para renderizar mensagens de estado vazio (empty states)
 quando não há dados para exibir em listagens ou seções.
-
-Exemplo de uso:
-{% from 'macros/empty_states.html' import empty_state %}
-
-{% if not categorias %}
-{{ empty_state(
-'Nenhuma categoria cadastrada',
-'Você ainda não possui categorias cadastradas. Clique no botão abaixo para começar!',
-action_url='/categorias/cadastrar',
-action_text='Cadastrar Primeira Tarefa'
-) }}
-{% endif %}
 #}
 
 {% macro empty_state(
@@ -43,21 +31,6 @@ Variantes comuns:
 - warning: Atenção necessária
 - success: Estado positivo
 - danger: Estado crítico
-
-Exemplo básico:
-{{ empty_state(
-'Nenhum resultado encontrado',
-'Não encontramos itens que correspondem aos seus critérios de busca.'
-) }}
-
-Exemplo com ação:
-{{ empty_state(
-'Nenhuma categoria cadastrada',
-'Comece criando sua primeira categoria!',
-action_url='/categorias/cadastrar',
-action_text='Nova Tarefa',
-icon='clipboard-x'
-) }}
 #}
 <div class="alert alert-{{ variant }}" role="alert">
     <h4 class="alert-heading">
@@ -80,9 +53,6 @@ Estado vazio específico para resultados de busca
 Args:
 search_term: Termo pesquisado (opcional)
 back_url: URL para voltar/limpar busca (opcional)
-
-Exemplo:
-{{ empty_search_result('Python', '/categorias/listar') }}
 #}
 <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">
@@ -121,9 +91,6 @@ Estado vazio para listagens filtradas sem resultados
 Args:
 filter_description: Descrição dos filtros aplicados (opcional)
 clear_url: URL para limpar filtros (opcional)
-
-Exemplo:
-{{ empty_filtered_result('Status: Aberto', '/chamados/listar') }}
 #}
 <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">
@@ -152,9 +119,6 @@ Estado vazio para acesso negado
 Args:
 message: Mensagem personalizada (opcional)
 back_url: URL para voltar (opcional)
-
-Exemplo:
-{{ empty_permission_denied('Você não tem permissão para visualizar estes dados.', '/home') }}
 #}
 <div class="alert alert-danger" role="alert">
     <h4 class="alert-heading">

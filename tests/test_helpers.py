@@ -18,10 +18,6 @@ def assert_permission_denied(response, expected_redirect: str = "/login"):
     Args:
         response: Response object do TestClient
         expected_redirect: URL base esperada de redirecionamento (padrão: /login)
-
-    Example:
-        >>> response = client.get("/admin/usuarios")
-        >>> assert_permission_denied(response)
     """
     assert response.status_code == status.HTTP_303_SEE_OTHER
     # Verificar se começa com a URL esperada (permite query strings)
@@ -38,10 +34,6 @@ def assert_redirects_to(response, expected_url: str, expected_status: int = stat
         response: Response object do TestClient
         expected_url: URL esperada de redirecionamento
         expected_status: Status code esperado (padrão: 303)
-
-    Example:
-        >>> response = client.post("/login", data={...})
-        >>> assert_redirects_to(response, "/usuario")
     """
     assert response.status_code == expected_status
     assert response.headers.get("location") == expected_url
@@ -55,10 +47,6 @@ def assert_contains_text(response, text: str, case_sensitive: bool = False):
         response: Response object do TestClient
         text: Texto esperado no conteúdo
         case_sensitive: Se deve ser case-sensitive (padrão: False)
-
-    Example:
-        >>> response = client.get("/")
-        >>> assert_contains_text(response, "bem-vindo")
     """
     content = response.text
     if not case_sensitive:

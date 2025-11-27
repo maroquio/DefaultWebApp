@@ -9,15 +9,6 @@ Parâmetros esperados:
 - max_file_size_mb: Tamanho máximo do arquivo em MB (default: 5)
 - accepted_formats: Formatos aceitos (default: ".jpg,.jpeg,.png,.gif,.webp")
 - show_upload_section: Se deve mostrar seção de upload dentro do modal (default: true)
-
-Exemplo de uso:
-- Defina as variáveis antes do include:
-set modal_id = "modalFotoPerfil"
-set modal_title = "Alterar Foto de Perfil"
-set form_action = "/perfil/atualizar-foto"
-set aspect_ratio = 1.0
-set show_upload_section = false # Para usar input externo
-- Depois faça: include 'components/modal_corte_imagem.html'
 #}
 
 {% set aspect_ratio = aspect_ratio if aspect_ratio is defined else 1.0 %}

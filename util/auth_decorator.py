@@ -23,14 +23,10 @@ def esta_logado(request: Request) -> bool:
 
 def requer_autenticacao(perfis_permitidos: Optional[List[str]] = None):
     """
-    Decorator para exigir autenticação e autorização
+    Decorator para exigir autenticação e autorização.
 
     Args:
         perfis_permitidos: Lista de perfis que podem acessar (None = qualquer logado)
-
-    Exemplo:
-        @requer_autenticacao([Perfil.ADMIN.value])
-        @requer_autenticacao()  # qualquer usuário logado
     """
     def decorator(func):
         @wraps(func)

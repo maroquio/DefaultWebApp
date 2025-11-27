@@ -1,12 +1,6 @@
 /**
  * Sistema de Modal de Alerta Bootstrap
  * Substitui alert() nativo por modais Bootstrap bonitos e acessíveis
- *
- * Uso:
- * exibirModalAlerta('Mensagem', 'danger', 'Título', 'Detalhes opcionais');
- *
- * @author DefaultWebApp
- * @version 1.0.0
  */
 
 /**
@@ -16,16 +10,6 @@
  * @param {string} tipo - Tipo do alerta: 'danger', 'warning', 'info', 'success' (padrão: 'info')
  * @param {string|null} titulo - Título do modal (se null, usa título padrão baseado no tipo)
  * @param {string|null} detalhes - Texto ou HTML adicional para detalhes (opcional)
- *
- * @example
- * // Erro
- * exibirModalAlerta('Arquivo muito grande!', 'danger', 'Erro de Upload');
- *
- * // Aviso
- * exibirModalAlerta('Tem certeza que deseja sair?', 'warning', 'Atenção');
- *
- * // Info
- * exibirModalAlerta('Operação concluída com sucesso!', 'success');
  */
 function exibirModalAlerta(mensagem, tipo = 'info', titulo = null, detalhes = null) {
     // Validar tipo

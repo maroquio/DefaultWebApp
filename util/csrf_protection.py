@@ -1,15 +1,8 @@
 """
-Middleware de proteção CSRF para FastAPI
+Middleware de proteção CSRF para FastAPI.
 
 Implementa validação de tokens CSRF baseada em sessões para proteger
 contra ataques Cross-Site Request Forgery.
-
-Uso:
-    1. Adicionar middleware em main.py
-    2. Incluir {{ csrf_input() }} em todos formulários
-    3. Rotas POST/PUT/PATCH/DELETE são protegidas automaticamente
-
-Autor: DefaultWebApp
 """
 import secrets
 from typing import Callable, Optional

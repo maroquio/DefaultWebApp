@@ -203,17 +203,6 @@ async def form_validation_exception_handler(request: Request, exc: ErroValidacao
 
     Returns:
         TemplateResponse renderizando o formulário com erros
-
-    Example:
-        Em uma rota, ao invés de:
-        >>> except ValidationError as e:
-        ...     erros = processar_erros_validacao(e, "senha")
-        ...     informar_erro(request, "Há campos com erros")
-        ...     return templates.TemplateResponse(...)
-
-        Simplesmente faça:
-        >>> except ValidationError as e:
-        ...     raise ErroValidacaoFormulario(e, "auth/login.html", dados, "senha")
     """
     # Processar erros de validação
     erros = processar_erros_validacao(

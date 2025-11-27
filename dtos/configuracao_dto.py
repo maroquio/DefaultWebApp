@@ -225,14 +225,6 @@ class SalvarConfiguracaoLoteDTO(BaseModel):
 
     Recebe um dicionário de {chave: valor} e valida cada par
     de acordo com regras específicas baseadas na chave.
-
-    Example:
-        {
-            "rate_limit_login_max": "5",
-            "rate_limit_login_minutos": "5",
-            "app_name": "Meu Sistema",
-            "toast_auto_hide_delay_ms": "5000"
-        }
     """
     configs: dict[str, str] = Field(..., description="Dicionário de configurações")
 
