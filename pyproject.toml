@@ -8,3 +8,17 @@ dependencies = []
 
 [tool.pyright]
 reportArgumentType = false
+reportAssignmentType = false
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+    "N805",    # primeiro argumento deve ser self (validators usam cls)
+    "ANN401",  # uso de Any em type hints
+]
+
+[tool.flake8]
+max-line-length = 120
+ignore = ["N805", "ANN401"]
