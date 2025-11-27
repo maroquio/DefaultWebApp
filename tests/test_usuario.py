@@ -2,7 +2,6 @@
 Testes de rotas do usuário
 Testa acesso ao dashboard do usuário autenticado
 """
-import pytest
 from fastapi import status
 
 

@@ -176,4 +176,3 @@ def executar_operacao_repo(
 
         # Redirecionar
         return RedirectResponse(redirect_url, status_code=status.HTTP_303_SEE_OTHER)
-

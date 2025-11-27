@@ -4,13 +4,12 @@ Rotas administrativas para gerenciamento de backups do banco de dados.
 Permite ao administrador criar, listar, restaurar e excluir backups do banco SQLite.
 """
 from typing import Optional
-from pathlib import Path
 from fastapi import APIRouter, Request, status
 from fastapi.responses import RedirectResponse, FileResponse
 
 from util.auth_decorator import requer_autenticacao
 from util.template_util import criar_templates
-from util.flash_messages import informar_sucesso, informar_erro, informar_aviso
+from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
 from util.perfis import Perfil
 from util import backup_util

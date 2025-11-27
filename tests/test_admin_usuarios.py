@@ -2,7 +2,6 @@
 Testes de administração de usuários
 Testa CRUD completo de usuários por administradores
 """
-import pytest
 from fastapi import status
 from util.perfis import Perfil
 from tests.test_helpers import assert_redirects_to, assert_permission_denied, assert_contains_text

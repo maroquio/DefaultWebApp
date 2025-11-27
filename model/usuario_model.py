@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-from util.perfis import Perfil
+
 
 @dataclass
 class Usuario:

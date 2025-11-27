@@ -3,7 +3,6 @@ Model para representar uma sala de chat entre dois usuários.
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass

@@ -161,6 +161,7 @@ def foto_usuario(id: int) -> str:
     """
     return f"/static/img/usuarios/{id:06d}.jpg"
 
+
 def csrf_input(request: Optional[Request] = None) -> str:
     """
     Gera input HTML hidden com token CSRF.

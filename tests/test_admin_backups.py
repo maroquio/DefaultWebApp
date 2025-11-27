@@ -2,9 +2,7 @@
 Testes de gerenciamento de backups
 Testa criação, listagem, restauração, exclusão e download de backups
 """
-import pytest
 from fastapi import status
-from pathlib import Path
 
 
 class TestListarBackups:

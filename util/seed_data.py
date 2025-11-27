@@ -4,6 +4,7 @@ from util.security import criar_hash_senha
 from util.logger_config import logger
 from util.perfis import Perfil
 
+
 def carregar_usuarios_seed():
     """
     Carrega usuários padrão gerando automaticamente 1 usuário para cada perfil do enum.
@@ -61,6 +62,7 @@ def carregar_usuarios_seed():
 
     # Resumo
     logger.info(f"Resumo do seed de usuários: {usuarios_criados} criados, {usuarios_com_erro} com erro")
+
 
 def inicializar_dados():
     """Inicializa todos os dados seed"""

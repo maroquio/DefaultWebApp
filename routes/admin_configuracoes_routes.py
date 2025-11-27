@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
 # DTOs
-from dtos.configuracao_dto import EditarConfiguracaoDTO, SalvarConfiguracaoLoteDTO
+from dtos.configuracao_dto import SalvarConfiguracaoLoteDTO
 
 # Repositories
 from repo import configuracao_repo
@@ -22,7 +22,6 @@ from repo import configuracao_repo
 from util.auth_decorator import requer_autenticacao
 from util.config_cache import config
 from util.datetime_util import agora
-from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro, informar_aviso
 from util.logger_config import logger
 from util.perfis import Perfil
@@ -223,6 +222,7 @@ async def get_tema(request: Request, usuario_logado: Optional[dict] = None):
         }
     )
 
+
 @router.post("/tema/aplicar")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_aplicar_tema(
@@ -314,7 +314,8 @@ def _ler_log_arquivo(data: str, nivel: str) -> tuple[str, int, Optional[str]]:
         tamanho_mb = arquivo_log.stat().st_size / (1024 * 1024)
         if tamanho_mb > 10:
             logger.warning(f"Arquivo de log muito grande ({tamanho_mb:.2f} MB): {arquivo_log}")
-            return "", 0, f"Arquivo de log muito grande ({tamanho_mb:.2f} MB). Considere usar ferramentas externas para análise."
+            msg = f"Arquivo de log muito grande ({tamanho_mb:.2f} MB). Use ferramentas externas."
+            return "", 0, msg
 
         # Ler arquivo
         with open(arquivo_log, 'r', encoding='utf-8') as f:

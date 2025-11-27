@@ -3,6 +3,7 @@ import resend
 from typing import Optional
 from util.logger_config import logger
 
+
 class ServicoEmail:
     def __init__(self):
         self.api_key = os.getenv('RESEND_API_KEY')
@@ -85,6 +86,7 @@ class ServicoEmail:
             assunto="Bem-vindo ao Sistema",
             html=html
         )
+
 
 # Instância global
 servico_email = ServicoEmail()

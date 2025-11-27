@@ -50,11 +50,13 @@ admin_usuarios_limiter = DynamicRateLimiter(
     nome="admin_usuarios",
 )
 
+
 @router.get("/")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def index(request: Request, usuario_logado: Optional[dict] = None):
     """Redireciona para lista de usuários"""
     return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
 
 @router.get("/listar")
 @requer_autenticacao([Perfil.ADMIN.value])
@@ -66,6 +68,7 @@ async def listar(request: Request, usuario_logado: Optional[dict] = None):
         {"request": request, "usuarios": usuarios}
     )
 
+
 @router.get("/cadastrar")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_cadastrar(request: Request, usuario_logado: Optional[dict] = None):
@@ -75,6 +78,7 @@ async def get_cadastrar(request: Request, usuario_logado: Optional[dict] = None)
         "admin/usuarios/cadastro.html",
         {"request": request, "perfis": perfis}
     )
+
 
 @router.post("/cadastrar")
 @requer_autenticacao([Perfil.ADMIN.value])
@@ -149,6 +153,7 @@ async def post_cadastrar(
             campo_padrao="senha",
         )
 
+
 @router.get("/editar/{id}")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_editar(request: Request, id: int, usuario_logado: Optional[dict] = None):
@@ -177,6 +182,7 @@ async def get_editar(request: Request, id: int, usuario_logado: Optional[dict] =
             "perfis": perfis
         }
     )
+
 
 @router.post("/editar/{id}")
 @requer_autenticacao([Perfil.ADMIN.value])
@@ -259,6 +265,7 @@ async def post_editar(
             dados_formulario=dados_formulario,
             campo_padrao="email",
         )
+
 
 @router.post("/excluir/{id}")
 @requer_autenticacao([Perfil.ADMIN.value])

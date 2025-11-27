@@ -35,6 +35,7 @@ def criar_tabela() -> bool:
         cursor.execute(CRIAR_TABELA)
         return True
 
+
 def inserir(usuario: Usuario) -> Optional[int]:
     with obter_conexao() as conn:
         cursor = conn.cursor()
@@ -52,6 +53,7 @@ def inserir(usuario: Usuario) -> Optional[int]:
 
         return usuario_id
 
+
 def alterar(usuario: Usuario) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
@@ -63,17 +65,20 @@ def alterar(usuario: Usuario) -> bool:
         ))
         return cursor.rowcount > 0
 
+
 def atualizar_senha(id: int, senha: str) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ALTERAR_SENHA, (senha, id))
         return cursor.rowcount > 0
 
+
 def excluir(id: int) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR, (id,))
         return cursor.rowcount > 0
+
 
 def obter_por_id(id: int) -> Optional[Usuario]:
     with obter_conexao() as conn:
@@ -84,6 +89,7 @@ def obter_por_id(id: int) -> Optional[Usuario]:
             return _row_to_usuario(row)
         return None
 
+
 def obter_todos() -> list[Usuario]:
     with obter_conexao() as conn:
         cursor = conn.cursor()
@@ -91,12 +97,14 @@ def obter_todos() -> list[Usuario]:
         rows = cursor.fetchall()
         return [_row_to_usuario(row) for row in rows]
 
+
 def obter_quantidade() -> int:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_QUANTIDADE)
         row = cursor.fetchone()
         return row["quantidade"] if row else 0
+
 
 def obter_por_email(email: str) -> Optional[Usuario]:
     with obter_conexao() as conn:
@@ -107,11 +115,13 @@ def obter_por_email(email: str) -> Optional[Usuario]:
             return _row_to_usuario(row)
         return None
 
+
 def atualizar_token(email: str, token: str, data_expiracao: datetime) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ATUALIZAR_TOKEN, (token, data_expiracao, email))
         return cursor.rowcount > 0
+
 
 def obter_por_token(token: str) -> Optional[Usuario]:
     with obter_conexao() as conn:
@@ -122,11 +132,13 @@ def obter_por_token(token: str) -> Optional[Usuario]:
             return _row_to_usuario(row)
         return None
 
+
 def limpar_token(id: int) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(LIMPAR_TOKEN, (id,))
         return cursor.rowcount > 0
+
 
 def obter_todos_por_perfil(perfil: str) -> list[Usuario]:
     with obter_conexao() as conn:
@@ -134,6 +146,7 @@ def obter_todos_por_perfil(perfil: str) -> list[Usuario]:
         cursor.execute(OBTER_TODOS_POR_PERFIL, (perfil,))
         rows = cursor.fetchall()
         return [_row_to_usuario(row) for row in rows]
+
 
 def buscar_por_termo(termo: str, limit: int = 10) -> list[Usuario]:
     """

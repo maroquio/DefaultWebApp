@@ -25,7 +25,6 @@ from util.email_service import servico_email
 from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
-from util.perfis import Perfil
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.security import (
     criar_hash_senha,
@@ -344,7 +343,7 @@ async def get_redefinir_senha(request: Request, token: str):
             return RedirectResponse(
                 "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER
             )
-    except:
+    except Exception:
         informar_erro(request, "Token inválido")
         return RedirectResponse("/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -386,7 +385,7 @@ async def post_redefinir_senha(
                 return RedirectResponse(
                     "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER
                 )
-        except:
+        except Exception:
             informar_erro(request, "Token inválido")
             return RedirectResponse(
                 "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER

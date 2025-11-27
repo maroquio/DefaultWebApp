@@ -20,7 +20,7 @@ def criar_indices() -> None:
             for indice_sql in indices_sql.TODOS_INDICES:
                 try:
                     cursor.execute(indice_sql)
-                    logger.debug(f"Índice criado com sucesso")
+                    logger.debug("Índice criado com sucesso")
                 except Exception as e:
                     logger.warning(f"Erro ao criar índice (pode já existir): {e}")
 

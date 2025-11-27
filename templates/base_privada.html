@@ -14,8 +14,10 @@
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
 
-    <!-- Widget de Chat CSS -->
+    <!-- Chat Widget CSS (apenas para usuários logados) -->
+    {% if request.session.get('usuario_logado') %}
     <link rel="stylesheet" href="/static/css/widget-chat.css">
+    {% endif %}
 
     {% block head %}{% endblock %}
 </head>
@@ -101,8 +103,10 @@
     <!-- Modal de Alerta (componente genérico) -->
     {% include 'components/modal_alerta.html' %}
 
-    <!-- Chat Widget -->
+    <!-- Chat Widget (apenas para usuários logados) -->
+    {% if request.session.get('usuario_logado') %}
     {% include 'components/chat_widget.html' %}
+    {% endif %}
 
     <!-- Footer -->
     <footer class="bg-light text-center text-muted py-3 mt-auto">
@@ -143,13 +147,12 @@
     <!-- Script de Auxiliares de Exclusão -->
     <script src="/static/js/auxiliares-exclusao.js"></script>
 
-    <!-- Chat Widget JS -->
+    <!-- Chat Widget JS (apenas para usuários logados) -->
+    {% if request.session.get('usuario_logado') %}
     <script src="/static/js/widget-chat.js" defer></script>
     <script>
         // Guardar ID do usuário logado no body para o chat
-        {% if request.session.get('usuario_logado') %}
         document.body.dataset.usuarioId = {{ request.session.get('usuario_logado')['id'] }};
-        {% endif %}
 
         // Inicializar chat quando DOM estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
@@ -158,6 +161,7 @@
             }
         });
     </script>
+    {% endif %}
 
     {% block scripts %}{% endblock %}
 </body>

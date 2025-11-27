@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from util.template_util import criar_templates
-from util.flash_messages import informar_erro, informar_aviso
+from util.flash_messages import informar_erro
 from util.logger_config import logger
 from util.config import IS_DEVELOPMENT
 from util.validation_util import processar_erros_validacao

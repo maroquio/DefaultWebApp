@@ -2,7 +2,6 @@
 Testes de rotas públicas
 Testa páginas acessíveis sem autenticação (landing page, sobre, etc.)
 """
-import pytest
 from fastapi import status
 
 

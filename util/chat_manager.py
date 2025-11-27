@@ -36,7 +36,10 @@ class GerenciadorChat:
         self._connections[usuario_id] = queue
         self._active_connections.add(usuario_id)
 
-        logger.info(f"[GerenciadorChat] Usuário {usuario_id} conectado. Total conexões: {len(self._active_connections)}")
+        logger.info(
+            f"[GerenciadorChat] Usuário {usuario_id} conectado. "
+            f"Total conexões: {len(self._active_connections)}"
+        )
 
         return queue
 
@@ -53,7 +56,10 @@ class GerenciadorChat:
         if usuario_id in self._active_connections:
             self._active_connections.remove(usuario_id)
 
-        logger.info(f"[GerenciadorChat] Usuário {usuario_id} desconectado. Total conexões: {len(self._active_connections)}")
+        logger.info(
+            f"[GerenciadorChat] Usuário {usuario_id} desconectado. "
+            f"Total conexões: {len(self._active_connections)}"
+        )
 
     async def broadcast_para_sala(self, sala_id: str, mensagem_dict: dict):
         """

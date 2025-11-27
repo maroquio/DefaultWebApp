@@ -2,7 +2,6 @@
 Testes de configurações administrativas
 Testa seleção de temas visuais e sistema de auditoria de logs
 """
-import pytest
 from fastapi import status
 from pathlib import Path
 from util.datetime_util import agora
@@ -164,7 +163,6 @@ class TestAuditoria:
 
     def test_filtrar_logs_registra_acao(self, admin_autenticado):
         """Filtrar logs deve registrar a própria ação de auditoria"""
-        from util.logger_config import logger
         data_hoje = agora().strftime('%Y-%m-%d')
 
         # Fazer auditoria
@@ -172,10 +170,6 @@ class TestAuditoria:
             "data": data_hoje,
             "nivel": "INFO"
         })
-
-        # Verificar que log foi criado (indiretamente - arquivo existe)
-        data_formatada = data_hoje.replace('-', '.')
-        log_file = Path(f"logs/app.{data_formatada}.log")
 
         # Como estamos em teste, log pode ou não existir
         # Apenas verificar que não houve erro

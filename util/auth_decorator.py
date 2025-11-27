@@ -5,21 +5,26 @@ from typing import List, Optional
 from util.logger_config import logger
 from util.flash_messages import informar_erro
 
+
 def criar_sessao(request: Request, usuario: dict):
     """Cria sessão de usuário"""
     request.session["usuario_logado"] = usuario
+
 
 def destruir_sessao(request: Request):
     """Destroi sessão de usuário"""
     request.session.clear()
 
+
 def obter_usuario_logado(request: Request) -> Optional[dict]:
     """Obtém usuário logado da sessão"""
     return request.session.get("usuario_logado")
 
+
 def esta_logado(request: Request) -> bool:
     """Verifica se usuário está logado"""
     return "usuario_logado" in request.session
+
 
 def requer_autenticacao(perfis_permitidos: Optional[List[str]] = None):
     """

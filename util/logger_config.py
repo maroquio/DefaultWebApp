@@ -21,7 +21,10 @@ class DailyRotatingFileHandler(TimedRotatingFileHandler):
     Cria logs no formato: app.YYYY.MM.DD.log
     """
 
-    def __init__(self, log_dir: str = 'logs', when: str = 'midnight', interval: int = 1, backupCount: int = LOG_RETENTION_DAYS):
+    def __init__(
+        self, log_dir: str = 'logs', when: str = 'midnight',
+        interval: int = 1, backupCount: int = LOG_RETENTION_DAYS
+    ):
         self.log_dir = log_dir
         Path(log_dir).mkdir(exist_ok=True)
 
@@ -107,6 +110,7 @@ def configurar_logger() -> logging.Logger:
     logger.addHandler(console_handler)
 
     return logger
+
 
 # Logger global para importação
 logger = configurar_logger()

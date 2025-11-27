@@ -165,4 +165,3 @@ def aplicar_rate_limit_async(
         redirect_url=None,  # Força retorno JSON
         log_detalhes=log_detalhes
     )
-

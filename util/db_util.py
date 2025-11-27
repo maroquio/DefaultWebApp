@@ -12,6 +12,7 @@ DATABASE_PATH = os.getenv('DATABASE_PATH', 'dados.db')
 TIMEZONE = os.getenv('TIMEZONE', 'America/Sao_Paulo')
 APP_TIMEZONE = ZoneInfo(TIMEZONE)
 
+
 @contextmanager
 def obter_conexao():
     """Context manager para conexão com banco de dados"""

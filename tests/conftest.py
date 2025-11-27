@@ -8,9 +8,9 @@ from fastapi.testclient import TestClient
 from fastapi import status
 import os
 import tempfile
-from pathlib import Path
 from typing import Optional
 from util.perfis import Perfil
+
 
 # Configurar banco de dados de teste ANTES de importar a aplicação
 @pytest.fixture(scope="session", autouse=True)
@@ -35,7 +35,7 @@ def setup_test_database():
     # Limpar: remover arquivo de banco após todos os testes
     try:
         os.unlink(test_db_path)
-    except:
+    except Exception:
         pass
 
 
@@ -49,8 +49,13 @@ def limpar_rate_limiter():
     from routes.admin_configuracoes_routes import admin_config_limiter
     from routes.chamados_routes import chamado_criar_limiter, chamado_responder_limiter
     from routes.admin_chamados_routes import admin_chamado_responder_limiter
-    from routes.usuario_routes import upload_foto_limiter, alterar_senha_limiter, form_get_limiter
-    from routes.chat_routes import chat_mensagem_limiter, chat_sala_limiter, busca_usuarios_limiter, chat_listagem_limiter
+    from routes.usuario_routes import (
+        upload_foto_limiter, alterar_senha_limiter, form_get_limiter
+    )
+    from routes.chat_routes import (
+        chat_mensagem_limiter, chat_sala_limiter,
+        busca_usuarios_limiter, chat_listagem_limiter
+    )
     from routes.public_routes import public_limiter
     from routes.examples_routes import examples_limiter
 
@@ -100,7 +105,8 @@ def limpar_banco_dados():
             cursor = conn.cursor()
             # Verificar se tabelas existem antes de limpar
             cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('chamado', 'chamado_interacao', 'usuario', 'configuracao')"
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name IN ('chamado', 'chamado_interacao', 'usuario', 'configuracao')"
             )
             tabelas_existentes = [row[0] for row in cursor.fetchall()]
 
@@ -298,7 +304,10 @@ def foto_teste_base64():
     Útil para testes de upload de foto
     """
     # PNG 1x1 pixel transparente em base64
-    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    return (
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+        "AAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    )
 
 
 @pytest.fixture

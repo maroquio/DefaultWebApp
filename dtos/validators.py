@@ -9,7 +9,6 @@ import re
 from typing import Optional, Set, Callable, Any
 from datetime import datetime
 from pathlib import Path
-from util.datetime_util import agora
 
 
 # ===== VALIDAÇÕES DE CAMPOS DE TEXTO =====

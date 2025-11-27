@@ -3,6 +3,7 @@ import sqlite3
 from repo import configuracao_repo
 from util.logger_config import logger
 
+
 class ConfigCache:
     """Cache de configurações do sistema para melhor performance"""
     _cache: Dict[str, Any] = {}
@@ -148,6 +149,7 @@ class ConfigCache:
         """Limpa cache de uma chave específica"""
         if chave in cls._cache:
             del cls._cache[chave]
+
 
 # Instância global para uso em toda a aplicação
 config = ConfigCache()

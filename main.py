@@ -40,6 +40,9 @@ from routes.examples_routes import router as examples_router
 # Seeds
 from util.seed_data import inicializar_dados
 
+# CSRF Protection
+from util.csrf_protection import MiddlewareProtecaoCSRF
+
 # Criar aplicação FastAPI
 app = FastAPI(title=APP_NAME, version=VERSION)
 
@@ -47,7 +50,6 @@ app = FastAPI(title=APP_NAME, version=VERSION)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 # Configurar CSRF Protection Middleware
-from util.csrf_protection import MiddlewareProtecaoCSRF
 app.add_middleware(MiddlewareProtecaoCSRF)
 logger.info("CSRF Protection habilitado")
 
@@ -121,6 +123,7 @@ ROUTERS = [
 for router, tags, nome in ROUTERS:
     app.include_router(router, tags=tags)
     logger.info(f"Router de {nome} incluído")
+
 
 @app.get("/health")
 async def health_check():

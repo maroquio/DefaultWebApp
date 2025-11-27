@@ -9,7 +9,6 @@ Testa proteções contra:
 - Validação de inputs maliciosos
 - Autorização inadequada
 """
-import pytest
 from fastapi import status
 from util.perfis import Perfil
 from tests.test_helpers import assert_permission_denied, assert_redirects_to
@@ -39,6 +38,7 @@ class TestXSSProtection:
                 # Nome foi salvo, mas Jinja2 deve escapar ao exibir
                 # Script tag não deve ser executável
                 assert "<script>" in usuario.nome or usuario.nome == malicious_name
+
 
 class TestSQLInjection:
     """Testes de proteção contra SQL Injection"""
@@ -448,8 +448,10 @@ class TestPasswordSecurity:
             # Deve rejeitar
             assert response.status_code == 200
             # Deve ter mensagem sobre requisitos de senha
-            assert any(palavra in response.text.lower()
-                      for palavra in ["senha", "mínimo", "maiúscula", "minúscula", "especial"])
+            assert any(
+                palavra in response.text.lower()
+                for palavra in ["senha", "mínimo", "maiúscula", "minúscula", "especial"]
+            )
 
 
 class TestInformationDisclosure:

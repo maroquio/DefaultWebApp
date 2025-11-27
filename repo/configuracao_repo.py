@@ -30,6 +30,7 @@ def criar_tabela() -> bool:
         cursor.execute(CRIAR_TABELA)
         return True
 
+
 def obter_por_chave(chave: str) -> Optional[Configuracao]:
     with obter_conexao() as conn:
         cursor = conn.cursor()
@@ -38,6 +39,7 @@ def obter_por_chave(chave: str) -> Optional[Configuracao]:
         if row:
             return _row_to_configuracao(row)
         return None
+
 
 def obter_todos() -> list[Configuracao]:
     with obter_conexao() as conn:
@@ -98,6 +100,7 @@ def obter_multiplas(chaves: list[str]) -> dict[str, Optional[Configuracao]]:
     for chave in chaves:
         resultado[chave] = obter_por_chave(chave)
     return resultado
+
 
 def atualizar(chave: str, valor: str) -> bool:
     """
@@ -194,6 +197,7 @@ def inserir_ou_atualizar(chave: str, valor: str, descricao: str = "") -> bool:
     except Exception as e:
         logger.error(f"Erro ao inserir ou atualizar configuração '{chave}': {e}")
         raise
+
 
 def inserir_padrao() -> None:
     """Insere configurações padrão se não existirem"""

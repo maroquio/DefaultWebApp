@@ -6,10 +6,9 @@ contra ataques Cross-Site Request Forgery.
 """
 import secrets
 from typing import Callable, Optional
-from fastapi import Request, HTTPException, status
+from fastapi import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.datastructures import FormData
 
 from util.logger_config import logger
 
@@ -58,7 +57,7 @@ def obter_token_csrf(request: Request) -> str:
     if not token:
         token = gerar_token_csrf()
         request.session[CSRF_SESSION_KEY] = token
-        logger.debug(f"Novo token CSRF gerado para sessão")
+        logger.debug("Novo token CSRF gerado para sessão")
 
     return token
 

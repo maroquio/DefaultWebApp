@@ -2,7 +2,6 @@
 Testes de autenticação e autorização
 Testa login, cadastro, logout e recuperação de senha
 """
-import pytest
 from fastapi import status
 from util.perfis import Perfil
 from tests.test_helpers import assert_redirects_to, assert_permission_denied, assert_contains_text
@@ -71,7 +70,12 @@ class TestLogin:
         }, follow_redirects=True)
 
         assert response.status_code == status.HTTP_200_OK
-        assert "string_too_short" in response.text.lower() or "obrigatório" in response.text.lower() or "e-mail" in response.text.lower()
+        texto = response.text.lower()
+        assert (
+            "string_too_short" in texto
+            or "obrigatório" in texto
+            or "e-mail" in texto
+        )
 
     def test_usuario_logado_nao_acessa_login(self, cliente_autenticado):
         """Usuário já logado deve ser redirecionado ao acessar /login"""

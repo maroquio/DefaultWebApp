@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Request, status
-from fastapi.responses import RedirectResponse
 
 from util.template_util import criar_templates
-from util.auth_decorator import obter_usuario_logado
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.flash_messages import informar_erro
 from util.logger_config import logger

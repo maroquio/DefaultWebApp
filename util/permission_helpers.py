@@ -10,9 +10,8 @@ Este módulo fornece funções para:
 - Lidar com acessos negados de forma padronizada
 """
 
-from typing import Optional, List, Union, Any
-from fastapi import Request, status
-from fastapi.responses import RedirectResponse
+from typing import List, Any
+from fastapi import Request
 
 from util.flash_messages import informar_erro
 from util.logger_config import logger

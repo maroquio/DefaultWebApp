@@ -36,8 +36,12 @@ class ConfiguracaoAplicacaoDTO(BaseModel):
 
 class ConfiguracaoFotosDTO(BaseModel):
     """DTO para configurações de fotos"""
-    foto_perfil_tamanho_max: Optional[int] = Field(default=None, description="Tamanho máximo da foto de perfil em pixels (64-2048)")
-    foto_max_upload_bytes: Optional[int] = Field(default=None, description="Tamanho máximo de upload de foto em bytes (100KB-50MB)")
+    foto_perfil_tamanho_max: Optional[int] = Field(
+        default=None, description="Tamanho máximo da foto de perfil em pixels (64-2048)"
+    )
+    foto_max_upload_bytes: Optional[int] = Field(
+        default=None, description="Tamanho máximo de upload de foto em bytes (100KB-50MB)"
+    )
 
     @field_validator('foto_perfil_tamanho_max')
     @classmethod
@@ -160,7 +164,10 @@ class ConfiguracaoRateLimitSenhaDTO(ConfiguracaoRateLimitDTO):
 
 class ConfiguracaoUIDTO(BaseModel):
     """DTO para configurações de interface"""
-    toast_auto_hide_delay_ms: Optional[int] = Field(default=None, description="Tempo de exibição das notificações toast em milissegundos (1000-30000)")
+    toast_auto_hide_delay_ms: Optional[int] = Field(
+        default=None,
+        description="Tempo de exibição das notificações toast em milissegundos (1000-30000)"
+    )
 
     @field_validator('toast_auto_hide_delay_ms')
     @classmethod

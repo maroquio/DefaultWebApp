@@ -2,7 +2,6 @@
 Testes de gerenciamento de perfil do usuário
 Testa visualização, edição de dados, alteração de senha e upload de foto
 """
-import pytest
 from fastapi import status
 from tests.test_helpers import assert_redirects_to, assert_permission_denied, assert_contains_text
 

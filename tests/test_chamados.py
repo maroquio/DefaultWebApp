@@ -13,7 +13,6 @@ Cobre:
 IMPORTANTE: Nova arquitetura usa tabela chamado_interacao para armazenar
 todas as mensagens (abertura, respostas do usuário, respostas do admin)
 """
-import pytest
 from fastapi import status
 
 
@@ -194,8 +193,10 @@ class TestAdminListarChamados:
     def test_admin_lista_todos_chamados(self, client, admin_teste, criar_usuario, fazer_login):
         """Admin deve ver todos os chamados do sistema"""
         # Criar admin
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
 
         # Criar usuário comum
         criar_usuario("Usuario Comum", "usuario@test.com", "Senha@123")
@@ -247,8 +248,10 @@ class TestAdminResponderChamado:
     def test_admin_responde_chamado_com_sucesso(self, client, admin_teste, criar_usuario, fazer_login):
         """Admin deve conseguir responder chamado"""
         # Setup
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
         criar_usuario("Usuario", "user@test.com", "Senha@123")
 
         fazer_login("user@test.com", "Senha@123")
@@ -315,8 +318,10 @@ class TestAdminResponderChamado:
     def test_admin_fecha_chamado(self, client, admin_teste, criar_usuario, fazer_login):
         """Admin deve poder fechar chamado"""
         # Setup
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
         criar_usuario("Usuario", "user@test.com", "Senha@123")
 
         fazer_login("user@test.com", "Senha@123")
@@ -335,8 +340,10 @@ class TestAdminResponderChamado:
     def test_resposta_curta_e_rejeitada(self, client, admin_teste, criar_usuario, fazer_login):
         """Deve rejeitar resposta com menos de 10 caracteres"""
         # Setup
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
         criar_usuario("Usuario", "user@test.com", "Senha@123")
 
         fazer_login("user@test.com", "Senha@123")
@@ -380,8 +387,10 @@ class TestHistoricoInteracoes:
     def test_interacao_registra_admin(self, client, admin_teste, criar_usuario, fazer_login):
         """Interação deve registrar qual admin respondeu"""
         # Setup
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
         criar_usuario("Usuario", "user@test.com", "Senha@123")
 
         fazer_login("user@test.com", "Senha@123")
@@ -405,8 +414,10 @@ class TestHistoricoInteracoes:
     def test_multiplas_respostas_do_mesmo_admin(self, client, admin_teste, criar_usuario, fazer_login):
         """Admin deve poder responder múltiplas vezes"""
         # Setup
-        criar_usuario(admin_teste["nome"], admin_teste["email"],
-                     admin_teste["senha"], admin_teste["perfil"])
+        criar_usuario(
+            admin_teste["nome"], admin_teste["email"],
+            admin_teste["senha"], admin_teste["perfil"]
+        )
         criar_usuario("Usuario", "user@test.com", "Senha@123")
 
         fazer_login("user@test.com", "Senha@123")

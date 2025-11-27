@@ -4,7 +4,6 @@ Módulo de gerenciamento de backups do banco de dados SQLite.
 Fornece funções para criar, listar, restaurar e excluir backups do banco de dados.
 Os backups são armazenados no diretório 'backups/' com nomenclatura padronizada.
 """
-import os
 import shutil
 import sqlite3
 from pathlib import Path
@@ -354,11 +353,17 @@ def restaurar_backup(nome_arquivo: str, criar_backup_antes: bool = True) -> tupl
 
             if caminho_backup_seguranca and caminho_backup_seguranca.exists():
                 shutil.copy2(caminho_backup_seguranca, db_path)
-                mensagem = f"Restauração falhou! Banco revertido para estado anterior. Backup '{nome_arquivo}' pode estar corrompido."
+                mensagem = (
+                    f"Restauração falhou! Banco revertido para estado anterior. "
+                    f"Backup '{nome_arquivo}' pode estar corrompido."
+                )
                 logger.error(mensagem)
                 return False, mensagem, nome_backup_automatico
             else:
-                mensagem = "ERRO CRÍTICO: Restauração falhou e não foi possível reverter! Banco pode estar inconsistente."
+                mensagem = (
+                    "ERRO CRÍTICO: Restauração falhou e não foi possível reverter! "
+                    "Banco pode estar inconsistente."
+                )
                 logger.critical(mensagem)
                 return False, mensagem, None
 

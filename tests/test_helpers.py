@@ -5,7 +5,6 @@ Fornece funções helper reutilizáveis para simplificar e padronizar
 assertions nos testes.
 """
 from fastapi import status
-from fastapi.testclient import TestClient
 
 
 def assert_permission_denied(response, expected_redirect: str = "/login"):

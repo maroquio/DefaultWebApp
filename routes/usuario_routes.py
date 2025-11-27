@@ -194,17 +194,17 @@ async def post_editar_perfil(
                 "/usuario/perfil/visualizar", status_code=status.HTTP_303_SEE_OTHER
             )
         else:
-            informar_erro(
-                request,
-                "Ocorreu um erro desconhecido ao atualizar seu perfil. A equipe de suporte foi notificada. Tente novamente mais tarde.",
+            msg_erro = (
+                "Ocorreu um erro desconhecido ao atualizar seu perfil. "
+                "A equipe de suporte foi notificada. Tente novamente mais tarde."
             )
+            informar_erro(request, msg_erro)
             return templates_usuario.TemplateResponse(
                 "perfil/editar.html",
-                {"request": request,
+                {
+                    "request": request,
                     "dados": dados_formulario,
-                    "erros": {
-                        "geral": "Ocorreu um erro desconhecido ao atualizar seu perfil. A equipe de suporte foi notificada. Tente novamente mais tarde."
-                    },
+                    "erros": {"geral": msg_erro},
                 },
             )
 
@@ -256,14 +256,13 @@ async def post_alterar_senha(
             f"Muitas tentativas de alteração de senha. Aguarde {alterar_senha_limiter.janela_minutos} minuto(s).",
         )
         logger.warning(f"Rate limit excedido para alteração de senha - IP: {ip}")
+        msg_rate = (
+            f"Muitas tentativas de alteração de senha. "
+            f"Aguarde {alterar_senha_limiter.janela_minutos} minuto(s)."
+        )
         return templates_usuario.TemplateResponse(
             "perfil/alterar-senha.html",
-            {
-                "request": request,
-                "erros": {
-                    "geral": f"Muitas tentativas de alteração de senha. Aguarde {alterar_senha_limiter.janela_minutos} minuto(s)."
-                },
-            },
+            {"request": request, "erros": {"geral": msg_rate}},
         )
 
     try:
@@ -320,15 +319,14 @@ async def post_alterar_senha(
                 "/usuario/perfil/visualizar", status_code=status.HTTP_303_SEE_OTHER
             )
         else:
+            msg_erro = (
+                "Ocorreu um erro desconhecido ao processar alteração de senha. "
+                "A equipe de suporte foi notificada. Tente novamente mais tarde."
+            )
             informar_erro(request, "Erro ao alterar senha. Tente novamente.")
             return templates_usuario.TemplateResponse(
                 "perfil/alterar-senha.html",
-                {
-                    "request": request,
-                    "erros": {
-                        "geral": "Ocorreu um erro desconhecido ao processar alteração de senha. A equipe de suporte foi notificada. Tente novamente mais tarde."
-                    },
-                },
+                {"request": request, "erros": {"geral": msg_erro}},
             )
 
     except ValidationError as e:
@@ -389,21 +387,23 @@ async def post_atualizar_foto(
             logger.info(f"Foto de perfil atualizada - Usuário ID: {usuario_id}")
             informar_sucesso(request, "Foto de perfil atualizada com sucesso!")
         else:
-            informar_erro(
-                request,
-                "Ocorreu um erro desconhecido ao atualizar foto. A equipe de suporte foi notificada. Tente novamente mais tarde.",
+            msg_erro = (
+                "Ocorreu um erro desconhecido ao atualizar foto. "
+                "A equipe de suporte foi notificada. Tente novamente mais tarde."
             )
+            informar_erro(request, msg_erro)
 
         return RedirectResponse(
             "/usuario/perfil/visualizar", status_code=status.HTTP_303_SEE_OTHER
         )
 
     except Exception as e:
-        logger.error(f"Erro ao fazer upload de foto para usuário ID {usuario_id}: {e}")
-        informar_erro(
-            request,
-            "Ocorreu um erro desconhecido ao processar upload da foto. A equipe de suporte foi notificada. Tente novamente mais tarde.",
+        logger.error(f"Erro ao fazer upload de foto - Usuário ID {usuario_id}: {e}")
+        msg_erro = (
+            "Ocorreu um erro desconhecido ao processar upload da foto. "
+            "A equipe de suporte foi notificada. Tente novamente mais tarde."
         )
+        informar_erro(request, msg_erro)
         return RedirectResponse(
             "/usuario/perfil/visualizar", status_code=status.HTTP_303_SEE_OTHER
         )
