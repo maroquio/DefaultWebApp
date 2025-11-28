@@ -7,6 +7,65 @@ from pathlib import Path
 # ===== VALIDAÇÕES DE CAMPOS DE TEXTO =====
 
 
+def _validar_string_base(
+    valor: Any,
+    nome_campo: str,
+    tamanho_minimo: Optional[int],
+    tamanho_maximo: Optional[int],
+    truncar: bool,
+    obrigatorio: bool,
+) -> str:
+    """
+    Função auxiliar centralizada para validação de strings.
+
+    Args:
+        valor: Valor a validar
+        nome_campo: Nome do campo para mensagens de erro
+        tamanho_minimo: Comprimento mínimo (opcional)
+        tamanho_maximo: Comprimento máximo (opcional)
+        truncar: Se deve remover espaços das bordas
+        obrigatorio: Se o campo é obrigatório
+
+    Returns:
+        String validada e tratada
+
+    Raises:
+        ValueError: Se validação falhar
+    """
+    # Verificar se vazio
+    if not valor:
+        if obrigatorio:
+            raise ValueError(f"{nome_campo} é obrigatório.")
+        return "" if truncar else valor
+
+    # Aplicar truncamento
+    resultado = valor.strip() if truncar else valor
+
+    # Verificar se vazio após truncamento
+    if obrigatorio and not resultado:
+        raise ValueError(f"{nome_campo} é obrigatório.")
+
+    # Validar tamanho mínimo
+    if tamanho_minimo and len(resultado) < tamanho_minimo:
+        msg = (
+            f"{nome_campo} deve ter no mínimo {tamanho_minimo} caracteres."
+            if nome_campo != "Campo"
+            else f"Deve ter no mínimo {tamanho_minimo} caracteres."
+        )
+        raise ValueError(msg)
+
+    # Validar tamanho máximo
+    if tamanho_maximo and len(resultado) > tamanho_maximo:
+        msg = (
+            f"{nome_campo} deve ter no máximo {tamanho_maximo} caracteres."
+            if nome_campo != "Campo"
+            else f"Deve ter no máximo {tamanho_maximo} caracteres."
+        )
+        raise ValueError(msg)
+
+    return resultado
+
+
 def validar_string_obrigatoria(
     nome_campo: str = "Campo",
     tamanho_minimo: Optional[int] = None,
@@ -27,22 +86,9 @@ def validar_string_obrigatoria(
     """
 
     def validator(cls: Any, v: Any) -> Any:
-        if not v or (truncar and not v.strip()):
-            raise ValueError(f"{nome_campo} é obrigatório.")
-
-        valor = v.strip() if truncar else v
-
-        if tamanho_minimo and len(valor) < tamanho_minimo:
-            raise ValueError(
-                f"{nome_campo} deve ter no mínimo {tamanho_minimo} caracteres."
-            )
-
-        if tamanho_maximo and len(valor) > tamanho_maximo:
-            raise ValueError(
-                f"{nome_campo} deve ter no máximo {tamanho_maximo} caracteres."
-            )
-
-        return valor
+        return _validar_string_base(
+            v, nome_campo, tamanho_minimo, tamanho_maximo, truncar, obrigatorio=True
+        )
 
     return validator
 
@@ -65,18 +111,9 @@ def validar_comprimento(
     """
 
     def validator(cls: Any, v: Any) -> Any:
-        if not v:
-            return "" if truncar else v
-
-        valor = v.strip() if truncar else v
-
-        if tamanho_minimo and len(valor) < tamanho_minimo:
-            raise ValueError(f"Deve ter no mínimo {tamanho_minimo} caracteres.")
-
-        if tamanho_maximo and len(valor) > tamanho_maximo:
-            raise ValueError(f"Deve ter no máximo {tamanho_maximo} caracteres.")
-
-        return valor
+        return _validar_string_base(
+            v, "Campo", tamanho_minimo, tamanho_maximo, truncar, obrigatorio=False
+        )
 
     return validator
 

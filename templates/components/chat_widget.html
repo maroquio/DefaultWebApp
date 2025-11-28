@@ -1,17 +1,17 @@
 <!-- Widget de Chat - Componente retrátil no canto inferior direito -->
 
 <!-- Botão flutuante (estado retraído) -->
-<div id="chat-widget-button" class="position-fixed bottom-0 end-0 m-3" style="z-index: 1050; display: flex;" onclick="toggleChatWidget()">
-    <button type="button" class="btn btn-primary rounded-circle position-relative" style="width: 60px; height: 60px;">
+<div id="chat-widget-button" class="position-fixed bottom-0 end-0 m-3" onclick="toggleChatWidget()">
+    <button type="button" class="btn btn-primary rounded-circle position-relative chat-widget-btn">
         <i class="bi bi-chat-dots-fill fs-4"></i>
-        <span id="chat-badge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="display: none;">
+        <span id="chat-badge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger">
             0
         </span>
     </button>
 </div>
 
 <!-- Painel expandido -->
-<div id="chat-widget-panel" class="position-fixed bottom-0 end-0 m-3 border rounded shadow-lg bg-white" style="width: 585px; height: 600px; z-index: 1049; display: none;">
+<div id="chat-widget-panel" class="position-fixed bottom-0 end-0 m-3 border rounded shadow-lg bg-white">
 
     <!-- Cabeçalho -->
     <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-primary text-white">
@@ -24,10 +24,10 @@
     </div>
 
     <!-- Corpo do chat -->
-    <div class="d-flex" style="height: calc(100% - 64px);">
+    <div class="d-flex chat-body">
 
         <!-- Painel de conversas -->
-        <div class="border-end bg-light d-flex flex-column" style="width: 234px; flex-shrink: 0;">
+        <div class="border-end bg-light d-flex flex-column chat-conversations-panel">
 
             <!-- Campo de busca de usuários -->
             <div class="p-2">
@@ -38,8 +38,9 @@
                         class="form-control form-control-sm"
                         placeholder="Buscar usuário..."
                         autocomplete="off"
+                        aria-label="Buscar usuário"
                     >
-                    <div id="chat-search-suggestions" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+                    <div id="chat-search-suggestions" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm"></div>
                 </div>
             </div>
 
@@ -60,7 +61,7 @@
         <div class="d-flex flex-column flex-grow-1">
 
             <!-- Container de mensagens -->
-            <div id="chat-messages-container" class="flex-grow-1 overflow-auto p-3" style="background-color: #f8f9fa;">
+            <div id="chat-messages-container" class="flex-grow-1 overflow-auto p-3">
                 <!-- Mensagens serão inseridas aqui via JS -->
                 <!-- Mensagens mais antigas no topo, mais recentes embaixo -->
             </div>
@@ -71,16 +72,16 @@
                     <div class="input-group">
                         <textarea
                             id="chat-message-input"
-                            class="form-control"
+                            class="form-control chat-input-textarea"
                             placeholder="Digite sua mensagem..."
                             rows="2"
-                            style="resize: none;"
+                            aria-label="Mensagem"
                         ></textarea>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" aria-label="Enviar mensagem">
                             <i class="bi bi-send-fill"></i>
                         </button>
                     </div>
-                    <small class="text-muted" style="font-size: 0.7rem;">
+                    <small class="text-muted chat-help-text">
                         <kbd>Enter</kbd> envia • <kbd>Shift+Enter</kbd> quebra linha
                     </small>
                 </form>

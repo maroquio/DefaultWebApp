@@ -62,6 +62,11 @@ Link (<a>) se onclick vazio, Button (<button>) se onclick presente
         show_delete: Mostrar botão de exclusão (padrão: true)
         extra_buttons: HTML adicional de botões entre edit e delete
         size: Tamanho dos botões ('sm', 'md', 'lg')
+
+        SEGURANÇA: O parâmetro extra_buttons é renderizado com |safe (sem escape).
+        Use APENAS com HTML gerado no servidor (templates Jinja2).
+        NUNCA passe conteúdo de usuários não sanitizado para este parâmetro.
+        Exemplo seguro: extra_buttons=btn_icon('/rota', 'star', 'warning')
         #}
         <div class="btn-group btn-group-{{ size }}" role="group">
             {% if show_view %}

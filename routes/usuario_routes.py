@@ -115,14 +115,15 @@ async def get_visualizar_perfil(request: Request, usuario_logado: Optional[Usuar
 @router.get("/usuario/perfil/editar")
 @requer_autenticacao()
 async def get_editar_perfil(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
+    """Formulário para editar dados do perfil"""
+    assert usuario_logado is not None
+
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
     if not form_get_limiter.verificar(ip):
         informar_erro(request, f"Muitas requisições. Aguarde {form_get_limiter.janela_minutos} minuto(s).")
         logger.warning(f"Rate limit excedido para formulário GET - IP: {ip}")
         return RedirectResponse("/usuario", status_code=status.HTTP_303_SEE_OTHER)
-    """Formulário para editar dados do perfil"""
-    assert usuario_logado is not None
 
     # Obter usuário ou redirecionar para logout
     usuario = obter_ou_404(
@@ -227,6 +228,8 @@ async def post_editar_perfil(
 @requer_autenticacao()
 async def get_alterar_senha(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Formulário para alterar senha"""
+    assert usuario_logado is not None
+
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
     if not form_get_limiter.verificar(ip):
@@ -234,7 +237,6 @@ async def get_alterar_senha(request: Request, usuario_logado: Optional[UsuarioLo
         logger.warning(f"Rate limit excedido para formulário GET - IP: {ip}")
         return RedirectResponse("/usuario", status_code=status.HTTP_303_SEE_OTHER)
 
-    assert usuario_logado is not None
     return templates_usuario.TemplateResponse("perfil/alterar-senha.html", {"request": request})
 
 
@@ -353,6 +355,9 @@ async def post_atualizar_foto(
     """Upload de foto de perfil cropada"""
     assert usuario_logado is not None
 
+    # Capturar ID do usuário ANTES do try para garantir disponibilidade no except
+    usuario_id = usuario_logado.id
+
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
     if not upload_foto_limiter.verificar(ip):
@@ -366,8 +371,6 @@ async def post_atualizar_foto(
         )
 
     try:
-        usuario_id = usuario_logado.id
-
         # Validação básica
         if not foto_base64 or len(foto_base64) < 100:
             informar_erro(request, "Foto inválida. Por favor, tente novamente.")
@@ -399,11 +402,12 @@ async def post_atualizar_foto(
             "/usuario/perfil/visualizar", status_code=status.HTTP_303_SEE_OTHER
         )
 
-    except Exception as e:
+    except (ValueError, IOError, OSError) as e:
+        # Erros de validação de dados (base64 inválido) ou I/O (escrita de arquivo)
         logger.error(f"Erro ao fazer upload de foto - Usuário ID {usuario_id}: {e}")
         msg_erro = (
-            "Ocorreu um erro desconhecido ao processar upload da foto. "
-            "A equipe de suporte foi notificada. Tente novamente mais tarde."
+            "Ocorreu um erro ao processar a imagem. "
+            "Verifique se o arquivo é uma imagem válida e tente novamente."
         )
         informar_erro(request, msg_erro)
         return RedirectResponse(

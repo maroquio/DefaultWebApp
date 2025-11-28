@@ -41,41 +41,50 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.path == '/usuario' else '' }}"
-                            href="/usuario">Dashboard</a>
+                            href="/usuario"
+                            {{ 'aria-current=page' if request.path == '/usuario' else '' }}>Dashboard</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/usuario/perfil/' in request.path else '' }}"
-                            href="/usuario/perfil/visualizar">Perfil</a>
+                            href="/usuario/perfil/visualizar"
+                            {{ 'aria-current=page' if '/usuario/perfil/' in request.path else '' }}>Perfil</a>
                     </li>
                     {% if request.session.get('usuario_logado')['perfil'] == 'Administrador' %}
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/chamados/' in request.path else '' }}"
-                            href="/admin/chamados/listar">Chamados</a>
+                            href="/admin/chamados/listar"
+                            {{ 'aria-current=page' if '/admin/chamados/' in request.path else '' }}>Chamados</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/usuarios/' in request.path else '' }}"
-                            href="/admin/usuarios/listar">Usuários</a>
+                            href="/admin/usuarios/listar"
+                            {{ 'aria-current=page' if '/admin/usuarios/' in request.path else '' }}>Usuários</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/configuracoes' in request.path else '' }}"
-                            href="/admin/configuracoes">Configurações</a>
+                            href="/admin/configuracoes"
+                            {{ 'aria-current=page' if '/admin/configuracoes' in request.path else '' }}>Configurações</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/tema' in request.path else '' }}"
-                            href="/admin/tema">Tema</a>
+                            href="/admin/tema"
+                            {{ 'aria-current=page' if '/admin/tema' in request.path else '' }}>Tema</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/auditoria' in request.path else '' }}"
-                            href="/admin/auditoria">Auditoria</a>
+                            href="/admin/auditoria"
+                            {{ 'aria-current=page' if '/admin/auditoria' in request.path else '' }}>Auditoria</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/backups/' in request.path else '' }}"
-                            href="/admin/backups/listar">Backup</a>
+                            href="/admin/backups/listar"
+                            {{ 'aria-current=page' if '/admin/backups/' in request.path else '' }}>Backup</a>
                     </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/chamados/' in request.path else '' }}"
-                            href="/chamados/listar">Chamados</a>
+                            href="/chamados/listar"
+                            {{ 'aria-current=page' if '/chamados/' in request.path else '' }}>Chamados</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -112,8 +121,8 @@
     <footer class="bg-light text-center text-muted py-3 mt-auto">
         <div class="container">
             <p class="mb-0">&copy; 2025 {{ APP_NAME }}. Todos os direitos reservados.</p>
+        </div>
     </footer>
-    </div>
 
     <!-- Dados de mensagens (hidden) -->
     <script id="mensagens-data" type="application/json">

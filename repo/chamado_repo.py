@@ -1,8 +1,49 @@
-from typing import Optional
+"""
+Repositório de Chamados de Suporte.
+
+NOTA SOBRE IMPORTS CIRCULARES:
+Este módulo usa lazy imports para `chamado_interacao_repo` nas funções
+`obter_todos()` e `obter_por_usuario()`. Isso é necessário porque existe
+uma dependência mútua entre os repositórios de chamado e interação.
+
+O padrão de lazy import (import dentro da função) é uma solução aceita
+em Python para evitar imports circulares. Alternativas como refatorar
+para um módulo de serviço seriam mais complexas para este caso de uso.
+
+Referência: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
+"""
+
+from typing import Optional, TypeVar, Type
+from enum import Enum
 from model.chamado_model import Chamado, StatusChamado, PrioridadeChamado
 from sql.chamado_sql import *
 from util.db_util import obter_conexao
 from util.datetime_util import agora
+from util.logger_config import logger
+
+T = TypeVar("T", bound=Enum)
+
+
+def _converter_enum_seguro(valor: str, tipo_enum: Type[T], padrao: T) -> T:
+    """
+    Converte string para Enum de forma segura.
+
+    Args:
+        valor: Valor string do banco de dados
+        tipo_enum: Tipo do Enum (ex: StatusChamado)
+        padrao: Valor padrão caso conversão falhe
+
+    Returns:
+        Valor do Enum ou padrão em caso de erro
+    """
+    try:
+        return tipo_enum(valor)
+    except ValueError:
+        logger.error(
+            f"Valor inválido para {tipo_enum.__name__}: '{valor}'. "
+            f"Usando padrão: {padrao.value}"
+        )
+        return padrao
 
 
 def _row_to_chamado(row) -> Chamado:
@@ -12,8 +53,12 @@ def _row_to_chamado(row) -> Chamado:
     return Chamado(
         id=row["id"],
         titulo=row["titulo"],
-        status=StatusChamado(row["status"]),
-        prioridade=PrioridadeChamado(row["prioridade"]),
+        status=_converter_enum_seguro(
+            row["status"], StatusChamado, StatusChamado.ABERTO
+        ),
+        prioridade=_converter_enum_seguro(
+            row["prioridade"], PrioridadeChamado, PrioridadeChamado.MEDIA
+        ),
         usuario_id=row["usuario_id"],
         data_abertura=row["data_abertura"],
         data_fechamento=row["data_fechamento"],

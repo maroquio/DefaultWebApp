@@ -3,6 +3,67 @@
  * Usa ao máximo classes do Bootstrap 5.3, adicionando apenas o essencial
  */
 
+/* ===== Layout e Posicionamento ===== */
+
+/* Botão flutuante */
+#chat-widget-button {
+    z-index: 1050;
+    display: flex;
+}
+
+/* Botão circular do chat */
+.chat-widget-btn {
+    width: 60px;
+    height: 60px;
+}
+
+/* Badge de notificação (oculto por padrão) */
+#chat-badge {
+    display: none;
+}
+
+/* Painel expandido (oculto por padrão) */
+#chat-widget-panel {
+    width: 585px;
+    height: 600px;
+    z-index: 1049;
+    display: none;
+}
+
+/* Corpo do chat */
+.chat-body {
+    height: calc(100% - 64px);
+}
+
+/* Painel de conversas */
+.chat-conversations-panel {
+    width: 234px;
+    flex-shrink: 0;
+}
+
+/* Container de sugestões de busca */
+#chat-search-suggestions {
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+/* Container de mensagens */
+#chat-messages-container {
+    background-color: #f8f9fa;
+}
+
+/* Textarea sem resize */
+.chat-input-textarea {
+    resize: none;
+}
+
+/* Texto de ajuda pequeno */
+.chat-help-text {
+    font-size: 0.7rem;
+}
+
 /* Animação de abertura do painel */
 #chat-widget-panel.show {
     animation: slideIn 0.3s ease-out;

@@ -81,6 +81,7 @@ async def stream_mensagens(request: Request, usuario_logado: Optional[UsuarioLog
     Endpoint SSE para receber mensagens em tempo real.
     Cada usuário mantém UMA conexão que recebe mensagens de TODAS as suas salas.
     """
+    assert usuario_logado is not None
     usuario_id = usuario_logado.id
 
     async def event_generator():
@@ -124,6 +125,8 @@ async def criar_ou_obter_sala(
     """
     Cria ou obtém uma sala de chat entre o usuário logado e outro usuário.
     """
+    assert usuario_logado is not None
+
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
     if not chat_sala_limiter.verificar(ip):
@@ -187,6 +190,8 @@ async def listar_conversas(
     """
     Lista conversas do usuário (salas com última mensagem e contador de não lidas).
     """
+    assert usuario_logado is not None
+
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
     if not chat_listagem_limiter.verificar(ip):

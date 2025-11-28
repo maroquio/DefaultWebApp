@@ -53,16 +53,33 @@ class MiddlewareSegurancaHeaders(BaseHTTPMiddleware):
         # Comentar a linha abaixo se estiver em desenvolvimento sem HTTPS
         # response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        # Content Security Policy - política básica
-        # Ajustar conforme necessário para seu aplicativo
+        # Content Security Policy - política de segurança
+        # NOTA DE SEGURANÇA: 'unsafe-inline' é necessário para:
+        # - style-src: Bootstrap e estilos inline do framework
+        # - script-src: Scripts inline nos templates (configurações, inicializações)
+        #
+        # Para remover 'unsafe-inline' de script-src seria necessário:
+        # 1. Mover todos os scripts inline para arquivos externos, ou
+        # 2. Implementar nonces CSP (gerar nonce por requisição e adicionar aos scripts)
+        #
+        # TODO: Migrar para nonces quando possível para maior segurança
         csp_directives = [
             "default-src 'self'",
+            # AVISO: 'unsafe-inline' em script-src reduz proteção XSS
+            # Manter apenas enquanto scripts inline forem necessários
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            # Bootstrap requer 'unsafe-inline' para estilos dinâmicos
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "img-src 'self' data: https:",
             "font-src 'self' https://cdn.jsdelivr.net",
             "connect-src 'self'",
             "frame-ancestors 'none'",
+            # Bloquear object e embed para prevenir plugins maliciosos
+            "object-src 'none'",
+            # Bloquear uso de base href para prevenir hijacking
+            "base-uri 'self'",
+            # Bloquear submissão de formulários para outros domínios
+            "form-action 'self'",
         ]
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
 

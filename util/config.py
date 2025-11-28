@@ -20,12 +20,24 @@ SECRET_KEY = os.getenv("SECRET_KEY", "sua-chave-secreta-super-segura-mude-isso-e
 # Verifica se SECRET_KEY padrão está sendo usada em produção
 RUNNING_MODE_CHECK = os.getenv("RUNNING_MODE", "Production")
 if RUNNING_MODE_CHECK.lower() != "development":
+    # Validação 1: Não pode usar a chave padrão
     if SECRET_KEY == "sua-chave-secreta-super-segura-mude-isso-em-producao":
         raise ValueError(
             "SEGURANÇA CRÍTICA: SECRET_KEY padrão não pode ser usada em produção!\n"
             "Configure uma chave secreta forte no arquivo .env:\n"
             "SECRET_KEY=sua-chave-aleatoria-gerada-aqui\n"
             "Você pode gerar uma com: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+
+    # Validação 2: Tamanho mínimo de 32 caracteres para segurança adequada
+    # (32 chars = 256 bits de entropia, recomendado para HMAC/sessões)
+    MIN_SECRET_KEY_LENGTH = 32
+    if len(SECRET_KEY) < MIN_SECRET_KEY_LENGTH:
+        raise ValueError(
+            f"SEGURANÇA CRÍTICA: SECRET_KEY muito curta ({len(SECRET_KEY)} caracteres)!\n"
+            f"Em produção, SECRET_KEY deve ter no mínimo {MIN_SECRET_KEY_LENGTH} caracteres.\n"
+            "Você pode gerar uma chave segura com:\n"
+            "  python -c 'import secrets; print(secrets.token_urlsafe(32))'"
         )
 
 # === Configurações do Banco de Dados ===

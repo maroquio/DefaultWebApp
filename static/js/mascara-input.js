@@ -50,6 +50,15 @@ class MascaraInput {
             ...options
         };
 
+        // Armazenar referências dos handlers para remoção posterior (cleanup)
+        this._handlers = {
+            input: null,
+            keydown: null,
+            paste: null,
+            submit: null
+        };
+        this._form = null;
+
         this.init();
     }
 
@@ -62,16 +71,22 @@ class MascaraInput {
             this.input.value = this.applyMask(this.input.value);
         }
 
+        // Criar handlers bound para permitir remoção posterior
+        this._handlers.input = (e) => this.handleInput(e);
+        this._handlers.keydown = (e) => this.handleKeydown(e);
+        this._handlers.paste = (e) => this.handlePaste(e);
+
         // Eventos de digitação
-        this.input.addEventListener('input', (e) => this.handleInput(e));
-        this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
-        this.input.addEventListener('paste', (e) => this.handlePaste(e));
+        this.input.addEventListener('input', this._handlers.input);
+        this.input.addEventListener('keydown', this._handlers.keydown);
+        this.input.addEventListener('paste', this._handlers.paste);
 
         // Se unmask está ativado, interceptar submit do formulário
         if (this.options.unmask) {
-            const form = this.input.closest('form');
-            if (form) {
-                form.addEventListener('submit', (e) => this.handleSubmit(e));
+            this._form = this.input.closest('form');
+            if (this._form) {
+                this._handlers.submit = (e) => this.handleSubmit(e);
+                this._form.addEventListener('submit', this._handlers.submit);
             }
         }
     }
@@ -251,11 +266,30 @@ class MascaraInput {
     }
 
     /**
-     * Remove a máscara do input
+     * Remove a máscara do input e limpa event listeners
+     * Importante chamar este método ao remover inputs dinamicamente para evitar memory leaks
      */
     destroy() {
+        // Remover event listeners usando referências armazenadas
+        if (this._handlers.input) {
+            this.input.removeEventListener('input', this._handlers.input);
+        }
+        if (this._handlers.keydown) {
+            this.input.removeEventListener('keydown', this._handlers.keydown);
+        }
+        if (this._handlers.paste) {
+            this.input.removeEventListener('paste', this._handlers.paste);
+        }
+        if (this._handlers.submit && this._form) {
+            this._form.removeEventListener('submit', this._handlers.submit);
+        }
+
+        // Limpar referências
+        this._handlers = { input: null, keydown: null, paste: null, submit: null };
+        this._form = null;
+
+        // Remover classe de identificação
         this.input.classList.remove('input-mask');
-        // Remover eventos seria necessário guardar referências
     }
 }
 
@@ -290,6 +324,16 @@ class MascaraDecimal {
             ...options
         };
 
+        // Armazenar referências dos handlers para remoção posterior (cleanup)
+        this._handlers = {
+            input: null,
+            keydown: null,
+            paste: null,
+            blur: null,
+            submit: null
+        };
+        this._form = null;
+
         this.init();
     }
 
@@ -308,17 +352,24 @@ class MascaraDecimal {
             }
         }
 
+        // Criar handlers bound para permitir remoção posterior
+        this._handlers.input = (e) => this.handleInput(e);
+        this._handlers.keydown = (e) => this.handleKeydown(e);
+        this._handlers.paste = (e) => this.handlePaste(e);
+        this._handlers.blur = (e) => this.handleBlur(e);
+
         // Eventos
-        this.input.addEventListener('input', (e) => this.handleInput(e));
-        this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
-        this.input.addEventListener('paste', (e) => this.handlePaste(e));
-        this.input.addEventListener('blur', (e) => this.handleBlur(e));
+        this.input.addEventListener('input', this._handlers.input);
+        this.input.addEventListener('keydown', this._handlers.keydown);
+        this.input.addEventListener('paste', this._handlers.paste);
+        this.input.addEventListener('blur', this._handlers.blur);
 
         // Interceptar submit do formulário
-        const form = this.input.closest('form');
-        if (form && !form.hasAttribute('data-decimal-submit-bound')) {
-            form.setAttribute('data-decimal-submit-bound', 'true');
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
+        this._form = this.input.closest('form');
+        if (this._form && !this._form.hasAttribute('data-decimal-submit-bound')) {
+            this._form.setAttribute('data-decimal-submit-bound', 'true');
+            this._handlers.submit = (e) => this.handleSubmit(e);
+            this._form.addEventListener('submit', this._handlers.submit);
         }
     }
 
@@ -543,9 +594,33 @@ class MascaraDecimal {
     }
 
     /**
-     * Remove a máscara do input
+     * Remove a máscara do input e limpa event listeners
+     * Importante chamar este método ao remover inputs dinamicamente para evitar memory leaks
      */
     destroy() {
+        // Remover event listeners usando referências armazenadas
+        if (this._handlers.input) {
+            this.input.removeEventListener('input', this._handlers.input);
+        }
+        if (this._handlers.keydown) {
+            this.input.removeEventListener('keydown', this._handlers.keydown);
+        }
+        if (this._handlers.paste) {
+            this.input.removeEventListener('paste', this._handlers.paste);
+        }
+        if (this._handlers.blur) {
+            this.input.removeEventListener('blur', this._handlers.blur);
+        }
+        if (this._handlers.submit && this._form) {
+            this._form.removeEventListener('submit', this._handlers.submit);
+            this._form.removeAttribute('data-decimal-submit-bound');
+        }
+
+        // Limpar referências
+        this._handlers = { input: null, keydown: null, paste: null, blur: null, submit: null };
+        this._form = null;
+
+        // Remover classe de identificação
         this.input.classList.remove('decimal-mask');
     }
 

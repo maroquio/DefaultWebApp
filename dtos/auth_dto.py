@@ -29,11 +29,7 @@ class CadastroDTO(BaseModel):
     _validar_nome = field_validator("nome")(validar_nome_pessoa())
     _validar_email = field_validator("email")(validar_email())
     _validar_senha = field_validator("senha")(validar_senha_forte())
-    _validar_confirmar = field_validator("confirmar_senha")(
-        validar_string_obrigatoria(
-            "Confirmação de Senha", tamanho_minimo=8, tamanho_maximo=128
-        )
-    )
+    _validar_confirmar = field_validator("confirmar_senha")(validar_senha_forte())
 
     _validar_senhas_match = model_validator(mode="after")(validar_senhas_coincidem())
 
@@ -53,8 +49,6 @@ class RedefinirSenhaDTO(BaseModel):
         validar_string_obrigatoria("Token", tamanho_minimo=1)
     )
     _validar_senha = field_validator("senha")(validar_senha_forte())
-    _validar_confirmar = field_validator("confirmar_senha")(
-        validar_string_obrigatoria()
-    )
+    _validar_confirmar = field_validator("confirmar_senha")(validar_senha_forte())
 
     _validar_senhas_match = model_validator(mode="after")(validar_senhas_coincidem())

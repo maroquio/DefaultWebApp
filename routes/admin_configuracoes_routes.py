@@ -40,6 +40,17 @@ router = APIRouter(prefix="/admin")
 templates = criar_templates("templates/admin")
 
 # =============================================================================
+# Whitelist de Temas (prevenção de Path Traversal)
+# =============================================================================
+
+TEMAS_VALIDOS = frozenset([
+    "brite", "cerulean", "cosmo", "cyborg", "darkly", "flatly", "journal",
+    "litera", "lumen", "lux", "materia", "minty", "morph", "original",
+    "pulse", "quartz", "sandstone", "simplex", "sketchy", "slate", "solar",
+    "spacelab", "superhero", "united", "vapor", "yeti", "zephyr"
+])
+
+# =============================================================================
 # Rate Limiters
 # =============================================================================
 
@@ -251,12 +262,21 @@ async def post_aplicar_tema(
         # Obter tema anterior para o log
         config_existente = configuracao_repo.obter_por_chave("theme")
 
-        # Validar se o tema existe
-        css_origem = Path(f"static/css/bootswatch/{tema}.bootstrap.min.css")
+        # Validar tema contra whitelist (prevenção de Path Traversal)
+        tema_normalizado = tema.lower().strip()
+        if tema_normalizado not in TEMAS_VALIDOS:
+            informar_erro(request, f"Tema '{tema}' inválido")
+            logger.warning(
+                f"Tentativa de aplicar tema inválido por admin {usuario_logado.id}: {tema}"
+            )
+            return RedirectResponse("/admin/tema", status_code=status.HTTP_303_SEE_OTHER)
+
+        # Construir caminho seguro após validação da whitelist
+        css_origem = Path(f"static/css/bootswatch/{tema_normalizado}.bootstrap.min.css")
 
         if not css_origem.exists():
-            informar_erro(request, f"Tema '{tema}' não encontrado")
-            logger.warning(f"Tentativa de aplicar tema inexistente: {tema}")
+            informar_erro(request, f"Arquivo do tema '{tema_normalizado}' não encontrado")
+            logger.error(f"Arquivo de tema na whitelist não existe: {css_origem}")
             return RedirectResponse("/admin/tema", status_code=status.HTTP_303_SEE_OTHER)
 
         # Copiar arquivo CSS do tema para bootstrap.min.css
@@ -266,7 +286,7 @@ async def post_aplicar_tema(
         # Atualizar ou inserir configuração no banco (upsert)
         sucesso = configuracao_repo.inserir_ou_atualizar(
             chave="theme",
-            valor=tema,
+            valor=tema_normalizado,
             descricao="Tema visual da aplicação (Bootswatch)"
         )
 
@@ -275,18 +295,19 @@ async def post_aplicar_tema(
             config.limpar()
 
             logger.info(
-                f"Tema alterado para '{tema}' por admin {usuario_logado.id} "
+                f"Tema alterado para '{tema_normalizado}' por admin {usuario_logado.id} "
                 f"(anterior: {config_existente.valor if config_existente else 'nenhum'})"
             )
             informar_sucesso(
                 request,
-                f"Tema '{tema.capitalize()}' aplicado com sucesso! Recarregue a página para ver as mudanças."
+                f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso! Recarregue a página para ver as mudanças."
             )
         else:
-            logger.error(f"Erro ao salvar configuração de tema '{tema}' no banco de dados")
+            logger.error(f"Erro ao salvar configuração de tema '{tema_normalizado}' no banco de dados")
             informar_erro(request, "Erro ao salvar configuração do tema")
 
     except Exception as e:
+        # Usa tema original pois tema_normalizado pode não estar definido em caso de exceção precoce
         logger.error(f"Erro ao aplicar tema '{tema}': {str(e)}")
         informar_erro(request, f"Erro ao aplicar tema: {str(e)}")
 

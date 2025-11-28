@@ -44,6 +44,45 @@ from model.usuario_logado_model import UsuarioLogado
 router = APIRouter()
 templates = criar_templates("templates/auth")
 
+
+def _validar_url_redirect(url: str, padrao: str = "/usuario") -> str:
+    """
+    Valida URL de redirect para prevenir Open Redirect.
+
+    Args:
+        url: URL a ser validada
+        padrao: URL padrão caso a validação falhe
+
+    Returns:
+        URL segura (relativa) ou URL padrão
+    """
+    if not url:
+        return padrao
+
+    url = url.strip()
+
+    # Deve começar com "/" (relativa)
+    if not url.startswith("/"):
+        logger.warning(f"Tentativa de redirect para URL não relativa: {url}")
+        return padrao
+
+    # Não pode começar com "//" (protocolo relativo - ex: //evil.com)
+    if url.startswith("//"):
+        logger.warning(f"Tentativa de redirect com protocolo relativo: {url}")
+        return padrao
+
+    # Não pode conter "://" em qualquer posição (URL absoluta)
+    if "://" in url:
+        logger.warning(f"Tentativa de redirect para URL absoluta: {url}")
+        return padrao
+
+    # Não pode ter quebra de linha (CRLF injection)
+    if "\n" in url or "\r" in url:
+        logger.warning(f"Tentativa de CRLF injection em redirect: {repr(url)}")
+        return padrao
+
+    return url
+
 # =============================================================================
 # Rate Limiters
 # =============================================================================
@@ -78,8 +117,10 @@ async def get_login(request: Request):
     if request.session.get("usuario_logado"):
         return RedirectResponse("/usuario", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Capturar o parâmetro redirect da query string
-    redirect_url = request.query_params.get("redirect", "/usuario")
+    # Capturar e validar o parâmetro redirect da query string
+    redirect_url = _validar_url_redirect(
+        request.query_params.get("redirect", "/usuario")
+    )
 
     return templates.TemplateResponse(
         "auth/login.html", {"request": request, "redirect": redirect_url}
@@ -94,6 +135,9 @@ async def post_login(
     redirect: str = Form(default="/usuario"),
 ):
     """Processa login do usuário"""
+    # Validar URL de redirect para prevenir Open Redirect
+    redirect = _validar_url_redirect(redirect)
+
     try:
         # Rate limiting por IP
         ip = obter_identificador_cliente(request)
@@ -341,7 +385,9 @@ async def get_redefinir_senha(request: Request, token: str):
             return RedirectResponse(
                 "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER
             )
-    except Exception:
+    except (ValueError, TypeError):
+        # ValueError: formato de data inválido
+        # TypeError: data_token é None (já verificado, mas por segurança)
         informar_erro(request, "Token inválido")
         return RedirectResponse("/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -383,7 +429,9 @@ async def post_redefinir_senha(
                 return RedirectResponse(
                     "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER
                 )
-        except Exception:
+        except (ValueError, TypeError):
+            # ValueError: formato de data inválido
+            # TypeError: data_token é None (já verificado, mas por segurança)
             informar_erro(request, "Token inválido")
             return RedirectResponse(
                 "/esqueci-senha", status_code=status.HTTP_303_SEE_OTHER
