@@ -13,10 +13,21 @@ para um módulo de serviço seriam mais complexas para este caso de uso.
 Referência: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
 """
 
+import sqlite3
 from typing import Optional, TypeVar, Type
 from enum import Enum
 from model.chamado_model import Chamado, StatusChamado, PrioridadeChamado
-from sql.chamado_sql import *
+from sql.chamado_sql import (
+    CRIAR_TABELA,
+    INSERIR,
+    OBTER_TODOS,
+    OBTER_POR_USUARIO,
+    OBTER_POR_ID,
+    ATUALIZAR_STATUS,
+    EXCLUIR,
+    CONTAR_ABERTOS_POR_USUARIO,
+    CONTAR_PENDENTES,
+)
 from util.db_util import obter_conexao
 from util.datetime_util import agora
 from util.logger_config import logger
@@ -46,7 +57,7 @@ def _converter_enum_seguro(valor: str, tipo_enum: Type[T], padrao: T) -> T:
         return padrao
 
 
-def _row_to_chamado(row) -> Chamado:
+def _row_to_chamado(row: sqlite3.Row) -> Chamado:
     usuario_nome = row["usuario_nome"] if "usuario_nome" in row.keys() else None
     usuario_email = row["usuario_email"] if "usuario_email" in row.keys() else None
 

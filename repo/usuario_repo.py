@@ -1,12 +1,28 @@
+import sqlite3
 from datetime import datetime
 from typing import Optional
 from model.usuario_model import Usuario
-from sql.usuario_sql import *
+from sql.usuario_sql import (
+    CRIAR_TABELA,
+    INSERIR,
+    ALTERAR,
+    ALTERAR_SENHA,
+    EXCLUIR,
+    OBTER_POR_ID,
+    OBTER_TODOS,
+    OBTER_QUANTIDADE,
+    OBTER_POR_EMAIL,
+    ATUALIZAR_TOKEN,
+    OBTER_POR_TOKEN,
+    LIMPAR_TOKEN,
+    OBTER_TODOS_POR_PERFIL,
+    BUSCAR_POR_TERMO,
+)
 from util.db_util import obter_conexao
 from util.foto_util import criar_foto_padrao_usuario
 
 
-def _row_to_usuario(row) -> Usuario:
+def _row_to_usuario(row: sqlite3.Row) -> Usuario:
     """
     Converte uma linha do banco de dados em objeto Usuario.
 
@@ -161,14 +177,6 @@ def buscar_por_termo(termo: str, limit: int = 10) -> list[Usuario]:
     """
     with obter_conexao() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            """SELECT id, nome, email, senha, perfil,
-                      token_redefinicao, data_token,
-                      data_cadastro[timestamp], data_atualizacao[timestamp]
-               FROM usuario
-               WHERE (LOWER(nome) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?))
-               LIMIT ?""",
-            (f"%{termo}%", f"%{termo}%", limit)
-        )
+        cursor.execute(BUSCAR_POR_TERMO, (f"%{termo}%", f"%{termo}%", limit))
         rows = cursor.fetchall()
         return [_row_to_usuario(row) for row in rows]

@@ -161,7 +161,7 @@ def csrf_input(request: Optional[Request] = None) -> str:
     return f'<input type="hidden" name="{CSRF_FORM_FIELD}" value="{token}">'
 
 
-def criar_templates(pasta: str) -> Jinja2Templates:
+def criar_templates() -> Jinja2Templates:
     """
     Cria instância de Jinja2Templates com configurações customizadas.
 
@@ -169,9 +169,6 @@ def criar_templates(pasta: str) -> Jinja2Templates:
     - Funções globais (obter_mensagens, csrf_input)
     - Variáveis globais (APP_NAME, VERSION)
     - Filtros customizados (data_br, data_hora_br, foto_usuario)
-
-    Args:
-        pasta: Caminho da pasta de templates (não utilizado, mantido por compatibilidade)
 
     Returns:
         Instância configurada de Jinja2Templates

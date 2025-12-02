@@ -87,10 +87,10 @@ function exibirModalAlerta(mensagem, tipo = 'info', titulo = null, detalhes = nu
     // SEGURANÇA: Usar textContent em vez de innerHTML para prevenir XSS
     if (detalhes) {
         detalhesEl.textContent = detalhes;
-        detalhesEl.style.display = 'block';
+        detalhesEl.classList.remove('d-none');
     } else {
         detalhesEl.textContent = '';
-        detalhesEl.style.display = 'none';
+        detalhesEl.classList.add('d-none');
     }
 
     // Configurar botão OK

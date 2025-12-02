@@ -11,7 +11,7 @@ from util.exceptions import ErroValidacaoFormulario
 import traceback
 
 # Configurar templates de erro
-templates = criar_templates("templates")
+templates = criar_templates()
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:

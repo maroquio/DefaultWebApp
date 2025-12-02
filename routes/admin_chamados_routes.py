@@ -48,7 +48,7 @@ from util.template_util import criar_templates
 # =============================================================================
 
 router = APIRouter(prefix="/admin/chamados")
-templates = criar_templates("templates/admin/chamados")
+templates = criar_templates()
 
 # =============================================================================
 # Rate Limiters

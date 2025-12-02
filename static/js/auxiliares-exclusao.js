@@ -234,13 +234,11 @@ window.App.Exclusao = window.App.Exclusao || {};
 window.App.Exclusao.confirmar = confirmarExclusao;
 window.App.Exclusao.escaparHtml = escaparHtml;
 window.App.Exclusao.excluirUsuario = excluirUsuario;
-window.App.Exclusao.excluirTarefa = excluirTarefa;
 window.App.Exclusao.excluirChamado = excluirChamado;
 
 // Exportar funcoes para uso global
 window.confirmarExclusao = confirmarExclusao;
 window.excluirUsuario = excluirUsuario;
-window.excluirTarefa = excluirTarefa;
 window.excluirChamado = excluirChamado;
 
 window.escaparHtml = escaparHtml;

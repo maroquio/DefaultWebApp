@@ -4,6 +4,7 @@
 
 # Standard library
 import shutil
+import sqlite3
 from pathlib import Path
 from typing import Optional
 
@@ -37,7 +38,7 @@ from util.validation_util import processar_erros_validacao
 # =============================================================================
 
 router = APIRouter(prefix="/admin")
-templates = criar_templates("templates/admin")
+templates = criar_templates()
 
 # =============================================================================
 # Whitelist de Temas (prevenção de Path Traversal)
@@ -85,8 +86,8 @@ async def get_listar_configuracoes(request: Request, usuario_logado: Optional[Us
             }
         )
 
-    except Exception as e:
-        logger.error(f"Erro ao listar configurações: {e}")
+    except sqlite3.Error as e:
+        logger.error(f"Erro de banco de dados ao listar configurações: {e}")
         informar_erro(request, "Erro ao carregar configurações")
         return RedirectResponse("/home", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -194,8 +195,8 @@ async def post_salvar_lote_configuracoes(
         # Redirecionar de volta para a listagem
         return RedirectResponse("/admin/configuracoes", status_code=status.HTTP_303_SEE_OTHER)
 
-    except Exception as e:
-        logger.error(f"Erro ao salvar configurações em lote: {e}")
+    except sqlite3.Error as e:
+        logger.error(f"Erro de banco de dados ao salvar configurações em lote: {e}")
         informar_erro(request, f"Erro ao salvar configurações: {str(e)}")
         return RedirectResponse("/admin/configuracoes", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -306,7 +307,7 @@ async def post_aplicar_tema(
             logger.error(f"Erro ao salvar configuração de tema '{tema_normalizado}' no banco de dados")
             informar_erro(request, "Erro ao salvar configuração do tema")
 
-    except Exception as e:
+    except (sqlite3.Error, OSError) as e:
         # Usa tema original pois tema_normalizado pode não estar definido em caso de exceção precoce
         logger.error(f"Erro ao aplicar tema '{tema}': {str(e)}")
         informar_erro(request, f"Erro ao aplicar tema: {str(e)}")
@@ -359,7 +360,7 @@ def _ler_log_arquivo(data: str, nivel: str) -> tuple[str, int, Optional[str]]:
 
         return conteudo, total, None
 
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Erro ao ler arquivo de log: {str(e)}")
         return "", 0, f"Erro ao ler arquivo de log: {str(e)}"
 

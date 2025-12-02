@@ -1,12 +1,18 @@
-from typing import Optional
 import sqlite3
+from typing import Optional
 from model.configuracao_model import Configuracao
-from sql.configuracao_sql import *
+from sql.configuracao_sql import (
+    CRIAR_TABELA,
+    INSERIR,
+    OBTER_POR_CHAVE,
+    OBTER_TODOS,
+    ATUALIZAR,
+)
 from util.db_util import obter_conexao
 from util.logger_config import logger
 
 
-def _row_to_configuracao(row) -> Configuracao:
+def _row_to_configuracao(row: sqlite3.Row) -> Configuracao:
     """
     Converte uma linha do banco de dados em objeto Configuracao.
 

@@ -1,10 +1,21 @@
+import sqlite3
 from typing import Optional
 from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
-from sql.chamado_interacao_sql import *
+from sql.chamado_interacao_sql import (
+    CRIAR_TABELA,
+    INSERIR,
+    OBTER_POR_CHAMADO,
+    OBTER_POR_ID,
+    CONTAR_POR_CHAMADO,
+    EXCLUIR_POR_CHAMADO,
+    MARCAR_COMO_LIDAS,
+    CONTAR_NAO_LIDAS_POR_CHAMADO,
+    TEM_RESPOSTA_ADMIN,
+)
 from util.db_util import obter_conexao
 
 
-def _row_to_interacao(row) -> ChamadoInteracao:
+def _row_to_interacao(row: sqlite3.Row) -> ChamadoInteracao:
     """
     Converte uma linha do banco de dados em objeto ChamadoInteracao.
 

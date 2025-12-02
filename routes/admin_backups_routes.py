@@ -18,7 +18,7 @@ from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 
 
 router = APIRouter(prefix="/admin/backups")
-templates = criar_templates("templates/admin/backups")
+templates = criar_templates()
 
 # Rate limiter para operações de backup (MUITO restritivo - operações perigosas)
 admin_backups_limiter = DynamicRateLimiter(

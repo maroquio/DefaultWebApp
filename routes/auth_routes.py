@@ -38,11 +38,17 @@ from util.validation_helpers import verificar_email_disponivel
 from model.usuario_logado_model import UsuarioLogado
 
 # =============================================================================
+# Constantes
+# =============================================================================
+
+TOKEN_EXPIRACAO_HORAS = 1  # Tempo de expiração do token de redefinição de senha
+
+# =============================================================================
 # Configuração do Router
 # =============================================================================
 
 router = APIRouter()
-templates = criar_templates("templates/auth")
+templates = criar_templates()
 
 
 def _validar_url_redirect(url: str, padrao: str = "/usuario") -> str:
@@ -332,7 +338,7 @@ async def post_esqueci_senha(request: Request, email: str = Form()):
         if usuario:
             # Gerar token de redefinição
             token = gerar_token_redefinicao()
-            data_expiracao = obter_data_expiracao_token(horas=1)
+            data_expiracao = obter_data_expiracao_token(horas=TOKEN_EXPIRACAO_HORAS)
 
             # Salvar token no banco
             usuario_repo.atualizar_token(usuario.email, token, data_expiracao)

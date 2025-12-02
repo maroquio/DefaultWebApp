@@ -500,6 +500,108 @@ def validar_senhas_coincidem(
     return validator
 
 
+# ===== VALIDAÇÕES DE RATE LIMITING =====
+
+
+def validar_rate_limit(
+    min_tentativas: int = 1,
+    max_tentativas: int = 1000,
+    min_minutos: int = 1,
+    max_minutos: int = 1440,
+    contexto: str = "",
+) -> tuple[Callable[[Any, Any], Any], Callable[[Any, Any], Any]]:
+    """
+    Cria validadores para campos de rate limit (max_tentativas e minutos).
+
+    Args:
+        min_tentativas: Mínimo de tentativas permitidas
+        max_tentativas: Máximo de tentativas permitidas
+        min_minutos: Mínimo de minutos para o período
+        max_minutos: Máximo de minutos para o período (padrão 1440 = 24h)
+        contexto: Texto adicional para mensagens (ex: "de login", "de cadastro")
+
+    Returns:
+        Tupla com (validador_tentativas, validador_minutos) para uso com field_validator
+    """
+
+    def validador_tentativas(cls: Any, v: Any) -> Any:
+        if v < min_tentativas:
+            msg = f"Deve permitir pelo menos {min_tentativas} tentativa"
+            if min_tentativas > 1:
+                msg += "s"
+            raise ValueError(msg)
+        if v > max_tentativas:
+            raise ValueError(f"Máximo permitido é {max_tentativas} tentativas")
+        return v
+
+    def validador_minutos(cls: Any, v: Any) -> Any:
+        if v < min_minutos:
+            raise ValueError(f"Período deve ser pelo menos {min_minutos} minuto(s)")
+        if v > max_minutos:
+            if max_minutos == 1440:
+                raise ValueError("Período máximo é 24 horas (1440 minutos)")
+            else:
+                raise ValueError(f"Período{contexto} não deve exceder {max_minutos} minutos")
+        return v
+
+    return validador_tentativas, validador_minutos
+
+
+def validar_email_opcional() -> Callable[[Any, Any], Any]:
+    """
+    Valida formato de e-mail opcional (permite None).
+
+    Returns:
+        Função validadora para uso com field_validator
+        Retorna None se vazio, ou e-mail em lowercase
+    """
+
+    def validator(cls: Any, v: Any) -> Any:
+        if v is None:
+            return v
+
+        valor = v.strip() if isinstance(v, str) else v
+        if not valor:
+            return None
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not re.match(email_regex, valor):
+            raise ValueError("Email inválido")
+
+        return valor.lower()
+
+    return validator
+
+
+def validar_inteiro_range(
+    min_valor: int,
+    max_valor: int,
+    nome_campo: str = "Valor",
+) -> Callable[[Any, Any], Any]:
+    """
+    Valida inteiro dentro de um range específico.
+
+    Args:
+        min_valor: Valor mínimo permitido
+        max_valor: Valor máximo permitido
+        nome_campo: Nome do campo para mensagens de erro
+
+    Returns:
+        Função validadora para uso com field_validator
+    """
+
+    def validator(cls: Any, v: Any) -> Any:
+        if v is None:
+            return v
+        if v < min_valor:
+            raise ValueError(f"{nome_campo} mínimo é {min_valor}")
+        if v > max_valor:
+            raise ValueError(f"{nome_campo} máximo é {max_valor}")
+        return v
+
+    return validator
+
+
 # ===== VALIDAÇÕES DE IDENTIFICADORES =====
 
 

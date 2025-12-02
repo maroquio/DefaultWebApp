@@ -37,7 +37,7 @@ from util.validation_helpers import verificar_email_disponivel
 # =============================================================================
 
 router = APIRouter(prefix="/admin/usuarios")
-templates = criar_templates("templates/admin/usuarios")
+templates = criar_templates()
 
 # =============================================================================
 # Rate Limiters

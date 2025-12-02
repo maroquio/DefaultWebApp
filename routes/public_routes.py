@@ -6,7 +6,7 @@ from util.flash_messages import informar_erro
 from util.logger_config import logger
 
 router = APIRouter()
-templates_public = criar_templates("templates")
+templates_public = criar_templates()
 
 # Rate limiter para páginas públicas (proteção contra DDoS)
 public_limiter = DynamicRateLimiter(

@@ -2,19 +2,16 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
-from dtos.validators import validar_string_obrigatoria
+from dtos.validators import validar_string_obrigatoria, validar_id_positivo
 
 
 class CriarSalaDTO(BaseModel):
     """DTO para criar ou obter uma sala de chat."""
     outro_usuario_id: int = Field(..., description="ID do outro usuário participante da conversa")
 
-    @field_validator('outro_usuario_id')
-    @classmethod
-    def validar_outro_usuario_id(cls, v):
-        if v <= 0:
-            raise ValueError('ID do usuário deve ser um número positivo.')
-        return v
+    _validar_outro_usuario_id = field_validator('outro_usuario_id')(
+        validar_id_positivo("ID do usuário")
+    )
 
 
 class EnviarMensagemDTO(BaseModel):
