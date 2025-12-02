@@ -304,7 +304,7 @@ const chatWidget = (() => {
 
         } catch (error) {
             console.error('[Chat] Erro ao criar/abrir sala:', error);
-            exibirErro('Erro ao iniciar conversa');
+            window.App.Modal.showError('Erro ao iniciar conversa');
         }
     }
 
@@ -529,7 +529,7 @@ const chatWidget = (() => {
 
         } catch (error) {
             console.error('[Chat] Erro ao enviar mensagem:', error);
-            exibirErro('Erro ao enviar mensagem');
+            window.App.Modal.showError('Erro ao enviar mensagem');
         }
     }
 

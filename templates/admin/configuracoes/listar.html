@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.stopPropagation();
 
                 // Exibir modal de aviso
-                exibirAviso(
+                window.App.Modal.showWarning(
                     'Você tem alterações não salvas. Deseja realmente trocar de aba? As alterações serão perdidas.',
                     'Alterações Não Salvas',
                     'Clique em "Salvar Configurações" antes de trocar de aba para não perder as alterações.'

@@ -147,7 +147,7 @@ function carregarImagemDeArquivo(modalId, file, aspectRatio = 1.0, maxFileSizeMB
     // Validar tamanho
     const maxBytes = maxFileSizeMB * 1024 * 1024;
     if (file.size > maxBytes) {
-        exibirErro(
+        window.App.Modal.showError(
             `O arquivo selecionado e muito grande. Tamanho maximo permitido: ${maxFileSizeMB}MB.`,
             'Arquivo Muito Grande'
         );
@@ -156,7 +156,7 @@ function carregarImagemDeArquivo(modalId, file, aspectRatio = 1.0, maxFileSizeMB
 
     // Validar tipo
     if (!file.type.startsWith('image/')) {
-        exibirErro(
+        window.App.Modal.showError(
             'Por favor, selecione um arquivo de imagem valido (JPG, PNG, GIF, etc.).',
             'Tipo de Arquivo Invalido'
         );
@@ -247,7 +247,7 @@ function inicializarCortadorImagem(modalId, aspectRatio = 1.0, maxFileSizeMB = 5
             e.preventDefault();
 
             if (!instanciasCortador[modalId]) {
-                exibirAviso('Por favor, selecione uma imagem antes de salvar.', 'Nenhuma Imagem Selecionada');
+                window.App.Modal.showWarning('Por favor, selecione uma imagem antes de salvar.', 'Nenhuma Imagem Selecionada');
                 return;
             }
 

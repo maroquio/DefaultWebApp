@@ -368,10 +368,10 @@ informar_info(request, "Nova atualização disponível.")
 **Toast Programático** (JavaScript):
 ```javascript
 // Exibir toast via JavaScript
-window.exibirToast('Operação realizada!', 'success');
-window.exibirToast('Atenção!', 'warning');
-window.exibirToast('Erro ao salvar.', 'danger');
-window.exibirToast('Informação importante.', 'info');
+window.App.Toasts.show('Operação realizada!', 'success');
+window.App.Toasts.show('Atenção!', 'warning');
+window.App.Toasts.show('Erro ao salvar.', 'danger');
+window.App.Toasts.show('Informação importante.', 'info');
 ```
 
 ### 📝 Logger Profissional

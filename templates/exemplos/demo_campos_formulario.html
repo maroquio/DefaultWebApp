@@ -28,8 +28,7 @@
                 <!-- PASSWORD COM BOTÃO ANEXADO -->
                 <h3 class="mt-5 mb-3">Senha com Botão Toggle</h3>
                 {{ field(name='senha', label='Senha', type='password', required=true,
-                append_icon='bi-eye', append_button_onclick="exibirInfo('Exemplo de botão anexado ao campo', 'Botão
-                Clicked')") }}
+                append_icon='bi-eye', append_button_onclick="window.App.Modal.showInfo('Exemplo de botão anexado ao campo', 'Botão Clicked')") }}
 
                 <!-- TEXTAREA -->
                 <h3 class="mt-5 mb-3">Área de Texto</h3>

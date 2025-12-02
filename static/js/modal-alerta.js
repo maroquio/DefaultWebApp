@@ -65,8 +65,7 @@ function exibirModalAlerta(mensagem, tipo = 'info', titulo = null, detalhes = nu
 
     if (!modal) {
         console.error('Modal de alerta não encontrado! Certifique-se de incluir modal_alerta.html no template.');
-        // Fallback para alert nativo
-        alert(mensagem);
+        console.error(`Mensagem não exibida: ${mensagem}`);
         return;
     }
 
@@ -150,29 +149,3 @@ window.App.Modal.showError = exibirErro;
 window.App.Modal.showWarning = exibirAviso;
 window.App.Modal.showInfo = exibirInfo;
 window.App.Modal.showSuccess = exibirSucesso;
-
-/**
- * DEPRECATED: Manter retrocompatibilidade
- * @deprecated Use window.App.Modal.show() em vez disso
- */
-window.exibirModalAlerta = exibirModalAlerta;
-
-/**
- * @deprecated Use window.App.Modal.showError() em vez disso
- */
-window.exibirErro = exibirErro;
-
-/**
- * @deprecated Use window.App.Modal.showWarning() em vez disso
- */
-window.exibirAviso = exibirAviso;
-
-/**
- * @deprecated Use window.App.Modal.showInfo() em vez disso
- */
-window.exibirInfo = exibirInfo;
-
-/**
- * @deprecated Use window.App.Modal.showSuccess() em vez disso
- */
-window.exibirSucesso = exibirSucesso;

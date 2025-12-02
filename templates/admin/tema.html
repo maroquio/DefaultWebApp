@@ -65,7 +65,7 @@
 
             if (isSelecionado) {
                 e.preventDefault();
-                exibirInfo('Este tema já está aplicado ao sistema.', 'Tema Já Selecionado');
+                window.App.Modal.showInfo('Este tema já está aplicado ao sistema.', 'Tema Já Selecionado');
                 return false;
             }
         });

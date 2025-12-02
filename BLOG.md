@@ -149,11 +149,6 @@ class Perfil(EnumEntidade):
     LEITOR = "Leitor"
     # FIM DOS PERFIS ############################################
 
-    # Alias para compatibilidade com código legado
-    @classmethod
-    def from_string(cls, valor: str):
-        """Alias deprecado. Use from_valor()."""
-        return cls.from_valor(valor)
 ```
 
 ### Explicação dos Perfis:

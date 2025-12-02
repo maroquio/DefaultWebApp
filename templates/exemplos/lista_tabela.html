@@ -22,7 +22,7 @@
                         <h5 class="mb-0">
                             <i class="bi bi-list-ul"></i> Lista de Produtos
                         </h5>
-                        <button class="btn btn-light btn-sm" onclick="exibirInfo('Exemplo de ação de adicionar produto', 'Novo Produto')">
+                        <button class="btn btn-light btn-sm" onclick="window.App.Modal.showInfo('Exemplo de ação de adicionar produto', 'Novo Produto')">
                             <i class="bi bi-plus-circle"></i> Novo Produto
                         </button>
                     </div>
@@ -77,13 +77,13 @@
                                             <button type="button" class="btn btn-outline-info"
                                                 title="Visualizar"
                                                 aria-label="Visualizar produto {{ produto.nome }}"
-                                                onclick="exibirInfo('Exemplo de visualização de detalhes', 'Visualizar: {{ produto.nome }}')">
+                                                onclick="window.App.Modal.showInfo('Exemplo de visualização de detalhes', 'Visualizar: {{ produto.nome }}')">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-primary"
                                                 title="Editar"
                                                 aria-label="Editar produto {{ produto.nome }}"
-                                                onclick="exibirInfo('Exemplo de edição de produto', 'Editar: {{ produto.nome }}')">
+                                                onclick="window.App.Modal.showInfo('Exemplo de edição de produto', 'Editar: {{ produto.nome }}')">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-danger"
@@ -205,7 +205,7 @@
             detalhes: detalhes,
             onConfirm: function() {
                 // Em uma aplicação real, faria o POST para a URL de exclusão
-                exibirSucesso('Produto excluído com sucesso!', 'Operação Concluída');
+                window.App.Modal.showSuccess('Produto excluído com sucesso!', 'Operação Concluída');
             }
         });
     }

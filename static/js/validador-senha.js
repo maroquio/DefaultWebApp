@@ -264,45 +264,6 @@ class ValidadorSenha {
 
         return password === confirmPassword;
     }
-
-    // =============================================================================
-    // METODOS DEPRECADOS - Mantidos para retrocompatibilidade
-    // =============================================================================
-
-    /**
-     * @deprecated Use verificarForcaSenha() em vez disso
-     */
-    checkPasswordStrength() {
-        return this.verificarForcaSenha();
-    }
-
-    /**
-     * @deprecated Use atualizarIndicadoresRequisitos() em vez disso
-     */
-    updateRequirementIndicators(requirements) {
-        return this.atualizarIndicadoresRequisitos(requirements);
-    }
-
-    /**
-     * @deprecated Use verificarSenhasCoincidentes() em vez disso
-     */
-    checkPasswordMatch() {
-        return this.verificarSenhasCoincidentes();
-    }
-
-    /**
-     * @deprecated Use obterForcaSenha() em vez disso
-     */
-    getPasswordStrength() {
-        return this.obterForcaSenha();
-    }
-
-    /**
-     * @deprecated Use senhasCoincidentes() em vez disso
-     */
-    doPasswordsMatch() {
-        return this.senhasCoincidentes();
-    }
 }
 
 /**

@@ -35,9 +35,3 @@ class Perfil(EnumEntidade):
     CLIENTE = "Cliente"
     VENDEDOR = "Vendedor"
     # FIM DOS PERFIS ############################################
-
-    # Alias para compatibilidade com código legado
-    @classmethod
-    def from_string(cls, valor: str):
-        """Alias deprecado. Use from_valor()."""
-        return cls.from_valor(valor)

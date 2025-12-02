@@ -62,25 +62,6 @@ def formatar_data_br(
         return str(data_str) if data_str else ""  # Retorna string vazia se falhar
 
 
-def formatar_data_hora_br(data_str: Union[str, datetime, None]) -> str:
-    """
-    Converte data/hora ISO para formato brasileiro completo (DD/MM/YYYY HH:MM:SS).
-
-    Esta função é um wrapper para formatar_data_br(data_str, com_hora=True)
-    mantido para compatibilidade com código legado.
-
-    Args:
-        data_str: String com data/hora no formato ISO ou objeto datetime
-
-    Returns:
-        String formatada no padrão brasileiro ou string vazia se inválido
-
-    Note:
-        Prefira usar formatar_data_br(data_str, com_hora=True) em código novo.
-    """
-    return formatar_data_br(data_str, com_hora=True)
-
-
 def formatar_data(data: Union[datetime, None]) -> str:
     """
     Formata datetime para DD/MM/YYYY (sem hora).
@@ -222,7 +203,6 @@ def criar_templates(pasta: str) -> Jinja2Templates:
 
     # Adicionar filtros customizados
     env.filters['data_br'] = formatar_data_br
-    env.filters['data_hora_br'] = formatar_data_hora_br
     env.filters['foto_usuario'] = foto_usuario
 
     # Filtros de formatação de data/hora (em português)
