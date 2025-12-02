@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS chamado (
     usuario_id INTEGER NOT NULL,
     data_abertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_fechamento TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 )
 """
 

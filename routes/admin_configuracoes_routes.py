@@ -117,7 +117,7 @@ async def post_salvar_lote_configuracoes(
     Returns:
         Redirect para listagem com mensagem de sucesso ou erro
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -251,7 +251,7 @@ async def post_aplicar_tema(
     Copia o arquivo CSS do tema para static/css/bootstrap.min.css
     e salva a configuração no banco de dados
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -397,7 +397,7 @@ async def post_filtrar_auditoria(
         data: Data no formato YYYY-MM-DD
         nivel: Nível de log (INFO, WARNING, ERROR, DEBUG, CRITICAL, TODOS)
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)

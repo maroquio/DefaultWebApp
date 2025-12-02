@@ -81,7 +81,7 @@ async def stream_mensagens(request: Request, usuario_logado: Optional[UsuarioLog
     Endpoint SSE para receber mensagens em tempo real.
     Cada usuário mantém UMA conexão que recebe mensagens de TODAS as suas salas.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
     usuario_id = usuario_logado.id
 
     async def event_generator():
@@ -125,7 +125,7 @@ async def criar_ou_obter_sala(
     """
     Cria ou obtém uma sala de chat entre o usuário logado e outro usuário.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -190,7 +190,7 @@ async def listar_conversas(
     """
     Lista conversas do usuário (salas com última mensagem e contador de não lidas).
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -275,7 +275,7 @@ async def listar_mensagens(
     """
     Lista mensagens de uma sala específica com paginação.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -328,7 +328,7 @@ async def enviar_mensagem(
     """
     Envia uma mensagem em uma sala.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -411,7 +411,7 @@ async def marcar_como_lidas(
     """
     Marca todas as mensagens de uma sala como lidas para o usuário logado.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
     usuario_id = usuario_logado.id
 
     # Verificar se usuário participa da sala
@@ -452,7 +452,7 @@ async def buscar_usuarios(
     Exclui o próprio usuário e administradores dos resultados.
     Administradores só podem ser contactados via sistema de chamados.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -503,7 +503,7 @@ async def contar_nao_lidas_total(
     """
     Conta o total de mensagens não lidas em todas as salas do usuário.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
     usuario_id = usuario_logado.id
 
     # Obter todas as participações do usuário

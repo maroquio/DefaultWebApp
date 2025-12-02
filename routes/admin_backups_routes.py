@@ -47,7 +47,7 @@ async def get_listar(request: Request, usuario_logado: Optional[UsuarioLogado] =
 
     Lista todos os backups existentes com informações de data/hora e tamanho.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter lista de backups
     backups = backup_util.listar_backups()
@@ -71,7 +71,7 @@ async def post_criar(request: Request, usuario_logado: Optional[UsuarioLogado] =
 
     Copia o arquivo database.db para backups/ com timestamp no nome.
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -111,7 +111,7 @@ async def post_restaurar(
     Args:
         nome_arquivo: Nome do arquivo de backup a restaurar
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -170,7 +170,7 @@ async def post_excluir(
     Args:
         nome_arquivo: Nome do arquivo de backup a excluir
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -210,7 +210,7 @@ async def get_download(
     Returns:
         FileResponse com o arquivo de backup
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)

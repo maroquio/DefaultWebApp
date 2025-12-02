@@ -92,7 +92,7 @@ async def post_cadastrar(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Cadastra um novo usuário"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -196,7 +196,7 @@ async def post_editar(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Altera dados de um usuário"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -272,7 +272,7 @@ async def post_editar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_excluir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exclui um usuário"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting
     ip = obter_identificador_cliente(request)

@@ -1,6 +1,8 @@
 """
 Repository para criação de índices do banco de dados
 """
+import sqlite3
+
 from util.db_util import obter_conexao
 from util.logger_config import logger
 from sql import indices_sql
@@ -21,11 +23,12 @@ def criar_indices() -> None:
                 try:
                     cursor.execute(indice_sql)
                     logger.debug("Índice criado com sucesso")
-                except Exception as e:
+                except sqlite3.OperationalError as e:
+                    # Índice já existe ou erro de SQL - não crítico
                     logger.warning(f"Erro ao criar índice (pode já existir): {e}")
 
             logger.info("Todos os índices verificados/criados com sucesso")
 
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error(f"Erro ao criar índices: {e}")
         # Não lançar exceção - índices são otimização, não críticos

@@ -87,21 +87,21 @@ try:
     # Criar índices para otimização de performance
     indices_repo.criar_indices()
 
-except Exception as e:
+except sqlite3.Error as e:
     logger.error(f"Erro ao criar tabelas: {e}")
     raise
 
 # Inicializar dados seed
 try:
     inicializar_dados()
-except Exception as e:
+except sqlite3.Error as e:
     logger.error(f"Erro ao inicializar dados seed: {e}", exc_info=True)
 
 # Migrar configurações do .env para o banco de dados
 try:
     from util.migrar_config import migrar_configs_para_banco
     migrar_configs_para_banco()
-except Exception as e:
+except sqlite3.Error as e:
     logger.error(f"Erro ao migrar configurações para banco: {e}", exc_info=True)
 
 # Definir routers e suas configurações

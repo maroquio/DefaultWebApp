@@ -200,7 +200,7 @@ def inserir_ou_atualizar(chave: str, valor: str, descricao: str = "") -> bool:
                 cursor.execute(INSERIR, (chave, valor, descricao))
                 return cursor.rowcount > 0
 
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error(f"Erro ao inserir ou atualizar configuração '{chave}': {e}")
         raise
 
@@ -222,7 +222,7 @@ def inserir_padrao() -> None:
             except sqlite3.IntegrityError:
                 # Configuração já existe (violação de UNIQUE constraint)
                 logger.debug(f"Configuração '{chave}' já existe, pulando inserção")
-            except Exception as e:
-                # Outro tipo de erro - logar e re-raise para não mascarar problema
+            except sqlite3.Error as e:
+                # Outro tipo de erro de banco - logar e re-raise para não mascarar problema
                 logger.error(f"Erro ao inserir configuração padrão '{chave}': {e}")
                 raise

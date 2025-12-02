@@ -7,11 +7,13 @@ Este módulo fornece funções para:
 - Salvar foto cropada do upload
 """
 
-from pathlib import Path
 import base64
+import binascii
 import io
+from pathlib import Path
 from typing import Optional
-from PIL import Image
+
+from PIL import Image, UnidentifiedImageError
 
 from util.logger_config import logger
 from util.config import FOTO_PERFIL_TAMANHO_MAX
@@ -81,7 +83,7 @@ def criar_foto_padrao_usuario(id: int) -> bool:
         logger.info(f"Foto padrão criada para usuário ID: {id}")
         return True
 
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Erro ao criar foto padrão para usuário {id}: {e}")
         return False
 
@@ -136,7 +138,11 @@ def salvar_foto_cropada_usuario(id: int, conteudo_base64: str) -> bool:
         logger.info(f"Foto cropada salva para usuário ID: {id}")
         return True
 
-    except Exception as e:
+    except (OSError, binascii.Error, UnidentifiedImageError, ValueError) as e:
+        # OSError: Erro de I/O ao salvar arquivo
+        # binascii.Error: Erro ao decodificar base64
+        # UnidentifiedImageError: Formato de imagem inválido ou não suportado
+        # ValueError: Erro ao processar dados da imagem
         logger.error(f"Erro ao salvar foto cropada para usuário {id}: {e}")
         return False
 

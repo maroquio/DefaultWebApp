@@ -5,6 +5,7 @@ Este módulo é executado automaticamente na inicialização da aplicação
 para garantir que todas as configurações editáveis estejam disponíveis
 na interface administrativa.
 """
+import sqlite3
 
 from util.logger_config import logger
 from repo import configuracao_repo
@@ -281,7 +282,7 @@ def migrar_configs_para_banco():
                 f"✓ Configuração migrada: '{chave_banco}' = '{valor_env}' ({categoria})"
             )
 
-        except Exception as e:
+        except sqlite3.Error as e:
             logger.error(f"✗ Erro ao migrar configuração '{chave_banco}': {e}")
 
     # Log resumo

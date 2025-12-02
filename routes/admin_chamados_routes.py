@@ -67,7 +67,7 @@ admin_chamado_responder_limiter = DynamicRateLimiter(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os chamados do sistema (apenas administradores)."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
     # Passa ID do admin para contar apenas mensagens de OUTROS usuários
     chamados = chamado_repo.obter_todos(usuario_logado.id)
     return templates.TemplateResponse(
@@ -80,7 +80,7 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_responder(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário para responder um chamado com histórico completo."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(
@@ -114,7 +114,7 @@ async def post_responder(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Salva resposta do administrador ao chamado e atualiza status."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -195,7 +195,7 @@ async def post_responder(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def fechar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Fecha um chamado alterando apenas o status, sem adicionar mensagem."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(
@@ -226,7 +226,7 @@ async def fechar(request: Request, id: int, usuario_logado: Optional[UsuarioLoga
 @requer_autenticacao([Perfil.ADMIN.value])
 async def reabrir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Reabre um chamado fechado, alterando status para 'Em Análise'."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(

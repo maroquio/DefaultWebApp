@@ -7,6 +7,7 @@ centralizando lógica que seria duplicada em múltiplos lugares.
 Autor: DefaultWebApp
 Versão: 1.0.0
 """
+import sqlite3
 from typing import Optional
 from repo import usuario_repo
 from util.logger_config import logger
@@ -66,7 +67,7 @@ def verificar_email_disponivel(
         logger.warning(f"Tentativa de cadastro com email já existente: {email}")
         return False, "Este e-mail já está cadastrado no sistema."
 
-    except Exception as e:
+    except sqlite3.Error as e:
         # Em caso de erro de banco, logar e retornar como indisponível por segurança
         logger.error(f"Erro ao verificar disponibilidade de email '{email}': {e}")
         return False, "Erro ao verificar e-mail. Tente novamente."
@@ -89,7 +90,7 @@ def email_existe(email: str) -> bool:
     try:
         usuario = usuario_repo.obter_por_email(email)
         return usuario is not None
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error(f"Erro ao verificar existência de email '{email}': {e}")
         # Em caso de erro, retornar True por segurança (assume que existe)
         return True

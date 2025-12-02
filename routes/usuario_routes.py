@@ -72,7 +72,7 @@ async def dashboard(request: Request, usuario_logado: Optional[UsuarioLogado] = 
     Dashboard do usuário (área privada)
     Requer autenticação
     """
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Preparar dados do contexto
     context = {
@@ -95,7 +95,7 @@ async def dashboard(request: Request, usuario_logado: Optional[UsuarioLogado] = 
 @requer_autenticacao()
 async def get_visualizar_perfil(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Visualizar perfil do usuário logado"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter usuário ou redirecionar para logout
     usuario = obter_ou_404(
@@ -116,7 +116,7 @@ async def get_visualizar_perfil(request: Request, usuario_logado: Optional[Usuar
 @requer_autenticacao()
 async def get_editar_perfil(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Formulário para editar dados do perfil"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -149,7 +149,7 @@ async def post_editar_perfil(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Processar edição de dados do perfil"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter usuário ou redirecionar para logout
     usuario = obter_ou_404(
@@ -228,7 +228,7 @@ async def post_editar_perfil(
 @requer_autenticacao()
 async def get_alterar_senha(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Formulário para alterar senha"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -250,7 +250,7 @@ async def post_alterar_senha(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Processar alteração de senha"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -353,7 +353,7 @@ async def post_atualizar_foto(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Upload de foto de perfil cropada"""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Capturar ID do usuário ANTES do try para garantir disponibilidade no except
     usuario_id = usuario_logado.id

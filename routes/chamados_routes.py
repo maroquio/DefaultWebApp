@@ -74,7 +74,7 @@ chamado_responder_limiter = DynamicRateLimiter(
 @requer_autenticacao()
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os chamados do usuário logado."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
     # Passa usuario_id para obter_por_usuario - a função já usa esse ID
     # para contar apenas mensagens de OUTROS usuários
     chamados = chamado_repo.obter_por_usuario(usuario_logado.id)
@@ -104,7 +104,7 @@ async def post_cadastrar(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Cadastra um novo chamado."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -182,7 +182,7 @@ async def post_cadastrar(
 @requer_autenticacao()
 async def visualizar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe detalhes de um chamado específico com histórico de interações."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(
@@ -225,7 +225,7 @@ async def post_responder(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Permite que o usuário adicione uma resposta/mensagem ao seu próprio chamado."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -301,7 +301,7 @@ async def post_responder(
 @requer_autenticacao()
 async def post_excluir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exclui um chamado do usuário (apenas se aberto e sem respostas de admin)."""
-    assert usuario_logado is not None
+    # usuario_logado garantido pelo decorator @requer_autenticacao
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(

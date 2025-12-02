@@ -437,13 +437,22 @@ const chatWidget = (() => {
     }
 
     /**
+     * Escapa HTML de forma segura usando DOM (previne XSS)
+     * Usa o próprio browser para garantir escaping correto
+     */
+    function escapeHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
+    }
+
+    /**
      * Aplica formatação markdown lite
+     * Seguro contra XSS: escapa HTML antes de aplicar formatação
      */
     function aplicarFormatacaoMarkdown(texto) {
-        // Escapar HTML primeiro
-        texto = texto.replace(/&/g, '&amp;')
-                     .replace(/</g, '&lt;')
-                     .replace(/>/g, '&gt;');
+        // Escapar HTML usando DOM (mais seguro que regex)
+        texto = escapeHtml(texto);
 
         // ***texto*** = negrito + itálico
         texto = texto.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');

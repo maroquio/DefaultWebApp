@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS chamado_interacao (
     status_resultante TEXT,
     data_leitura TIMESTAMP,
     FOREIGN KEY (chamado_id) REFERENCES chamado(id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 )
 """
 
