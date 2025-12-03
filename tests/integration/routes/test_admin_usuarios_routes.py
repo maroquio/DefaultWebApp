@@ -2,7 +2,10 @@
 Testes de administração de usuários
 Testa CRUD completo de usuários por administradores
 """
+from unittest.mock import patch
+
 from fastapi import status
+
 from util.perfis import Perfil
 from tests.test_helpers import assert_redirects_to, assert_permission_denied, assert_contains_text
 
@@ -300,3 +303,51 @@ class TestRedirecionamentos:
         # Redireciona com status 307 (Temporary Redirect) para /listar
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
         assert "/admin/usuarios/listar" in response.headers["location"]
+
+
+class TestAdminUsuariosRateLimiting:
+    """Testes de rate limiting para operações de administração de usuários"""
+
+    def test_cadastrar_rate_limit(self, admin_autenticado):
+        """Rate limit deve bloquear cadastros excessivos"""
+        with patch('routes.admin_usuarios_routes.admin_usuarios_limiter.verificar', return_value=False):
+            response = admin_autenticado.post("/admin/usuarios/cadastrar", data={
+                "nome": "Teste Rate Limit",
+                "email": "ratelimit@example.com",
+                "senha": "Senha@123",
+                "perfil": Perfil.CLIENTE.value
+            }, follow_redirects=False)
+
+            assert_redirects_to(response, "/admin/usuarios/listar")
+
+    def test_editar_rate_limit(self, admin_autenticado, criar_usuario):
+        """Rate limit deve bloquear edições excessivas"""
+        criar_usuario("Usuario Editar", "editar_rate@example.com", "Senha@123")
+
+        from repo import usuario_repo
+        usuario = usuario_repo.obter_por_email("editar_rate@example.com")
+
+        with patch('routes.admin_usuarios_routes.admin_usuarios_limiter.verificar', return_value=False):
+            response = admin_autenticado.post(f"/admin/usuarios/editar/{usuario.id}", data={
+                "nome": "Nome Editado",
+                "email": "editar_rate@example.com",
+                "perfil": Perfil.CLIENTE.value
+            }, follow_redirects=False)
+
+            assert_redirects_to(response, "/admin/usuarios/listar")
+
+    def test_excluir_rate_limit(self, admin_autenticado, criar_usuario):
+        """Rate limit deve bloquear exclusões excessivas"""
+        criar_usuario("Usuario Excluir", "excluir_rate@example.com", "Senha@123")
+
+        from repo import usuario_repo
+        usuario = usuario_repo.obter_por_email("excluir_rate@example.com")
+
+        with patch('routes.admin_usuarios_routes.admin_usuarios_limiter.verificar', return_value=False):
+            response = admin_autenticado.post(f"/admin/usuarios/excluir/{usuario.id}", follow_redirects=False)
+
+            assert_redirects_to(response, "/admin/usuarios/listar")
+
+        # Verificar que usuário ainda existe (não foi excluído devido ao rate limit)
+        usuario_ainda_existe = usuario_repo.obter_por_id(usuario.id)
+        assert usuario_ainda_existe is not None

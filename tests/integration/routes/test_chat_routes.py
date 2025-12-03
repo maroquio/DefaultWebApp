@@ -548,3 +548,167 @@ class TestChatTotalNaoLidas:
             data = response.json()
             assert "total" in data
             assert isinstance(data["total"], int)
+
+
+class TestChatListarConversasEdgeCases:
+    """Testes de casos de borda para listagem de conversas"""
+
+    def test_listar_conversas_sala_inexistente(self, client, fazer_login, criar_usuario_direto):
+        """Deve tratar quando sala não existe mais (continue no loop)"""
+        usuario_id = criar_usuario_direto(
+            nome="User Sala Inexistente",
+            email="sala_inexistente@teste.com",
+            senha="Teste@123"
+        )
+        fazer_login("sala_inexistente@teste.com", "Teste@123")
+
+        # Mock para simular participação em sala que não existe
+        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_part:
+            mock_participacao = MagicMock()
+            mock_participacao.sala_id = "sala_que_nao_existe"
+            mock_part.return_value = [mock_participacao]
+
+            with patch('routes.chat_routes.chat_sala_repo.obter_por_id', return_value=None):
+                response = client.get("/chat/conversas")
+
+                assert response.status_code == 200
+                # Lista deve estar vazia (sala inexistente é ignorada)
+                assert response.json() == []
+
+    def test_listar_conversas_outro_participante_inexistente(self, client, fazer_login, criar_usuario_direto):
+        """Deve tratar quando não encontra outro participante na sala"""
+        usuario_id = criar_usuario_direto(
+            nome="User Sem Outro",
+            email="sem_outro@teste.com",
+            senha="Teste@123"
+        )
+        fazer_login("sem_outro@teste.com", "Teste@123")
+
+        # Mock para simular sala sem outro participante
+        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_list_user:
+            mock_participacao = MagicMock()
+            mock_participacao.sala_id = "sala_teste"
+            mock_list_user.return_value = [mock_participacao]
+
+            with patch('routes.chat_routes.chat_sala_repo.obter_por_id') as mock_sala:
+                mock_sala_obj = MagicMock()
+                mock_sala_obj.id = "sala_teste"
+                mock_sala.return_value = mock_sala_obj
+
+                # Simular lista de participantes com apenas o próprio usuário
+                with patch('routes.chat_routes.chat_participante_repo.listar_por_sala') as mock_list_sala:
+                    mock_part_proprio = MagicMock()
+                    mock_part_proprio.usuario_id = usuario_id
+                    mock_list_sala.return_value = [mock_part_proprio]
+
+                    response = client.get("/chat/conversas")
+
+                    assert response.status_code == 200
+                    # Lista deve estar vazia (sem outro participante)
+                    assert response.json() == []
+
+    def test_listar_conversas_outro_usuario_excluido(self, client, fazer_login, criar_usuario_direto):
+        """Deve tratar quando outro usuário foi excluído do sistema"""
+        usuario_id = criar_usuario_direto(
+            nome="User Outro Excluido",
+            email="outro_excluido@teste.com",
+            senha="Teste@123"
+        )
+        fazer_login("outro_excluido@teste.com", "Teste@123")
+
+        # Mock para simular sala com participante cujo usuário foi excluído
+        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_list_user:
+            mock_participacao = MagicMock()
+            mock_participacao.sala_id = "sala_teste"
+            mock_list_user.return_value = [mock_participacao]
+
+            with patch('routes.chat_routes.chat_sala_repo.obter_por_id') as mock_sala:
+                mock_sala_obj = MagicMock()
+                mock_sala_obj.id = "sala_teste"
+                mock_sala.return_value = mock_sala_obj
+
+                with patch('routes.chat_routes.chat_participante_repo.listar_por_sala') as mock_list_sala:
+                    mock_part_proprio = MagicMock()
+                    mock_part_proprio.usuario_id = usuario_id
+                    mock_part_outro = MagicMock()
+                    mock_part_outro.usuario_id = 99999  # Usuário que foi excluído
+                    mock_list_sala.return_value = [mock_part_proprio, mock_part_outro]
+
+                    # Usuário excluído - retorna None
+                    with patch('routes.chat_routes.usuario_repo.obter_por_id', return_value=None):
+                        response = client.get("/chat/conversas")
+
+                        assert response.status_code == 200
+                        # Lista deve estar vazia (outro usuário foi excluído)
+                        assert response.json() == []
+
+
+class TestChatEnviarMensagemEdgeCases:
+    """Testes de casos de borda para envio de mensagem"""
+
+    def test_enviar_mensagem_dto_validation_error(self, client, fazer_login, criar_usuario_direto):
+        """Deve tratar ValidationError do DTO corretamente"""
+        criar_usuario_direto(
+            nome="User Msg DTO",
+            email="msg_dto@teste.com",
+            senha="Teste@123"
+        )
+        fazer_login("msg_dto@teste.com", "Teste@123")
+
+        # Tentar enviar mensagem com dados que falham validação do DTO
+        with patch('routes.chat_routes.EnviarMensagemDTO') as mock_dto:
+            from pydantic import ValidationError as PydanticValidationError
+            from pydantic import BaseModel, field_validator
+
+            class TestModel(BaseModel):
+                campo: str
+
+                @field_validator('campo')
+                @classmethod
+                def validar(cls, v):
+                    raise ValueError("Valor inválido")
+
+            try:
+                TestModel(campo="abc")
+            except PydanticValidationError as e:
+                mock_dto.side_effect = e
+
+            response = client.post(
+                "/chat/mensagens",
+                data={"sala_id": "sala_teste", "mensagem": "teste"}
+            )
+
+            # Deve retornar 400 Bad Request
+            assert response.status_code == 400
+
+    def test_criar_sala_dto_validation_error(self, client, fazer_login, criar_usuario_direto):
+        """Deve tratar ValidationError do CriarSalaDTO corretamente"""
+        criar_usuario_direto(
+            nome="User Sala DTO",
+            email="sala_dto@teste.com",
+            senha="Teste@123"
+        )
+        fazer_login("sala_dto@teste.com", "Teste@123")
+
+        # Tentar criar sala com dados que falham validação do DTO
+        with patch('routes.chat_routes.CriarSalaDTO') as mock_dto:
+            from pydantic import ValidationError as PydanticValidationError
+            from pydantic import BaseModel, field_validator
+
+            class TestModel(BaseModel):
+                campo: int
+
+                @field_validator('campo')
+                @classmethod
+                def validar(cls, v):
+                    raise ValueError("Valor inválido")
+
+            try:
+                TestModel(campo=1)
+            except PydanticValidationError as e:
+                mock_dto.side_effect = e
+
+            response = client.post("/chat/salas", data={"outro_usuario_id": 1})
+
+            # Deve retornar 400 Bad Request
+            assert response.status_code == 400

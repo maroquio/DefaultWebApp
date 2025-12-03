@@ -497,6 +497,36 @@ class TestSalvarLoteConfiguracoes:
             assert response.status_code == status.HTTP_303_SEE_OTHER
 
     @pytest.mark.asyncio
+    async def test_salvar_lote_validation_error_erros_vazios(self):
+        """Deve usar mensagem fallback quando processar_erros_validacao retorna vazio"""
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+        from pydantic import ValidationError as PydanticValidationError
+        from pydantic import BaseModel, field_validator
+
+        request = self._criar_request_mock({"campo_invalido": "abc"})
+
+        with patch('routes.admin_configuracoes_routes.SalvarConfiguracaoLoteDTO') as mock_dto:
+            # Criar uma ValidationError real
+            class TestModel(BaseModel):
+                campo: str
+
+                @field_validator('campo')
+                @classmethod
+                def validar(cls, v):
+                    raise ValueError("Valor inválido")
+
+            try:
+                TestModel(campo="abc")
+            except PydanticValidationError as e:
+                mock_dto.side_effect = e
+
+            # Mock processar_erros_validacao para retornar dict vazio
+            with patch('routes.admin_configuracoes_routes.processar_erros_validacao', return_value={}):
+                response = await post_salvar_lote_configuracoes(request)
+
+                assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
     async def test_salvar_lote_erro_banco(self):
         """Deve tratar erro de banco de dados"""
         from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
