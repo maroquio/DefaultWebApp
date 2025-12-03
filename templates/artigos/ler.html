@@ -147,7 +147,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const conteudoEl = document.getElementById('conteudo-artigo');
-        const conteudoOriginal = conteudoEl.textContent;
+        const conteudoOriginal = conteudoEl.textContent.trim();
 
         // Configura o marked
         marked.setOptions({

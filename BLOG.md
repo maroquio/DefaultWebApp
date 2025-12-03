@@ -2922,7 +2922,7 @@ Crie o arquivo `templates/artigos/buscar.html`:
                         ) }}
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100" style="height: calc(3.5rem + 2px);">
                             <i class="bi bi-filter"></i> Filtrar
                         </button>
                     </div>
@@ -3143,7 +3143,7 @@ Crie o arquivo `templates/artigos/ler.html`:
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const conteudoEl = document.getElementById('conteudo-artigo');
-        const conteudoOriginal = conteudoEl.textContent;
+        const conteudoOriginal = conteudoEl.textContent.trim();
 
         // Configura o marked
         marked.setOptions({
@@ -3727,6 +3727,30 @@ async def sobre(request: Request):
 > - Importados os repositórios `artigo_repo` e `categoria_repo`
 > - As rotas `/` e `/index` agora buscam os últimos 6 artigos publicados
 > - Categorias são carregadas para exibir os filtros na home
+
+### 16.2 Atualizando o Menu Público
+
+O template `templates/base_publica.html` contém o menu de navegação público. Vamos substituir o link "Exemplos" pelo link "Artigos", que levará à página de busca de artigos.
+
+No arquivo `templates/base_publica.html`, localize o item de menu "Exemplos" (por volta da linha 49):
+
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/exemplos' in request.path else '' }}"
+                            href="/exemplos">Exemplos</a>
+                    </li>
+```
+
+Substitua por:
+
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/artigos' in request.path else '' }}"
+                            href="/artigos">Artigos</a>
+                    </li>
+```
+
+> **Resultado esperado:** O menu público agora exibe: **Início** → **Sobre** → **Artigos**. O link "Artigos" direciona para a página de busca/listagem pública de artigos (`/artigos`).
 
 ---
 
