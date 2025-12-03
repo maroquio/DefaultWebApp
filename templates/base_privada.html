@@ -49,7 +49,7 @@
                             href="/usuario/perfil/visualizar"
                             {{ 'aria-current=page' if '/usuario/perfil/' in request.path else '' }}>Perfil</a>
                     </li>
-                    {% if request.session.get('usuario_logado')['perfil'] == 'Administrador' %}
+                    {% if usuario_logado and usuario_logado.perfil == 'Administrador' %}
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/admin/chamados/' in request.path else '' }}"
                             href="/admin/chamados/listar"

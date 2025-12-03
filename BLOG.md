@@ -19,12 +19,19 @@ Este tutorial guia você passo a passo na criação de um blog completo usando c
 4. [Configurando o Ambiente](#4-configurando-o-ambiente)
 5. [Configurando os Perfis de Usuário](#5-configurando-os-perfis-de-usuário)
 6. [Criando o CRUD de Categorias](#6-criando-o-crud-de-categorias)
-7. [Criando o CRUD de Artigos](#7-criando-o-crud-de-artigos)
-8. [Modificando os Templates Base](#8-modificando-os-templates-base)
-9. [Atualizando as Rotas Públicas](#9-atualizando-as-rotas-públicas)
-10. [Configurando o main.py](#10-configurando-o-mainpy)
-11. [Testando a Aplicação](#11-testando-a-aplicação)
-12. [Conclusão](#12-conclusão)
+7. [Registrando o CRUD de Categorias](#7-registrando-o-crud-de-categorias)
+8. [Adicionando Menu e Card de Categorias no Dashboard](#8-adicionando-menu-e-card-de-categorias-no-dashboard)
+9. [Testando o CRUD de Categorias](#9-testando-o-crud-de-categorias)
+10. [Criando o CRUD de Artigos](#10-criando-o-crud-de-artigos)
+11. [Templates de Artigos](#11-templates-de-artigos)
+12. [Registrando o CRUD de Artigos](#12-registrando-o-crud-de-artigos)
+13. [Adicionando Menu e Card de Artigos no Dashboard](#13-adicionando-menu-e-card-de-artigos-no-dashboard)
+14. [Testando o CRUD de Artigos](#14-testando-o-crud-de-artigos)
+15. [Templates Base e Home Page](#15-templates-base-e-home-page)
+16. [Rotas Públicas e Configuração do main.py](#16-rotas-públicas-e-configuração-do-mainpy)
+17. [Testando a Aplicação Completa](#17-testando-a-aplicação-completa)
+18. [Resumo dos Arquivos Criados](#18-resumo-dos-arquivos-criados)
+19. [Conclusão](#19-conclusão)
 
 ---
 
@@ -44,20 +51,41 @@ Antes de começar, certifique-se de ter instalado:
 1. Acesse o repositório upstream: https://github.com/maroquio/DefaultWebApp
 2. Clique no botão **Fork** no canto superior direito
 3. Selecione sua conta como destino do fork
-4. Opcionalmente, renomeie o repositório para "SimpleBlog" ou outro nome de sua preferência
+4. **Renomeie o repositório para "BlogSimples"** no campo "Repository name"
+5. Clique em **Create fork**
 
 ---
 
 ## 3. Clonando o Repositório
 
-Após criar o fork, clone-o para sua máquina:
+Após criar o fork, você deve cloná-lo para sua máquina. Para isso, abra o VS Code em uma pasta vazia de sua preferência e abra o terminal integrado (Ctrl + `). Em seguida, execute os comandos abaixo:
 
 ```bash
 # Substitua SEU_USUARIO pelo seu usuário do GitHub
-git clone https://github.com/SEU_USUARIO/SimpleBlog.git
-cd SimpleBlog
+git clone https://github.com/SEU_USUARIO/BlogSimples.git
+cd BlogSimples
+code .
+```
 
-# Configure o upstream para receber atualizações futuras
+Uma nova instância do VS Code será aberta na pasta do projeto clonado como raiz. Mantenha apenas esta instância aberta para evitar conflitos de ambiente, ou seja, feche outras janelas do VS Code que estejam abertas em outras pastas.
+
+### 3.1. Configurando o Git
+
+No terminal do VS Code aberto na raiz do projeto, configure seu nome e email para os commits:
+
+```bash
+# Configure seu nome (usado nos commits)
+git config user.name "Seu Nome Completo"
+
+# Configure seu email (deve ser o mesmo do GitHub)
+git config user.email "seu.email@exemplo.com"
+```
+
+### 3.2. Configurando o upstream
+
+Para receber atualizações futuras do repositório original:
+
+```bash
 git remote add upstream https://github.com/maroquio/DefaultWebApp.git
 ```
 
@@ -84,7 +112,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4.3. Configurando variáveis de ambiente
+### 4.3. Extensões recomendadas do VS Code
+
+Para uma melhor experiência de desenvolvimento, instale as seguintes extensões no VS Code:
+
+| Extensão | Descrição |
+|----------|-----------|
+| **Python** | Suporte completo para Python (IntelliSense, debug, linting) |
+| **Jinja** | Syntax highlighting para templates Jinja2 |
+| **HTML CSS Support** | Autocomplete de classes CSS em arquivos HTML |
+| **IntelliSense for CSS class names in HTML** | Autocomplete de classes CSS baseado nos arquivos do projeto |
+| **SQLite3 Editor** | Visualizar e editar o banco de dados SQLite |
+| **vscode-icons** | Ícones para diferentes tipos de arquivos |
+| **Reload** | Botão para recarregar a janela do VS Code rapidamente |
+
+> **Dica:** Para instalar uma extensão, pressione **Ctrl+Shift+X**, pesquise pelo nome e clique em **Install**.
+
+### 4.4. Selecionando o interpretador Python
+
+Após criar o ambiente virtual, é importante configurar o VS Code para usar o interpretador Python correto:
+
+1. Pressione **Ctrl+Shift+P** para abrir a paleta de comandos
+2. Digite **Python: Select Interpreter** e pressione Enter
+3. Selecione o interpretador que está dentro da pasta `.venv`:
+   - Windows: `.venv\Scripts\python.exe`
+   - Linux/Mac: `.venv/bin/python`
+
+> **Importante:** Sempre que abrir o projeto, verifique se o interpretador correto está selecionado. Você pode ver o interpretador atual na barra de status do VS Code (canto inferior esquerdo).
+
+### 4.5. Configurando variáveis de ambiente
 
 Copie o arquivo de exemplo e configure:
 
@@ -92,9 +148,23 @@ Copie o arquivo de exemplo e configure:
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` conforme necessário.
+Edite o arquivo `.env` e atualize as seguintes variáveis:
 
-### 4.4. Testando a instalação
+1. **APP_NAME**: Altere para o nome do seu blog
+   ```
+   APP_NAME=Blog do João Silva
+   ```
+   > Substitua "João Silva" pelo seu nome completo.
+
+2. **SECRET_KEY**: Gere uma chave secreta única para sua aplicação
+   - Acesse: https://generate-secret.now.sh/64
+   - Copie a chave gerada e cole no arquivo `.env`:
+   ```
+   SECRET_KEY=sua_chave_gerada_aqui
+   ```
+   > **Importante:** Nunca compartilhe ou versione sua SECRET_KEY.
+
+### 4.6. Testando a instalação
 
 ```bash
 python main.py
@@ -106,11 +176,11 @@ Acesse http://localhost:8400 para verificar se está funcionando (porta padrão 
 
 ## 5. Configurando os Perfis de Usuário
 
-O sistema de blog utiliza dois novos perfis de usuário além dos existentes. **O arquivo `util/perfis.py` do projeto original contém os perfis ADMIN, CLIENTE e VENDEDOR. Você deve ADICIONAR os novos perfis ao enum existente**, mantendo os perfis originais:
+O sistema de blog utiliza dois perfis de usuário diferentes dos existentes. O arquivo `util/perfis.py` do projeto original contém os perfis ADMIN, CLIENTE e VENDEDOR. **Você deve SUBSTITUIR os perfis CLIENTE e VENDEDOR por AUTOR e LEITOR**:
 
 ### Arquivo: `util/perfis.py`
 
-Localize o enum `Perfil` e adicione os novos perfis `AUTOR` e `LEITOR`:
+Localize o enum `Perfil` e **substitua** os perfis `CLIENTE` e `VENDEDOR` por `AUTOR` e `LEITOR`. O arquivo deve ficar assim:
 
 ```python
 """
@@ -147,10 +217,8 @@ class Perfil(EnumEntidade):
 
     # PERFIS DO SEU SISTEMA #####################################
     ADMIN = "Administrador"
-    CLIENTE = "Cliente"
-    VENDEDOR = "Vendedor"
-    AUTOR = "Autor"      # ADICIONAR para o blog
-    LEITOR = "Leitor"    # ADICIONAR para o blog
+    AUTOR = "Autor"
+    LEITOR = "Leitor"
     # FIM DOS PERFIS ############################################
 
 ```
@@ -158,14 +226,12 @@ class Perfil(EnumEntidade):
 ### Explicação dos Perfis:
 
 - **Administrador**: Gerencia categorias e tem acesso administrativo completo
-- **Cliente**: Perfil padrão do sistema (mantido do projeto original)
-- **Vendedor**: Perfil do sistema (mantido do projeto original)
 - **Autor**: Pode criar, editar e publicar artigos
 - **Leitor**: Pode ler artigos publicados
 
-### 5.1. Atualizando o UsuarioLogado (Opcional)
+### 5.1. Atualizando o UsuarioLogado
 
-O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` que representa o usuário autenticado. Para adicionar métodos auxiliares para os novos perfis, localize a classe e adicione os seguintes métodos após os existentes (`is_admin()`, `is_cliente()`, `is_vendedor()`):
+O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` que representa o usuário autenticado. Como substituímos os perfis CLIENTE e VENDEDOR, você deve **substituir os métodos `is_cliente()` e `is_vendedor()` por `is_autor()` e `is_leitor()`**:
 
 ```python
     def is_autor(self) -> bool:
@@ -177,7 +243,20 @@ O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` qu
         return self.perfil == Perfil.LEITOR.value
 ```
 
-> **Nota:** Esses métodos são opcionais. Você também pode usar `usuario_logado.perfil == 'Autor'` diretamente no código.
+> **Nota:** O método `is_admin()` deve ser mantido. Remova apenas `is_cliente()` e `is_vendedor()`.
+
+### 5.3. Substituindo os Perfis Antigos Pelos Novos no Restante do Projeto
+
+Clique na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilidade a maiúsculas e minúsculas e faça as seguintes substituições globais no projeto:
+
+| Buscar               | Substituir por      |
+|----------------------|---------------------|
+| `CLIENTE`            | `AUTOR`             |
+| `VENDEDOR`           | `LEITOR`            |
+| `Cliente`            | `Autor`             |
+| `Vendedor`           | `Leitor`            |
+| `cliente`            | `autor`             |
+| `vendedor`           | `leitor`            |
 
 ---
 
@@ -589,7 +668,7 @@ async def get_cadastrar(
     Acessível em: GET /admin/categorias/cadastrar
     """
     return templates.TemplateResponse(
-        "admin/categorias/cadastro.html",
+        "admin/categorias/cadastrar.html",
         {"request": request, "usuario_logado": usuario_logado},
     )
 
@@ -650,7 +729,7 @@ async def post_cadastrar(
     except ValidationError as e:
         raise ErroValidacaoFormulario(
             validation_error=e,
-            template_path="admin/categorias/cadastro.html",
+            template_path="admin/categorias/cadastrar.html",
             dados_formulario={"nome": nome, "descricao": descricao},
             campo_padrao="nome",
         )
@@ -814,7 +893,7 @@ async def post_excluir(
 
 #### 6.6.1. Template de Listagem
 
-Crie o arquivo `templates/admin/categorias/listar.html`:
+Crie a pasta `templates/admin/categorias/` e dentro dela crie o arquivo `listar.html`:
 
 ```html
 {% extends "base_privada.html" %}
@@ -920,6 +999,8 @@ Crie o arquivo `templates/admin/categorias/listar.html`:
 </script>
 {% endblock %}
 ```
+
+**ATENÇÃO:** Não se preocupe caso veja algum erro de checagem de código no VS Code relacionado ao template acima e aos demais que forem criados. Isso ocorre porque algumas variáveis são dinâmicas e só estarão disponíveis em tempo de execução. Desde que o template funcione corretamente ao rodar a aplicação, você pode ignorar esses avisos.
 
 #### 6.6.2. Template de Cadastro
 
@@ -1059,9 +1140,172 @@ Crie o arquivo `templates/admin/categorias/editar.html`:
 
 ---
 
-## 7. Criando o CRUD de Artigos
+## 7. Registrando o CRUD de Categorias
 
-### 7.1. Model de Artigo
+Antes de testar o CRUD de Categorias, precisamos registrá-lo no `main.py` para que a aplicação reconheça as novas rotas e crie a tabela no banco de dados.
+
+### 7.1. Adicionar import do repositório
+
+No início do arquivo `main.py`, no final da linha 26, adicione `categoria_repo`. A linha vai ficar assim:
+
+```python
+from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo
+```
+
+### 7.2. Adicionar import das rotas
+
+Ainda no `main.py`, no final da seção de importação de rotas, aproximadamente depois da linha 38, adicione a linha a seguir:
+
+```python
+from routes.admin_categorias_routes import router as admin_categorias_router
+```
+
+### 7.3. Adicionar tabela na lista TABELAS
+
+No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `categoria` ao final da listagem:
+
+```python
+TABELAS = [
+    (usuario_repo, "usuario"),
+    (configuracao_repo, "configuracao"),
+    (chamado_repo, "chamado"),
+    (chamado_interacao_repo, "chamado_interacao"),
+    (chat_sala_repo, "chat_sala"),
+    (chat_participante_repo, "chat_participante"),
+    (chat_mensagem_repo, "chat_mensagem"),
+    (categoria_repo, "categoria"),  # NOVA TABELA
+]
+```
+
+### 7.4. Adicionar router na lista ROUTERS
+
+Localize a lista `ROUTERS` e adicione o novo router, logo depois da linha `(admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),`, que provavelmente está na linha 118. A linha a ser adicionada é:
+
+```python
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
+```
+
+O bloco `ROUTERS` ficará assim:
+
+```python
+ROUTERS = [
+    (auth_router, ["Autenticação"], "autenticação"),
+    (chamados_router, ["Chamados"], "chamados"),
+    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
+    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
+    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
+    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
+    (usuario_router, ["Usuário"], "usuário"),
+    (chat_router, ["Chat"], "chat"),
+    (public_router, ["Público"], "público"),  # Deve ficar por último
+    (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
+]
+```
+
+> **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
+
+---
+
+## 8. Adicionando Menu e Card de Categorias no Dashboard
+
+Agora vamos adicionar o acesso ao CRUD de Categorias no painel do administrador.
+
+### 8.1. Adicionando o link no menu de navegação
+
+No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}` da linha 52).
+
+Após o final do link de **Backup** na linha 82, de um ENTER e adicione o link para **Categorias**:
+
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
+                            href="/admin/categorias/listar"
+                            {{ 'aria-current=page' if '/admin/categorias/' in request.path else '' }}>Categorias</a>
+                    </li>
+```
+
+### 8.2. Adicionando o card no dashboard do administrador
+
+No arquivo `templates/dashboard.html`, localize a seção de cards do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}`).
+
+Adicione um novo card para **Categorias** junto aos outros cards administrativos:
+
+```html
+                <!-- Card Categorias -->
+                <div class="col">
+                    <div class="card h-100 shadow-sm shadow-hover">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-folder text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Categorias</h5>
+                            <p class="card-text text-muted">
+                                Gerencie as categorias de artigos do blog
+                            </p>
+                            <a href="/admin/categorias/listar" class="btn btn-primary">
+                                <i class="bi bi-folder"></i> Acessar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+```
+
+> **Resultado esperado:** O administrador verá o link "Categorias" no menu superior e um card de acesso rápido na página inicial (dashboard).
+
+---
+
+## 9. Testando o CRUD de Categorias
+
+Agora vamos testar se o CRUD de Categorias está funcionando corretamente.
+
+### 9.1. Iniciando a aplicação
+
+No VS Code, pressione **Ctrl+F5** para executar a aplicação sem depuração (ou execute `python main.py` no terminal).
+
+Você deverá ver algo como:
+
+```
+============================================================
+                    BLOG DO FULANO
+============================================================
+Modo de execução: Development
+============================================================
+
+INFO:     Tabela 'categoria' verificada/criada com sucesso.
+...
+INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
+```
+
+### 9.2. Acessando como Administrador
+
+1. Acesse http://localhost:8400 no navegador
+2. Clique em **Entrar** ou acesse http://localhost:8400/login
+3. Faça login com as credenciais do administrador padrão:
+   - **Email:** `padrao@administrador.com`
+   - **Senha:** `1234aA@#`
+
+### 9.3. Testando as funcionalidades
+
+Após o login, teste as seguintes funcionalidades:
+
+1. **Verificar o menu:** O link "Categorias" deve aparecer no menu superior
+2. **Verificar o dashboard:** O card "Categorias" deve aparecer na página inicial
+3. **Listar categorias:** Clique em "Categorias" - a lista deve estar vazia inicialmente
+4. **Cadastrar categoria:** Clique em "Nova Categoria" e cadastre algumas categorias de teste:
+   - Nome: "Tecnologia", Descrição: "Artigos sobre tecnologia e programação"
+   - Nome: "Esportes", Descrição: "Notícias e artigos sobre esportes"
+   - Nome: "Cultura", Descrição: "Arte, música, cinema e literatura"
+5. **Editar categoria:** Altere o nome da categoria "Cultura" para "Cultura e Entretenimento", salve e depois altere novamente para "Cultura"
+6. **Excluir categoria:** Crie uma categoria chamada "Teste Exclusão" e depois exclua essa categoria
+
+> **Dica:** Se encontrar erros, verifique o terminal onde a aplicação está rodando para ver as mensagens de log.
+
+---
+
+## 10. Criando o CRUD de Artigos
+
+### 10.1. Model de Artigo
 
 Crie o arquivo `model/artigo_model.py`:
 
@@ -1101,7 +1345,7 @@ class Artigo:
     categoria_nome: Optional[str] = None
 ```
 
-### 7.2. Queries SQL de Artigo
+### 10.2. Queries SQL de Artigo
 
 Crie o arquivo `sql/artigo_sql.py`:
 
@@ -1273,7 +1517,7 @@ VERIFICAR_TITULO_EXISTE = """
 """
 ```
 
-### 7.3. Repositório de Artigo
+### 10.3. Repositório de Artigo
 
 Crie o arquivo `repo/artigo_repo.py`:
 
@@ -1525,7 +1769,7 @@ def titulo_existe(titulo: str, excluir_id: int = 0) -> bool:
         return False
 ```
 
-### 7.4. DTO de Artigo
+### 10.4. DTO de Artigo
 
 Crie o arquivo `dtos/artigo_dto.py`:
 
@@ -1598,11 +1842,12 @@ class AlterarArtigoDTO(BaseModel):
     _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo("Categoria"))
 ```
 
-### 7.5. Rotas de Artigos
+### 10.5. Rotas de Artigos
 
 Crie o arquivo `routes/artigos_routes.py`:
 
 ```python
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, status
@@ -1640,6 +1885,9 @@ async def meus_artigos(
     request: Request,
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    
     """Lista os artigos do autor logado."""
     artigos = artigo_repo.obter_por_usuario(usuario_logado.id)
 
@@ -1682,10 +1930,13 @@ async def post_cadastrar(
     titulo: str = Form(""),
     resumo: str = Form(""),
     conteudo: str = Form(""),
-    status_artigo: str = Form("Rascunho"),
+    acao: str = Form("rascunho"),
     categoria_id: int = Form(0),
 ):
     """Processa o cadastro de um novo artigo."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
     ip = obter_identificador_cliente(request)
     if not artigos_limiter.verificar(ip):
         informar_erro(
@@ -1698,6 +1949,9 @@ async def post_cadastrar(
         )
 
     categorias = categoria_repo.obter_todos()
+
+    # Determina status baseado na ação do botão clicado
+    status_artigo = "Rascunho" if acao == "rascunho" else "Finalizado"
 
     try:
         dto = CriarArtigoDTO(
@@ -1750,10 +2004,8 @@ async def post_cadastrar(
                 "titulo": titulo,
                 "resumo": resumo,
                 "conteudo": conteudo,
-                "status_artigo": status_artigo,
                 "categoria_id": categoria_id,
                 "categorias": categorias,
-                "StatusArtigo": StatusArtigo,
             },
             campo_padrao="titulo",
         )
@@ -1767,6 +2019,9 @@ async def get_editar(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exibe o formulário de edição de artigo."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
     artigo = artigo_repo.obter_por_id(id)
 
     if not artigo:
@@ -1807,10 +2062,13 @@ async def post_editar(
     titulo: str = Form(""),
     resumo: str = Form(""),
     conteudo: str = Form(""),
-    status_artigo: str = Form("Rascunho"),
+    acao: str = Form("rascunho"),
     categoria_id: int = Form(0),
 ):
     """Processa a edição de um artigo."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
     ip = obter_identificador_cliente(request)
     if not artigos_limiter.verificar(ip):
         informar_erro(
@@ -1839,6 +2097,9 @@ async def post_editar(
         )
 
     categorias = categoria_repo.obter_todos()
+
+    # Determina status baseado na ação do botão clicado
+    status_artigo = "Rascunho" if acao == "rascunho" else "Finalizado"
 
     try:
         dto = AlterarArtigoDTO(
@@ -1886,12 +2147,10 @@ async def post_editar(
                 "titulo": titulo,
                 "resumo": resumo,
                 "conteudo": conteudo,
-                "status_artigo": status_artigo,
                 "categoria_id": categoria_id,
                 "id": id,
                 "artigo": artigo_atual,
                 "categorias": categorias,
-                "StatusArtigo": StatusArtigo,
             },
             campo_padrao="titulo",
         )
@@ -1905,6 +2164,9 @@ async def post_excluir(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exclui um artigo."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    
     ip = obter_identificador_cliente(request)
     if not artigos_limiter.verificar(ip):
         informar_erro(
@@ -1952,6 +2214,9 @@ async def post_publicar(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Publica um artigo."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    
     artigo = artigo_repo.obter_por_id(id)
     if not artigo:
         informar_erro(request, "Artigo não encontrado.")
@@ -1973,6 +2238,45 @@ async def post_publicar(
         informar_sucesso(request, "Artigo publicado com sucesso!")
     else:
         informar_erro(request, "Erro ao publicar artigo.")
+
+    return RedirectResponse(
+        url="/artigos/meus",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/pausar/{id}")
+@requer_autenticacao([Perfil.AUTOR.value, Perfil.ADMIN.value])
+async def post_pausar(
+    request: Request,
+    id: int,
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Pausa um artigo publicado."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    artigo = artigo_repo.obter_por_id(id)
+    if not artigo:
+        informar_erro(request, "Artigo não encontrado.")
+        return RedirectResponse(
+            url="/artigos/meus",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    # Verifica permissão
+    if artigo.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
+        informar_erro(request, "Você não tem permissão para pausar este artigo.")
+        return RedirectResponse(
+            url="/artigos/meus",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    if artigo_repo.alterar_status(id, StatusArtigo.PAUSADO.value):
+        logger.info(f"Artigo {id} pausado por usuário {usuario_logado.id}")
+        informar_sucesso(request, "Artigo pausado com sucesso!")
+    else:
+        informar_erro(request, "Erro ao pausar artigo.")
 
     return RedirectResponse(
         url="/artigos/meus",
@@ -2004,7 +2308,7 @@ async def listar_artigos(
 
     # Ordenação
     if ordem == "antigos":
-        artigos = sorted(artigos, key=lambda a: a.data_publicacao or a.data_cadastro)
+        artigos = sorted(artigos, key=lambda a: a.data_publicacao or a.data_cadastro or datetime.min)
     elif ordem == "visualizacoes":
         artigos = sorted(artigos, key=lambda a: a.qtde_visualizacoes or 0, reverse=True)
     # Default é "recentes" (já vem ordenado do banco)
@@ -2033,6 +2337,9 @@ async def ler_artigo(
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exibe um artigo completo (somente para usuários autenticados)."""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    
     artigo = artigo_repo.obter_por_id(id)
 
     if not artigo:
@@ -2068,11 +2375,11 @@ async def ler_artigo(
 
 ---
 
-## 7. Templates de Artigos
+## 11. Templates de Artigos
 
 Agora vamos criar os templates HTML para o módulo de artigos. Os autores usarão esses templates para gerenciar seus artigos, enquanto os leitores usarão para navegar e ler o conteúdo.
 
-### 7.1 Template de Listagem (Meus Artigos)
+### 11.1 Template de Listagem (Meus Artigos)
 
 Crie o arquivo `templates/artigos/listar.html`:
 
@@ -2149,7 +2456,12 @@ Crie o arquivo `templates/artigos/listar.html`:
                                             class="btn btn-outline-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        {% if artigo.status != 'Publicado' %}
+                                        {% if artigo.status == 'Publicado' %}
+                                        <button type="button" class="btn btn-outline-warning" title="Pausar"
+                                            onclick="pausarArtigo({{ artigo.id }}, '{{ artigo.titulo|replace("'", "\\'") }}')">
+                                            <i class="bi bi-pause-circle"></i>
+                                        </button>
+                                        {% elif artigo.status in ['Finalizado', 'Pausado'] %}
                                         <button type="button" class="btn btn-outline-success" title="Publicar"
                                             onclick="publicarArtigo({{ artigo.id }}, '{{ artigo.titulo|replace("'", "\\'") }}')">
                                             <i class="bi bi-send"></i>
@@ -2198,14 +2510,32 @@ Crie o arquivo `templates/artigos/listar.html`:
         abrirModalConfirmacao({
             url: `/artigos/publicar/${artigoId}`,
             mensagem: `Deseja publicar o artigo "${artigoTitulo}"?`,
-            detalhes: '<p class="text-info"><i class="bi bi-info-circle"></i> O artigo ficará visível para todos os usuários autenticados.</p>'
+            detalhes: '<p class="text-info"><i class="bi bi-info-circle"></i> O artigo ficará visível para todos os usuários autenticados.</p>',
+            tipo: 'warning',
+            titulo: 'Confirmar Publicação',
+            icone: 'bi-send',
+            btnTexto: 'Publicar',
+            btnIcone: 'bi-send'
+        });
+    }
+
+    function pausarArtigo(artigoId, artigoTitulo) {
+        abrirModalConfirmacao({
+            url: `/artigos/pausar/${artigoId}`,
+            mensagem: `Deseja pausar o artigo "${artigoTitulo}"?`,
+            detalhes: '<p class="text-warning"><i class="bi bi-info-circle"></i> O artigo ficará temporariamente indisponível para leitores.</p>',
+            tipo: 'warning',
+            titulo: 'Confirmar Pausa',
+            icone: 'bi-pause-circle',
+            btnTexto: 'Pausar',
+            btnIcone: 'bi-pause-circle'
         });
     }
 </script>
 {% endblock %}
 ```
 
-### 7.2 Template de Cadastro
+### 11.2 Template de Cadastro
 
 Crie o arquivo `templates/artigos/cadastrar.html`:
 
@@ -2286,32 +2616,24 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
 
                         <div class="col-12 mb-3">
                             <label for="conteudo" class="form-label">Conteúdo <span class="text-danger">*</span></label>
-                            <textarea name="conteudo" id="conteudo" required>{{ dados.conteudo if dados is defined and dados.conteudo else '' }}</textarea>
+                            <textarea name="conteudo" id="conteudo">{{ dados.conteudo if dados is defined and dados.conteudo else '' }}</textarea>
                             <small class="form-text text-muted">
                                 Use Markdown para formatar seu texto. Mínimo de 50 caracteres.
                             </small>
                         </div>
 
-                        <div class="col-md-6">
-                            {{ field(
-                                name='status_artigo',
-                                label='Status',
-                                type='select',
-                                options={
-                                    'Rascunho': 'Rascunho - Salvar para continuar depois',
-                                    'Finalizado': 'Finalizado - Pronto para revisão',
-                                    'Publicado': 'Publicado - Visível para todos'
-                                }
-                            ) }}
-                        </div>
                     </div>
                 </div>
                 <div class="card-footer p-4">
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Salvar Artigo
+                        <input type="hidden" name="acao" id="acao" value="rascunho">
+                        <button type="submit" class="btn btn-secondary" onclick="document.getElementById('acao').value='rascunho'">
+                            <i class="bi bi-file-earmark"></i> Salvar Rascunho
                         </button>
-                        <a href="/artigos/meus" class="btn btn-secondary">
+                        <button type="submit" class="btn btn-success" onclick="document.getElementById('acao').value='finalizar'">
+                            <i class="bi bi-check-circle"></i> Concluir Artigo
+                        </button>
+                        <a href="/artigos/meus" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -2349,14 +2671,29 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
 
         // Sincronizar valor do editor para o textarea antes do submit
         document.getElementById('formArtigo').addEventListener('submit', function(e) {
-            easyMDE.codemirror.save();
+            // Sincroniza o valor do editor para o textarea
+            const conteudo = easyMDE.value();
+            document.getElementById('conteudo').value = conteudo;
+
+            // Valida se o conteúdo não está vazio
+            if (!conteudo || conteudo.trim().length < 50) {
+                e.preventDefault();
+                window.App.Modal.showWarning(
+                    'O conteúdo do artigo deve ter pelo menos 50 caracteres.',
+                    'Conteúdo obrigatório'
+                );
+                return false;
+            }
+
+            // Limpa o autosave do localStorage após validação bem-sucedida
+            localStorage.removeItem('smde_artigo-novo');
         });
     });
 </script>
 {% endblock %}
 ```
 
-### 7.3 Template de Edição
+### 11.3 Template de Edição
 
 Crie o arquivo `templates/artigos/editar.html`:
 
@@ -2441,26 +2778,10 @@ Crie o arquivo `templates/artigos/editar.html`:
 
                         <div class="col-12 mb-3">
                             <label for="conteudo" class="form-label">Conteúdo <span class="text-danger">*</span></label>
-                            <textarea name="conteudo" id="conteudo" required>{{ dados.conteudo if dados is defined and dados.conteudo else artigo.conteudo }}</textarea>
+                            <textarea name="conteudo" id="conteudo">{{ dados.conteudo if dados is defined and dados.conteudo else artigo.conteudo }}</textarea>
                             <small class="form-text text-muted">
                                 Use Markdown para formatar seu texto. Mínimo de 50 caracteres.
                             </small>
-                        </div>
-
-                        <div class="col-md-6">
-                            {% set status_atual = dados.status_artigo if dados is defined and dados.status_artigo else artigo.status %}
-                            {{ field(
-                                name='status_artigo',
-                                label='Status',
-                                type='select',
-                                value=status_atual,
-                                options={
-                                    'Rascunho': 'Rascunho - Salvar para continuar depois',
-                                    'Finalizado': 'Finalizado - Pronto para revisão',
-                                    'Publicado': 'Publicado - Visível para todos',
-                                    'Pausado': 'Pausado - Temporariamente indisponível'
-                                }
-                            ) }}
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -2477,15 +2798,14 @@ Crie o arquivo `templates/artigos/editar.html`:
                 </div>
                 <div class="card-footer p-4">
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Salvar Alterações
+                        <input type="hidden" name="acao" id="acao" value="rascunho">
+                        <button type="submit" class="btn btn-secondary" onclick="document.getElementById('acao').value='rascunho'">
+                            <i class="bi bi-file-earmark"></i> Salvar Rascunho
                         </button>
-                        {% if artigo.status != 'Publicado' %}
-                        <button type="button" class="btn btn-success" onclick="publicarArtigo()">
-                            <i class="bi bi-send"></i> Publicar
+                        <button type="submit" class="btn btn-success" onclick="document.getElementById('acao').value='finalizar'">
+                            <i class="bi bi-check-circle"></i> Concluir Artigo
                         </button>
-                        {% endif %}
-                        <a href="/artigos/meus" class="btn btn-secondary">
+                        <a href="/artigos/meus" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -2522,22 +2842,26 @@ Crie o arquivo `templates/artigos/editar.html`:
 
         // Sincronizar valor do editor para o textarea antes do submit
         document.getElementById('formArtigo').addEventListener('submit', function(e) {
-            easyMDE.codemirror.save();
+            // Sincroniza o valor do editor para o textarea
+            const conteudo = easyMDE.value();
+            document.getElementById('conteudo').value = conteudo;
+
+            // Valida se o conteúdo não está vazio
+            if (!conteudo || conteudo.trim().length < 50) {
+                e.preventDefault();
+                window.App.Modal.showWarning(
+                    'O conteúdo do artigo deve ter pelo menos 50 caracteres.',
+                    'Conteúdo obrigatório'
+                );
+                return false;
+            }
         });
     });
-
-    function publicarArtigo() {
-        abrirModalConfirmacao({
-            url: '/artigos/publicar/{{ artigo.id }}',
-            mensagem: 'Deseja publicar este artigo?',
-            detalhes: '<p class="text-info"><i class="bi bi-info-circle"></i> O artigo ficará visível para todos os usuários autenticados.</p>'
-        });
-    }
 </script>
 {% endblock %}
 ```
 
-### 7.4 Template de Busca (Listagem Pública)
+### 11.4 Template de Busca (Listagem Pública)
 
 Crie o arquivo `templates/artigos/buscar.html`:
 
@@ -2598,7 +2922,7 @@ Crie o arquivo `templates/artigos/buscar.html`:
                         ) }}
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100" style="height: calc(3.5rem + 2px);">
                             <i class="bi bi-filter"></i> Filtrar
                         </button>
                     </div>
@@ -2675,7 +2999,7 @@ Crie o arquivo `templates/artigos/buscar.html`:
 {% endblock %}
 ```
 
-### 7.5 Template de Leitura
+### 11.5 Template de Leitura
 
 Crie o arquivo `templates/artigos/ler.html`:
 
@@ -2819,7 +3143,7 @@ Crie o arquivo `templates/artigos/ler.html`:
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const conteudoEl = document.getElementById('conteudo-artigo');
-        const conteudoOriginal = conteudoEl.textContent;
+        const conteudoOriginal = conteudoEl.textContent.trim();
 
         // Configura o marked
         marked.setOptions({
@@ -2849,49 +3173,223 @@ Crie o arquivo `templates/artigos/ler.html`:
 
 ---
 
-## 8. Templates Base e Home Page
+## 12. Registrando o CRUD de Artigos
 
-Agora vamos modificar os templates base do boilerplate para incluir a navegação do blog e criar a página inicial.
+Antes de testar o CRUD de Artigos, precisamos registrá-lo no `main.py` para que a aplicação reconheça as novas rotas e crie a tabela no banco de dados.
 
-> **IMPORTANTE**: NÃO substitua os templates base inteiros! Adicione apenas os novos itens de menu conforme instruído abaixo.
+### 12.1. Adicionar import do repositório
 
-### 8.1 Atualizando o Template Base Privada
+No início do arquivo `main.py`, localize a linha de importação dos repositórios (aproximadamente linha 27) e adicione `artigo_repo`. A linha ficará assim:
 
-O template `templates/base_privada.html` já existe no boilerplate. Você precisa adicionar os links de navegação para **Categorias** (admin) e **Meus Artigos** (autores).
-
-> **IMPORTANTE**: O projeto utiliza o dataclass `UsuarioLogado` (injetado automaticamente pelo decorator `@requer_autenticacao`). Nos templates, use `usuario_logado.perfil` em vez de `request.session.get('usuario_logado')['perfil']`.
-
-#### Passo 1: Adicionar link de Categorias (apenas para Admin)
-
-No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}`).
-
-Após o link de **Backup**, adicione o link para **Categorias**:
-
-```html
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
-                            href="/admin/categorias/listar"
-                            {{ 'aria-current=page' if '/admin/categorias/' in request.path else '' }}>Categorias</a>
-                    </li>
+```python
+from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo, artigo_repo
 ```
 
-#### Passo 2: Adicionar link de Meus Artigos (para Autores e Admins)
+### 12.2. Adicionar import das rotas
 
-Ainda no mesmo arquivo, após o bloco do administrador e ANTES do `{% else %}`, adicione uma verificação para autores:
+Ainda no `main.py`, na seção de importação de rotas, logo depois da linha 40, adicione a linha a seguir:
+
+```python
+from routes.artigos_routes import router as artigos_router
+```
+
+### 12.3. Adicionar tabela na lista TABELAS
+
+No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `artigo` ao final da listagem, logo após a linha 81:
+
+```python
+TABELAS = [
+    (usuario_repo, "usuario"),
+    (configuracao_repo, "configuracao"),
+    (chamado_repo, "chamado"),
+    (chamado_interacao_repo, "chamado_interacao"),
+    (chat_sala_repo, "chat_sala"),
+    (chat_participante_repo, "chat_participante"),
+    (chat_mensagem_repo, "chat_mensagem"),
+    (categoria_repo, "categoria"),
+    (artigo_repo, "artigo"),  # NOVA TABELA
+]
+```
+
+### 12.4. Adicionar router na lista ROUTERS
+
+Localize a lista `ROUTERS` e adicione o novo router após a linha do `admin_categorias_router`, logo após a linha 121:
+
+```python
+    (artigos_router, ["Artigos"], "artigos"),  # NOVO ROUTER
+```
+
+O bloco `ROUTERS` ficará assim:
+
+```python
+ROUTERS = [
+    (auth_router, ["Autenticação"], "autenticação"),
+    (chamados_router, ["Chamados"], "chamados"),
+    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
+    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
+    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
+    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),
+    (artigos_router, ["Artigos"], "artigos"),  # NOVO ROUTER
+    (usuario_router, ["Usuário"], "usuário"),
+    (chat_router, ["Chat"], "chat"),
+    (public_router, ["Público"], "público"),  # Deve ficar por último
+    (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
+]
+```
+
+> **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
+
+---
+
+## 13. Adicionando Menu e Card de Artigos no Dashboard
+
+Agora vamos adicionar o acesso ao CRUD de Artigos no painel do autor.
+
+### 13.1. Adicionando o link no menu de navegação
+
+No arquivo `templates/base_privada.html`, localize a seção de navegação. Após o bloco do administrador (que termina com `{% endif %}`), após a linha 124, adicione uma verificação para autores e administradores terem acesso a "Meus Artigos":
 
 ```html
-                    {% endif %}
-                    {% if usuario_logado and usuario_logado.perfil in ['Administrador', 'Autor'] %}
+                    {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/artigos/meus' in request.path else '' }}"
                             href="/artigos/meus"
                             {{ 'aria-current=page' if '/artigos/meus' in request.path else '' }}>Meus Artigos</a>
                     </li>
+                    {% endif %}
 ```
 
-> **Resultado esperado:** O menu do administrador terá o link "Categorias", e tanto administradores quanto autores verão o link "Meus Artigos".
+### 13.2. Adicionando o card no dashboard do autor
 
-### 8.2 Atualizando o Template Base Pública
+No arquivo `templates/dashboard.html`, adicione uma seção para autores logo após a seção do administrador. Localize o fechamento do bloco `{% endif %}` do administrador, logo após a linha 173, e adicione:
+
+```html
+    {# Cards do Autor #}
+    {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+        <!-- Card Meus Artigos -->
+        <div class="col">
+            <div class="card h-100 shadow-sm shadow-hover">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-pencil-square text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="card-title">Meus Artigos</h5>
+                    <p class="card-text text-muted">
+                        Crie e gerencie seus artigos do blog
+                    </p>
+                    <a href="/artigos/meus" class="btn btn-success">
+                        <i class="bi bi-pencil-square"></i> Acessar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+```
+
+> **Resultado esperado:** O autor verá o link "Meus Artigos" no menu superior e um card de acesso rápido na página inicial (dashboard).
+
+---
+
+## 14. Testando o CRUD de Artigos
+
+Agora vamos testar se o CRUD de Artigos está funcionando corretamente.
+
+### 14.1. Iniciando a aplicação
+
+No VS Code, pressione **Ctrl+F5** para executar a aplicação sem depuração (ou execute `python main.py` no terminal).
+
+Você deverá ver algo como:
+
+```
+============================================================
+                    BLOG DO FULANO
+============================================================
+Modo de execução: Development
+============================================================
+
+INFO:     Tabela 'categoria' verificada/criada com sucesso.
+INFO:     Tabela 'artigo' verificada/criada com sucesso.
+...
+INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
+```
+
+### 14.2. Acessando como Autor
+
+1. Acesse http://localhost:8400 no navegador
+2. Clique em **Entrar** ou acesse http://localhost:8400/login
+3. Faça login com as credenciais do autor padrão:
+   - **Email:** `padrao@autor.com`
+   - **Senha:** `1234aA@#`
+
+### 14.3. Testando as funcionalidades
+
+Após o login, teste as seguintes funcionalidades:
+
+1. **Verificar o menu:** O link "Meus Artigos" deve aparecer no menu superior
+2. **Verificar o dashboard:** O card "Meus Artigos" deve aparecer na página inicial
+3. **Listar artigos:** Clique em "Meus Artigos" - a lista deve estar vazia inicialmente
+4. **Cadastrar artigo:** Clique em "Novo Artigo" e cadastre um artigo de teste com os seguintes dados:
+
+   **Título:**
+   ```
+   Introdução ao Python: Primeiros Passos na Programação
+   ```
+
+   **Categoria:** Selecione "Tecnologia" (ou outra categoria que você criou anteriormente)
+
+   **Resumo:**
+   ```
+   Descubra por que Python é a linguagem ideal para iniciantes e aprenda os conceitos básicos para começar a programar hoje mesmo.
+   ```
+
+   **Conteúdo (Markdown):**
+   ````markdown
+   Python é uma das linguagens de programação mais populares do mundo, conhecida por sua sintaxe simples e legibilidade.
+
+   ## Por que aprender Python?
+
+   - **Fácil de aprender:** A sintaxe é clara e intuitiva
+   - **Versátil:** Usado em web, dados, IA e automação
+   - **Grande comunidade:** Milhares de bibliotecas disponíveis
+
+   ## Seu primeiro código
+
+   Veja como é simples exibir uma mensagem:
+
+   ```python
+   print("Olá, mundo!")
+   ```
+
+   ## Próximos passos
+
+   Após dominar o básico, você pode explorar:
+
+   1. Estruturas de dados (listas, dicionários)
+   2. Funções e módulos
+   3. Orientação a objetos
+
+   Comece hoje mesmo e descubra o poder do Python!
+   ````
+
+5. **Salvar o artigo:** Clique em "Cadastrar" para salvar o artigo
+6. **Editar artigo:** Na lista, clique no botão de edição do artigo criado, altere o título para "Python para Iniciantes: Guia Completo" e salve
+7. **Visualizar artigo:** Clique no botão de visualização para ver como o artigo ficará para os leitores
+8. **Excluir artigo de teste:** Crie um novo artigo chamado "Artigo de Teste para Exclusão" e depois exclua-o para testar a funcionalidade de exclusão
+
+> **Dica:** Se encontrar erros, verifique o terminal onde a aplicação está rodando para ver as mensagens de log.
+
+---
+
+## 15. Templates Base e Home Page
+
+Agora vamos modificar os templates base do boilerplate para incluir a navegação do blog e criar a página inicial.
+
+> **IMPORTANTE**: NÃO substitua os templates base inteiros! Adicione apenas os novos itens de menu conforme instruído abaixo.
+
+### 15.1 Atualizando o Template Base Pública
 
 O template `templates/base_publica.html` é usado para páginas públicas. Você precisa adicionar o link para **Artigos** na navegação.
 
@@ -2910,7 +3408,7 @@ Após o link de **Início** e ANTES do link de **Sobre**, adicione o link para *
 
 > **Resultado esperado:** O menu público terá os links: Início → **Artigos** → Sobre
 
-### 8.3 Criando a Home Page do Blog
+### 15.2 Criando a Home Page do Blog
 
 Crie ou substitua o arquivo `templates/index.html` com o template da home page do blog:
 
@@ -3101,11 +3599,11 @@ Crie ou substitua o arquivo `templates/index.html` com o template da home page d
 
 ---
 
-## 9. Rotas Públicas e Configuração do main.py
+## 16. Rotas Públicas e Configuração do main.py
 
 Agora vamos atualizar as rotas públicas para exibir os artigos na home page e configurar o `main.py` para integrar todos os módulos.
 
-### 9.1 Atualizando as Rotas Públicas
+### 16.1 Atualizando as Rotas Públicas
 
 O arquivo `routes/public_routes.py` precisa ser atualizado para carregar os artigos e categorias na página inicial. Abaixo está o arquivo completo com as modificações necessárias:
 
@@ -3230,79 +3728,37 @@ async def sobre(request: Request):
 > - As rotas `/` e `/index` agora buscam os últimos 6 artigos publicados
 > - Categorias são carregadas para exibir os filtros na home
 
-### 9.2 Configurando o main.py
+### 16.2 Atualizando o Menu Público
 
-O arquivo `main.py` é o ponto de entrada da aplicação. Você precisa adicionar os imports e registrar os novos repositórios e rotas.
+O template `templates/base_publica.html` contém o menu de navegação público. Vamos substituir o link "Exemplos" pelo link "Artigos", que levará à página de busca de artigos.
 
-> **IMPORTANTE**: NÃO substitua o main.py inteiro! Adicione apenas as modificações conforme instruído abaixo.
+No arquivo `templates/base_publica.html`, localize o item de menu "Exemplos" (por volta da linha 49):
 
-> **NOTA**: O projeto atual já utiliza `sqlite3.Error` para tratamento de exceções. Se você receber erros relacionados ao `sqlite3`, verifique se o import está presente no início do arquivo: `import sqlite3`.
-
-#### Passo 1: Adicionar imports dos repositórios
-
-No início do arquivo `main.py`, localize a seção de imports de repositórios e adicione:
-
-```python
-from repo import categoria_repo, artigo_repo
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/exemplos' in request.path else '' }}"
+                            href="/exemplos">Exemplos</a>
+                    </li>
 ```
 
-#### Passo 2: Adicionar imports das rotas
+Substitua por:
 
-Localize a seção de imports de rotas e adicione:
-
-```python
-from routes.admin_categorias_routes import router as admin_categorias_router
-from routes.artigos_routes import router as artigos_router
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/artigos' in request.path else '' }}"
+                            href="/artigos">Artigos</a>
+                    </li>
 ```
 
-#### Passo 3: Adicionar tabelas na lista TABELAS
-
-No arquivo `main.py`, localize a lista `TABELAS` e adicione as novas tabelas:
-
-```python
-TABELAS = [
-    (usuario_repo, "usuario"),
-    (configuracao_repo, "configuracao"),
-    (chamado_repo, "chamado"),
-    (chamado_interacao_repo, "chamado_interacao"),
-    (chat_sala_repo, "chat_sala"),
-    (chat_participante_repo, "chat_participante"),
-    (chat_mensagem_repo, "chat_mensagem"),
-    (categoria_repo, "categoria"),  # NOVO
-    (artigo_repo, "artigo"),        # NOVO
-]
-```
-
-#### Passo 4: Adicionar routers na lista ROUTERS
-
-Localize a lista `ROUTERS` e adicione os novos routers **ANTES** de `public_router` e `examples_router`:
-
-```python
-ROUTERS = [
-    (auth_router, ["Autenticação"], "autenticação"),
-    (chamados_router, ["Chamados"], "chamados"),
-    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
-    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
-    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
-    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
-    (usuario_router, ["Usuário"], "usuário"),
-    (chat_router, ["Chat"], "chat"),
-    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO
-    (artigos_router, ["Artigos"], "artigos"),  # NOVO
-    (public_router, ["Público"], "público"),  # Deve ficar por último
-    (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
-]
-```
-
-> **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
+> **Resultado esperado:** O menu público agora exibe: **Início** → **Sobre** → **Artigos**. O link "Artigos" direciona para a página de busca/listagem pública de artigos (`/artigos`).
 
 ---
 
-## 10. Testando a Aplicação
+## 17. Testando a Aplicação Completa
 
 Agora que todos os arquivos foram criados, vamos testar a aplicação completa.
 
-### 10.1 Iniciando a Aplicação
+### 17.1 Iniciando a Aplicação
 
 Execute a aplicação:
 
@@ -3314,7 +3770,7 @@ Você deverá ver algo como:
 
 ```
 ============================================================
-Iniciando SimpleBlog v1.0.0
+Iniciando BlogSimples v1.0.0
 ============================================================
 Servidor rodando em http://0.0.0.0:8400
 Hot reload: Ativado
@@ -3322,7 +3778,7 @@ Documentação API: http://0.0.0.0:8400/docs
 ============================================================
 ```
 
-### 10.2 Testando o Fluxo Completo
+### 17.2 Testando o Fluxo Completo
 
 #### Passo 1: Criar um Administrador
 
@@ -3397,7 +3853,7 @@ Espero que tenham gostado!
 4. Clique em um artigo - será solicitado login para ler
 5. Cadastre-se como leitor e faça login para ler o artigo completo
 
-### 10.3 Funcionalidades Implementadas
+### 17.3 Funcionalidades Implementadas
 
 #### Para Administradores:
 - Gerenciar categorias (CRUD completo)
@@ -3423,7 +3879,7 @@ Espero que tenham gostado!
 
 ---
 
-## 11. Resumo dos Arquivos Criados
+## 18. Resumo dos Arquivos Criados
 
 ### Models (Camada de Dados)
 - `model/categoria_model.py` - Dataclass Categoria
@@ -3465,9 +3921,9 @@ Espero que tenham gostado!
 
 ---
 
-## 12. Conclusão
+## 19. Conclusão
 
-Parabéns! Você concluiu a implementação do **SimpleBlog**, um sistema de blog completo construído com:
+Parabéns! Você concluiu a implementação do **BlogSimples**, um sistema de blog completo construído com:
 
 - **FastAPI** - Framework web moderno e rápido
 - **SQLite** - Banco de dados leve e embutido
@@ -3507,3 +3963,9 @@ Essa separação de responsabilidades facilita a manutenção e evolução do c�
 ---
 
 **Bons estudos e bom desenvolvimento!**
+
+corrigir todas as rotas para que elas passem usuario_logado para os templates em vez de usuario, e acertar os templates para usar usuario_logado em vez de usuario
+
+em toda rota que requer autenticação, adicionar no início do corpo da função para eliminar erros de lint:
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)

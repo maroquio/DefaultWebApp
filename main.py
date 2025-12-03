@@ -1,4 +1,5 @@
 import uvicorn
+import sqlite3
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
@@ -22,7 +23,13 @@ from util.exception_handlers import (
 from util.exceptions import ErroValidacaoFormulario
 
 # Repositórios
-from repo import usuario_repo, configuracao_repo, chamado_repo, chamado_interacao_repo, indices_repo
+from repo import (
+    usuario_repo,
+    configuracao_repo,
+    chamado_repo,
+    chamado_interacao_repo,
+    indices_repo,
+)
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
 
 # Rotas
@@ -100,6 +107,7 @@ except sqlite3.Error as e:
 # Migrar configurações do .env para o banco de dados
 try:
     from util.migrar_config import migrar_configs_para_banco
+
     migrar_configs_para_banco()
 except sqlite3.Error as e:
     logger.error(f"Erro ao migrar configurações para banco: {e}", exc_info=True)
@@ -130,6 +138,7 @@ async def health_check():
     """Endpoint de health check"""
     return {"status": "healthy"}
 
+
 if __name__ == "__main__":
     logger.info("=" * 60)
     logger.info(f"Iniciando {APP_NAME} v{VERSION}")
@@ -141,13 +150,7 @@ if __name__ == "__main__":
     logger.info("=" * 60)
 
     try:
-        uvicorn.run(
-            "main:app",
-            host=HOST,
-            port=PORT,
-            reload=RELOAD,
-            log_level="info"
-        )
+        uvicorn.run("main:app", host=HOST, port=PORT, reload=RELOAD, log_level="info")
     except KeyboardInterrupt:
         logger.info("Servidor encerrado pelo usuário")
     except Exception as e:
