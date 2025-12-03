@@ -3959,9 +3959,3 @@ Este tutorial demonstrou a arquitetura em camadas utilizada no projeto:
 6. **Templates** - Interface do usuário
 
 Essa separação de responsabilidades facilita a manutenção e evolução do código.
-
----
-
-em toda rota que requer autenticação, adicionar no início do corpo da função para eliminar erros de lint:
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
