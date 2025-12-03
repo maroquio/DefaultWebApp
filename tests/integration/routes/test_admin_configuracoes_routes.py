@@ -170,14 +170,13 @@ class TestAuditoria:
         data_hoje = agora().strftime('%Y-%m-%d')
 
         # Fazer auditoria
-        admin_autenticado.post("/admin/auditoria/filtrar", data={
+        response = admin_autenticado.post("/admin/auditoria/filtrar", data={
             "data": data_hoje,
             "nivel": "INFO"
         })
 
-        # Como estamos em teste, log pode ou não existir
-        # Apenas verificar que não houve erro
-        assert True
+        # Verificar que a requisição foi processada com sucesso
+        assert response.status_code == status.HTTP_200_OK
 
     def test_cliente_nao_pode_filtrar_logs(self, cliente_autenticado):
         """Cliente não deve poder filtrar logs"""

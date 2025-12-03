@@ -2,6 +2,8 @@
 Configuracoes especificas para testes de rotas.
 
 Fornece fixtures reutilizaveis para testes de integracao de rotas.
+A criacao de tabelas e feita pela fixture criar_tabelas_integracao
+no conftest.py do nivel de integracao.
 """
 import pytest
 
@@ -10,31 +12,7 @@ from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
 from repo import chamado_repo, chamado_interacao_repo, usuario_repo
 
 
-@pytest.fixture(scope="function", autouse=True)
-def criar_tabelas_rotas():
-    """
-    Cria as tabelas necessarias para os testes de rotas.
-
-    Esta fixture roda antes de cada teste para garantir que
-    as tabelas existam no banco de dados de teste.
-    """
-    from repo import (
-        usuario_repo,
-        chamado_repo,
-        chamado_interacao_repo,
-        configuracao_repo,
-    )
-
-    # Criar tabelas na ordem correta (respeitando dependencias)
-    usuario_repo.criar_tabela()
-    configuracao_repo.criar_tabela()
-    chamado_repo.criar_tabela()
-    chamado_interacao_repo.criar_tabela()
-
-    yield
-
-
-@pytest.fixture
+@pytest.fixture(scope="function")
 def criar_chamado_admin(admin_autenticado, admin_teste):
     """
     Cria um chamado de teste para cenarios de admin.

@@ -1,8 +1,9 @@
 """
 Configuracao especifica para testes de repositorios.
 
-Cria as tabelas necessarias antes dos testes de repo.
 Fornece fixtures reutilizaveis para testes de repos.
+A criacao de tabelas e feita pela fixture criar_tabelas_integracao
+no conftest.py do nivel de integracao.
 """
 import pytest
 
@@ -14,47 +15,12 @@ from util.security import criar_hash_senha
 from util.perfis import Perfil
 
 
-@pytest.fixture(scope="function", autouse=True)
-def criar_tabelas_repos():
-    """
-    Cria as tabelas necessarias para os testes de repositorio.
-
-    Esta fixture roda antes de cada teste para garantir que
-    as tabelas existam no banco de dados de teste.
-    """
-    # Importar repos apos configuracao do banco (feita no conftest.py principal)
-    from repo import (
-        usuario_repo,
-        chamado_repo,
-        chamado_interacao_repo,
-        configuracao_repo,
-        indices_repo,
-        chat_sala_repo,
-        chat_participante_repo,
-        chat_mensagem_repo,
-    )
-
-    # Criar tabelas na ordem correta (respeitando dependencias)
-    usuario_repo.criar_tabela()
-    configuracao_repo.criar_tabela()
-    chamado_repo.criar_tabela()
-    chamado_interacao_repo.criar_tabela()
-    indices_repo.criar_indices()
-    chat_sala_repo.criar_tabela()
-    chat_participante_repo.criar_tabela()
-    chat_mensagem_repo.criar_tabela()
-
-    yield
-
-    # Nao precisa limpar - o conftest.py principal ja faz isso
-
-
 # ============================================================================
 # FIXTURES REUTILIZAVEIS PARA TESTES DE REPOS
 # ============================================================================
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def usuario_repo_teste():
     """
     Cria um usuario para associar a entidades que requerem FK de usuario.
@@ -73,7 +39,7 @@ def usuario_repo_teste():
     return usuario_id
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def admin_repo_teste():
     """
     Cria um usuario admin para testes que requerem perfil administrativo.
@@ -92,7 +58,7 @@ def admin_repo_teste():
     return usuario_id
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def chamado_repo_teste(usuario_repo_teste):
     """
     Cria um chamado de teste associado a um usuario.
@@ -114,7 +80,7 @@ def chamado_repo_teste(usuario_repo_teste):
     return chamado_id
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def interacao_repo_teste(chamado_repo_teste, usuario_repo_teste):
     """
     Cria uma interacao de teste para um chamado.
