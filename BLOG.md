@@ -100,15 +100,17 @@ Edite o arquivo `.env` conforme necessário.
 python main.py
 ```
 
-Acesse http://localhost:8000 para verificar se está funcionando.
+Acesse http://localhost:8400 para verificar se está funcionando (porta padrão do projeto).
 
 ---
 
 ## 5. Configurando os Perfis de Usuário
 
-O sistema de blog utiliza três perfis de usuário. Verifique se o arquivo `util/perfis.py` contém os perfis corretos:
+O sistema de blog utiliza dois novos perfis de usuário além dos existentes. **O arquivo `util/perfis.py` do projeto original contém os perfis ADMIN, CLIENTE e VENDEDOR. Você deve ADICIONAR os novos perfis ao enum existente**, mantendo os perfis originais:
 
 ### Arquivo: `util/perfis.py`
+
+Localize o enum `Perfil` e adicione os novos perfis `AUTOR` e `LEITOR`:
 
 ```python
 """
@@ -145,8 +147,10 @@ class Perfil(EnumEntidade):
 
     # PERFIS DO SEU SISTEMA #####################################
     ADMIN = "Administrador"
-    AUTOR = "Autor"
-    LEITOR = "Leitor"
+    CLIENTE = "Cliente"
+    VENDEDOR = "Vendedor"
+    AUTOR = "Autor"      # ADICIONAR para o blog
+    LEITOR = "Leitor"    # ADICIONAR para o blog
     # FIM DOS PERFIS ############################################
 
 ```
@@ -154,6 +158,8 @@ class Perfil(EnumEntidade):
 ### Explicação dos Perfis:
 
 - **Administrador**: Gerencia categorias e tem acesso administrativo completo
+- **Cliente**: Perfil padrão do sistema (mantido do projeto original)
+- **Vendedor**: Perfil do sistema (mantido do projeto original)
 - **Autor**: Pode criar, editar e publicar artigos
 - **Leitor**: Pode ler artigos publicados
 
@@ -495,7 +501,7 @@ from repo import categoria_repo
 # Utilitários
 from util.auth_decorator import requer_autenticacao
 from util.flash_messages import informar_sucesso, informar_erro
-from util.rate_limiter import RateLimiter, obter_identificador_cliente
+from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.exceptions import ErroValidacaoFormulario
 from util.perfis import Perfil
 from util.template_util import criar_templates
@@ -506,10 +512,12 @@ from util.template_util import criar_templates
 router = APIRouter(prefix="/admin/categorias")
 templates = criar_templates()
 
-# Rate limiter: máximo 10 operações por minuto
-admin_categorias_limiter = RateLimiter(
-    max_tentativas=10,
-    janela_minutos=1,
+# Rate limiter dinâmico: valores podem ser alterados via configuração
+admin_categorias_limiter = DynamicRateLimiter(
+    chave_max="rate_limit_admin_categorias_max",
+    chave_minutos="rate_limit_admin_categorias_minutos",
+    padrao_max=10,
+    padrao_minutos=1,
     nome="admin_categorias"
 )
 
@@ -1591,7 +1599,7 @@ from model.usuario_logado_model import UsuarioLogado
 from repo import artigo_repo, categoria_repo
 from util.auth_decorator import requer_autenticacao
 from util.flash_messages import informar_sucesso, informar_erro
-from util.rate_limiter import RateLimiter, obter_identificador_cliente
+from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.exceptions import ErroValidacaoFormulario
 from util.perfis import Perfil
 from util.template_util import criar_templates
@@ -1600,10 +1608,12 @@ from util.logger_config import logger
 router = APIRouter(prefix="/artigos")
 templates = criar_templates()
 
-# Rate limiter: máximo 20 operações por minuto
-artigos_limiter = RateLimiter(
-    max_tentativas=20,
-    janela_minutos=1,
+# Rate limiter dinâmico: valores podem ser alterados via configuração
+artigos_limiter = DynamicRateLimiter(
+    chave_max="rate_limit_artigos_max",
+    chave_minutos="rate_limit_artigos_minutos",
+    padrao_max=20,
+    padrao_minutos=1,
     nome="artigos"
 )
 
@@ -2320,6 +2330,11 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
             status: ['autosave', 'lines', 'words'],
             minHeight: '300px',
         });
+
+        // Sincronizar valor do editor para o textarea antes do submit
+        document.getElementById('formArtigo').addEventListener('submit', function(e) {
+            easyMDE.codemirror.save();
+        });
     });
 </script>
 {% endblock %}
@@ -2487,6 +2502,11 @@ Crie o arquivo `templates/artigos/editar.html`:
             ],
             status: ['autosave', 'lines', 'words'],
             minHeight: '300px',
+        });
+
+        // Sincronizar valor do editor para o textarea antes do submit
+        document.getElementById('formArtigo').addEventListener('submit', function(e) {
+            easyMDE.codemirror.save();
         });
     });
 
@@ -3268,19 +3288,20 @@ python main.py
 Você deverá ver algo como:
 
 ```
-======================================================================
-🟢 Iniciando SimpleBlog v1.0.0
-🌐 Acesse: http://127.0.0.1:8000
-🔁 Hot reload: Ativado
-📘 Docs: http://127.0.0.1:8000/docs
-======================================================================
+============================================================
+Iniciando SimpleBlog v1.0.0
+============================================================
+Servidor rodando em http://0.0.0.0:8400
+Hot reload: Ativado
+Documentação API: http://0.0.0.0:8400/docs
+============================================================
 ```
 
 ### 10.2 Testando o Fluxo Completo
 
 #### Passo 1: Criar um Administrador
 
-1. Acesse `http://127.0.0.1:8000/cadastrar`
+1. Acesse `http://127.0.0.1:8400/cadastrar`
 2. Crie uma conta com os dados:
    - Nome: Admin
    - Email: admin@blog.com
@@ -3302,7 +3323,7 @@ Você deverá ver algo como:
 
 #### Passo 3: Criar um Autor
 
-1. Acesse `http://127.0.0.1:8000/cadastrar`
+1. Acesse `http://127.0.0.1:8400/cadastrar`
 2. Crie uma conta com os dados:
    - Nome: Autor Teste
    - Email: autor@blog.com
@@ -3346,7 +3367,7 @@ Espero que tenham gostado!
 #### Passo 5: Visualizar como Leitor
 
 1. Faça logout
-2. Acesse a home page em `http://127.0.0.1:8000`
+2. Acesse a home page em `http://127.0.0.1:8400`
 3. Você verá os artigos publicados na seção "Artigos Recentes"
 4. Clique em um artigo - será solicitado login para ler
 5. Cadastre-se como leitor e faça login para ler o artigo completo
