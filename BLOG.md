@@ -254,7 +254,9 @@ Clique na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilida
 | `cliente`            | `autor`             |
 | `vendedor`           | `leitor`            |
 
-**ATENÇÃO:** a função obter_identificador_cliente nao deve ser renomeada! Ela está nos arquivos rate_limiter.py e rate_limit_decorator.py.
+
+#### **ATENÇÃO:** a função `obter_identificador_cliente` não deve ser renomeada! Ela está nos arquivos `rate_limiter.py` e `rate_limit_decorator.py`. Caso ela seja renomeada para `obter_identificador_autor`, o sistema de rate limiting deixará de funcionar corretamente. Se ela tiver sido renomeada, reverta a alteração.
+
 ---
 
 ## 6. Criando o CRUD de Categorias
@@ -3264,22 +3266,20 @@ No arquivo `templates/dashboard.html`, adicione uma seção para autores logo ap
 ```html
     {# Cards do Autor #}
     {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
-        <!-- Card Meus Artigos -->
-        <div class="col">
-            <div class="card h-100 shadow-sm shadow-hover">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="bi bi-pencil-square text-success" style="font-size: 3rem;"></i>
-                    </div>
-                    <h5 class="card-title">Meus Artigos</h5>
-                    <p class="card-text text-muted">
-                        Crie e gerencie seus artigos do blog
-                    </p>
-                    <a href="/artigos/meus" class="btn btn-success">
-                        <i class="bi bi-pencil-square"></i> Acessar
-                    </a>
+    <!-- Card Meus Artigos -->
+    <div class="col">
+        <div class="card h-100 shadow-sm shadow-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-pencil-square text-success" style="font-size: 3rem;"></i>
                 </div>
+                <h5 class="card-title">Meus Artigos</h5>
+                <p class="card-text text-muted">
+                    Crie e gerencie seus artigos do blog
+                </p>
+                <a href="/artigos/meus" class="btn btn-success">
+                    <i class="bi bi-pencil-square"></i> Acessar
+                </a>
             </div>
         </div>
     </div>
