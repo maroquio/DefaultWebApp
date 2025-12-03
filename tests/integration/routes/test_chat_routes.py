@@ -7,31 +7,16 @@ envio de mensagens, listagem e busca de usuários.
 
 import pytest
 from unittest.mock import patch, MagicMock
-from repo import usuario_repo
-from model.usuario_model import Usuario
-from util.security import criar_hash_senha
-
-
-def _criar_usuario_direto(nome: str, email: str, senha: str, perfil: str = "Cliente") -> int:
-    """Cria um usuário diretamente no banco e retorna o ID"""
-    usuario = Usuario(
-        id=0,
-        nome=nome,
-        email=email,
-        senha=criar_hash_senha(senha),
-        perfil=perfil
-    )
-    return usuario_repo.inserir(usuario)
 
 
 class TestChatRoutes:
     """Testes para rotas de chat"""
 
     @pytest.fixture
-    def usuarios_chat(self, client, fazer_login):
+    def usuarios_chat(self, client, fazer_login, criar_usuario_direto):
         """Fixture que cria dois usuários e loga o primeiro"""
         # Criar usuário 1 e logar
-        usuario1_id = _criar_usuario_direto(
+        usuario1_id = criar_usuario_direto(
             nome="Usuario Chat 1",
             email="chat1@teste.com",
             senha="Teste@123",
@@ -40,7 +25,7 @@ class TestChatRoutes:
         fazer_login("chat1@teste.com", "Teste@123")
 
         # Criar usuário 2 (destino)
-        usuario2_id = _criar_usuario_direto(
+        usuario2_id = criar_usuario_direto(
             nome="Usuario Chat 2",
             email="chat2@teste.com",
             senha="Teste@123",
@@ -89,9 +74,9 @@ class TestChatRoutes:
         data = response.json()
         assert "sala_id" in data
 
-    def test_criar_sala_consigo_mesmo_falha(self, client, fazer_login):
+    def test_criar_sala_consigo_mesmo_falha(self, client, fazer_login, criar_usuario_direto):
         """Não pode criar sala consigo mesmo"""
-        usuario_id = _criar_usuario_direto(
+        usuario_id = criar_usuario_direto(
             nome="Solo User",
             email="solo@teste.com",
             senha="Teste@123"
@@ -103,9 +88,9 @@ class TestChatRoutes:
         # Deve retornar erro 400 ou redirecionar (303)
         assert response.status_code in [303, 400]
 
-    def test_criar_sala_usuario_inexistente(self, client, fazer_login):
+    def test_criar_sala_usuario_inexistente(self, client, fazer_login, criar_usuario_direto):
         """Não pode criar sala com usuário inexistente"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="User Criar",
             email="criar@teste.com",
             senha="Teste@123"
@@ -161,9 +146,9 @@ class TestChatRoutes:
 
         assert response.status_code == 303
 
-    def test_listar_mensagens_sala_nao_participante(self, client, fazer_login):
+    def test_listar_mensagens_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
         """Não pode listar mensagens de sala que não participa"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Intruso",
             email="intruso@teste.com",
             senha="Teste@123"
@@ -205,9 +190,9 @@ class TestChatRoutes:
 
         assert response.status_code == 303
 
-    def test_enviar_mensagem_sala_nao_participante(self, client, fazer_login):
+    def test_enviar_mensagem_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
         """Não pode enviar mensagem em sala que não participa"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Sender Intruso",
             email="sender_intruso@teste.com",
             senha="Teste@123"
@@ -243,9 +228,9 @@ class TestChatRoutes:
         assert data["mensagem"] == "Olá, tudo bem?"
         assert data["sala_id"] == sala_id
 
-    def test_enviar_mensagem_sala_inexistente(self, client, fazer_login):
+    def test_enviar_mensagem_sala_inexistente(self, client, fazer_login, criar_usuario_direto):
         """Não pode enviar mensagem em sala inexistente"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Sender Sem Sala",
             email="sender_sem_sala@teste.com",
             senha="Teste@123"
@@ -271,9 +256,9 @@ class TestChatRoutes:
 
         assert response.status_code == 303
 
-    def test_marcar_lidas_sala_nao_participante(self, client, fazer_login):
+    def test_marcar_lidas_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
         """Não pode marcar como lidas em sala que não participa"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Reader Intruso",
             email="reader_intruso@teste.com",
             senha="Teste@123"
@@ -310,9 +295,9 @@ class TestChatRoutes:
 
         assert response.status_code == 303
 
-    def test_buscar_usuarios_termo_curto(self, client, fazer_login):
+    def test_buscar_usuarios_termo_curto(self, client, fazer_login, criar_usuario_direto):
         """Termo muito curto deve retornar lista vazia"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Buscador",
             email="buscador@teste.com",
             senha="Teste@123"
@@ -324,22 +309,22 @@ class TestChatRoutes:
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_buscar_usuarios_retorna_lista(self, client, fazer_login):
+    def test_buscar_usuarios_retorna_lista(self, client, fazer_login, criar_usuario_direto):
         """Deve retornar lista de usuários encontrados"""
         # Criar vários usuários
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Pessoa Busca 1",
             email="pessoa1@teste.com",
             senha="Teste@123"
         )
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Pessoa Busca 2",
             email="pessoa2@teste.com",
             senha="Teste@123"
         )
 
         # Criar e logar buscador
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Buscador Teste",
             email="buscador_t@teste.com",
             senha="Teste@123"
@@ -388,9 +373,9 @@ class TestChatRoutes:
 class TestChatRateLimiting:
     """Testes de rate limiting para rotas de chat"""
 
-    def test_rate_limit_busca_usuarios(self, client, fazer_login):
+    def test_rate_limit_busca_usuarios(self, client, fazer_login, criar_usuario_direto):
         """Rate limit deve bloquear após muitas buscas"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Buscador Rate",
             email="buscador_rate@teste.com",
             senha="Teste@123"
@@ -406,9 +391,9 @@ class TestChatRateLimiting:
             # Deve retornar 429 ou redirecionar (303)
             assert response.status_code in [303, 429]
 
-    def test_rate_limit_criar_sala(self, client, fazer_login):
+    def test_rate_limit_criar_sala(self, client, fazer_login, criar_usuario_direto):
         """Rate limit deve bloquear criação excessiva de salas"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Criador Rate",
             email="criador_rate@teste.com",
             senha="Teste@123"
@@ -422,9 +407,9 @@ class TestChatRateLimiting:
 
             assert response.status_code == 429
 
-    def test_rate_limit_enviar_mensagem(self, client, fazer_login):
+    def test_rate_limit_enviar_mensagem(self, client, fazer_login, criar_usuario_direto):
         """Rate limit deve bloquear envio excessivo de mensagens"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Sender Rate",
             email="sender_rate@teste.com",
             senha="Teste@123"
@@ -441,9 +426,9 @@ class TestChatRateLimiting:
 
             assert response.status_code == 429
 
-    def test_rate_limit_listar_conversas(self, client, fazer_login):
+    def test_rate_limit_listar_conversas(self, client, fazer_login, criar_usuario_direto):
         """Rate limit deve bloquear listagem excessiva"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Listador Rate",
             email="listador_rate@teste.com",
             senha="Teste@123"
@@ -457,9 +442,9 @@ class TestChatRateLimiting:
 
             assert response.status_code == 429
 
-    def test_rate_limit_listar_mensagens(self, client, fazer_login):
+    def test_rate_limit_listar_mensagens(self, client, fazer_login, criar_usuario_direto):
         """Rate limit deve bloquear listagem excessiva de mensagens"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="Leitor Rate",
             email="leitor_rate@teste.com",
             senha="Teste@123"
@@ -477,9 +462,9 @@ class TestChatRateLimiting:
 class TestChatValidationErrors:
     """Testes de erros de validação nas rotas de chat"""
 
-    def test_criar_sala_validation_error(self, client, fazer_login):
+    def test_criar_sala_validation_error(self, client, fazer_login, criar_usuario_direto):
         """Deve retornar erro quando validação do DTO falha"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="User Validation",
             email="validation@teste.com",
             senha="Teste@123"
@@ -492,9 +477,9 @@ class TestChatValidationErrors:
         # Deve retornar 422 Unprocessable Entity (validação do FastAPI)
         assert response.status_code == 422
 
-    def test_enviar_mensagem_vazia_validation_error(self, client, fazer_login):
+    def test_enviar_mensagem_vazia_validation_error(self, client, fazer_login, criar_usuario_direto):
         """Deve retornar erro quando mensagem está vazia"""
-        _criar_usuario_direto(
+        criar_usuario_direto(
             nome="User Msg Validation",
             email="msg_validation@teste.com",
             senha="Teste@123"
@@ -510,9 +495,9 @@ class TestChatValidationErrors:
         # Deve retornar erro de validação (400, 422 ou 429 se rate limit)
         assert response.status_code in [400, 422, 429]
 
-    def test_enviar_mensagem_sala_nao_existe_apos_verificacao(self, client, fazer_login):
+    def test_enviar_mensagem_sala_nao_existe_apos_verificacao(self, client, fazer_login, criar_usuario_direto):
         """Deve retornar 404 quando sala não existe após verificação de participante"""
-        usuario_id = _criar_usuario_direto(
+        usuario_id = criar_usuario_direto(
             nome="User Sala Fantasma",
             email="sala_fantasma@teste.com",
             senha="Teste@123"
@@ -536,9 +521,9 @@ class TestChatValidationErrors:
 class TestChatTotalNaoLidas:
     """Testes para endpoint de total de mensagens não lidas"""
 
-    def test_total_nao_lidas_com_participacoes(self, client, fazer_login):
+    def test_total_nao_lidas_com_participacoes(self, client, fazer_login, criar_usuario_direto):
         """Deve contar total de não lidas incluindo loop de participações"""
-        usuario_id = _criar_usuario_direto(
+        usuario_id = criar_usuario_direto(
             nome="User Nao Lidas",
             email="nao_lidas@teste.com",
             senha="Teste@123"
@@ -546,7 +531,7 @@ class TestChatTotalNaoLidas:
         fazer_login("nao_lidas@teste.com", "Teste@123")
 
         # Criar outro usuário para chat
-        outro_id = _criar_usuario_direto(
+        outro_id = criar_usuario_direto(
             nome="Outro Nao Lidas",
             email="outro_nao_lidas@teste.com",
             senha="Teste@123"

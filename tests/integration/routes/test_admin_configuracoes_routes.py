@@ -357,168 +357,159 @@ class TestAuditoriaErros:
 
 
 class TestSalvarLoteConfiguracoes:
-    """Testes para salvamento em lote de configurações (testes unitários)
+    """Testes unitários para salvamento em lote de configurações.
 
-    Nota: Esta rota usa request.form() ao invés de Form(), então não podemos
-    testar via HTTP pois FastAPI interpreta usuario_logado como body.
-    Testamos a lógica interna diretamente, mockando o decorator.
+    Nota: Esta rota usa await request.form() sem parâmetros Form() explícitos,
+    o que impede testes via TestClient. Por isso, testamos a função diretamente.
     """
 
-    def _criar_request_mock(self, form_data=None):
-        """Cria mock de request com form data"""
-        from starlette.datastructures import FormData
+    def _criar_request_mock(self, form_data: dict, com_usuario_admin: bool = True):
+        """Cria um mock de Request com form data e session com usuário admin."""
+        from starlette.datastructures import ImmutableMultiDict
 
-        async def get_form():
-            return form_data or FormData({})
+        request = MagicMock()
 
-        mock_request = MagicMock()
-        mock_request.client.host = "127.0.0.1"
-        mock_request.form = get_form
-        return mock_request
+        # Sessão com usuário admin logado
+        if com_usuario_admin:
+            request.session = {
+                "usuario_logado": {
+                    "id": 1,
+                    "nome": "Admin",
+                    "email": "admin@test.com",
+                    "perfil": "Administrador"
+                }
+            }
+        else:
+            request.session = {}
 
-    def _criar_usuario_admin(self):
-        """Cria UsuarioLogado admin para testes"""
-        from model.usuario_logado_model import UsuarioLogado
-        return UsuarioLogado(id=1, nome="Admin", email="admin@test.com", perfil="Administrador")
+        # Mock assíncrono para form()
+        async def mock_form():
+            return ImmutableMultiDict(form_data)
+        request.form = mock_form
+
+        # Mock para client.host (usado em rate limiting)
+        request.client = MagicMock()
+        request.client.host = "127.0.0.1"
+
+        # Mock para url.path (usado em redirects e flash messages)
+        request.url = MagicMock()
+        request.url.path = "/admin/configuracoes/salvar-lote"
+
+        return request
 
     @pytest.mark.asyncio
     async def test_salvar_lote_rate_limit(self):
         """Rate limit deve bloquear salvamento em lote"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
-        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"toast_delay": "5000"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=False):
-                from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                response = await post_salvar_lote_configuracoes(mock_request)
+        with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=False):
+            # Decorator injeta usuario_logado a partir da sessão
+            response = await post_salvar_lote_configuracoes(request)
 
-                assert response.status_code == status.HTTP_303_SEE_OTHER
-                assert response.headers["location"] == "/admin/configuracoes"
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.headers["location"] == "/admin/configuracoes"
 
     @pytest.mark.asyncio
     async def test_salvar_lote_configs_vazias(self):
         """Deve avisar quando não há configurações para salvar"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
         # Apenas categoria, sem configs reais
-        mock_request = self._criar_request_mock(FormData({"categoria": "interface"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"categoria": "interface"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                response = await post_salvar_lote_configuracoes(mock_request)
+        response = await post_salvar_lote_configuracoes(request)
 
-                assert response.status_code == status.HTTP_303_SEE_OTHER
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+        assert response.headers["location"] == "/admin/configuracoes"
 
     @pytest.mark.asyncio
     async def test_salvar_lote_sucesso(self):
         """Deve salvar configurações com sucesso"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
-        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"toast_delay": "5000"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
-                    mock_repo.atualizar_multiplas.return_value = (1, [])
+        with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+            mock_repo.atualizar_multiplas.return_value = (1, [])
 
-                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                    response = await post_salvar_lote_configuracoes(mock_request)
+            response = await post_salvar_lote_configuracoes(request)
 
-                    assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.status_code == status.HTTP_303_SEE_OTHER
 
     @pytest.mark.asyncio
     async def test_salvar_lote_sucesso_com_avisos(self):
         """Deve salvar com sucesso e avisar sobre chaves não encontradas"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
-        mock_request = self._criar_request_mock(FormData({
+        request = self._criar_request_mock({
             "toast_delay": "5000",
             "chave_inexistente": "valor"
-        }))
-        usuario = self._criar_usuario_admin()
+        })
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
-                    mock_repo.atualizar_multiplas.return_value = (1, ["chave_inexistente"])
+        with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+            mock_repo.atualizar_multiplas.return_value = (1, ["chave_inexistente"])
 
-                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                    response = await post_salvar_lote_configuracoes(mock_request)
+            response = await post_salvar_lote_configuracoes(request)
 
-                    assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.status_code == status.HTTP_303_SEE_OTHER
 
     @pytest.mark.asyncio
     async def test_salvar_lote_nenhum_atualizado(self):
         """Deve informar erro quando nenhuma configuração foi atualizada"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
-        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"toast_delay": "5000"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
-                    mock_repo.atualizar_multiplas.return_value = (0, [])
+        with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+            mock_repo.atualizar_multiplas.return_value = (0, [])
 
-                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                    response = await post_salvar_lote_configuracoes(mock_request)
+            response = await post_salvar_lote_configuracoes(request)
 
-                    assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.status_code == status.HTTP_303_SEE_OTHER
 
     @pytest.mark.asyncio
     async def test_salvar_lote_validation_error(self):
         """Deve tratar erro de validação"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
         from pydantic import ValidationError as PydanticValidationError
         from pydantic import BaseModel, field_validator
 
-        mock_request = self._criar_request_mock(FormData({"campo_invalido": "abc"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"campo_invalido": "abc"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                with patch('routes.admin_configuracoes_routes.SalvarConfiguracaoLoteDTO') as mock_dto:
-                    # Criar uma ValidationError real
-                    class TestModel(BaseModel):
-                        campo: str
+        with patch('routes.admin_configuracoes_routes.SalvarConfiguracaoLoteDTO') as mock_dto:
+            # Criar uma ValidationError real
+            class TestModel(BaseModel):
+                campo: str
 
-                        @field_validator('campo')
-                        @classmethod
-                        def validar(cls, v):
-                            raise ValueError("Valor inválido")
+                @field_validator('campo')
+                @classmethod
+                def validar(cls, v):
+                    raise ValueError("Valor inválido")
 
-                    try:
-                        TestModel(campo="abc")
-                    except PydanticValidationError as e:
-                        mock_dto.side_effect = e
+            try:
+                TestModel(campo="abc")
+            except PydanticValidationError as e:
+                mock_dto.side_effect = e
 
-                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                    response = await post_salvar_lote_configuracoes(mock_request)
+            response = await post_salvar_lote_configuracoes(request)
 
-                    assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.status_code == status.HTTP_303_SEE_OTHER
 
     @pytest.mark.asyncio
     async def test_salvar_lote_erro_banco(self):
         """Deve tratar erro de banco de dados"""
-        from starlette.datastructures import FormData
+        from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
 
-        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
-        usuario = self._criar_usuario_admin()
+        request = self._criar_request_mock({"toast_delay": "5000"})
 
-        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
-            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
-                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
-                    mock_repo.atualizar_multiplas.side_effect = sqlite3.Error("Database error")
+        with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+            mock_repo.atualizar_multiplas.side_effect = sqlite3.Error("Database error")
 
-                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
-                    response = await post_salvar_lote_configuracoes(mock_request)
+            response = await post_salvar_lote_configuracoes(request)
 
-                    assert response.status_code == status.HTTP_303_SEE_OTHER
+            assert response.status_code == status.HTTP_303_SEE_OTHER
 
 
 class TestLerLogArquivo:

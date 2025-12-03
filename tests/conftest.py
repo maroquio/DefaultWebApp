@@ -480,3 +480,76 @@ def obter_ultimo_backup():
         return backups[0]
 
     return _obter_ultimo_backup
+
+
+@pytest.fixture
+def criar_usuario_direto():
+    """
+    Fixture que retorna função para criar usuário diretamente no banco.
+
+    Útil para testes que precisam criar usuários sem passar pelo endpoint
+    de cadastro (ex: testes de chat, admin, etc).
+
+    Returns:
+        Função que cria usuário e retorna o ID
+    """
+    from repo import usuario_repo
+    from model.usuario_model import Usuario
+    from util.security import criar_hash_senha
+
+    def _criar_usuario_direto(
+        nome: str,
+        email: str,
+        senha: str,
+        perfil: str = Perfil.CLIENTE.value
+    ) -> int:
+        """
+        Cria usuário diretamente no banco.
+
+        Args:
+            nome: Nome do usuário
+            email: Email do usuário
+            senha: Senha (será hasheada)
+            perfil: Perfil do usuário (padrão: Cliente)
+
+        Returns:
+            ID do usuário criado
+        """
+        usuario = Usuario(
+            id=0,
+            nome=nome,
+            email=email,
+            senha=criar_hash_senha(senha),
+            perfil=perfil
+        )
+        return usuario_repo.inserir(usuario)
+
+    return _criar_usuario_direto
+
+
+@pytest.fixture
+def bloquear_rate_limiter():
+    """
+    Fixture que retorna função para mockar rate limiter como bloqueado.
+
+    Útil para testes de rate limiting onde se quer simular
+    que o limite foi excedido.
+
+    Returns:
+        Context manager que mocka o limiter especificado
+    """
+    from unittest.mock import patch
+
+    def _bloquear_limiter(limiter_path: str):
+        """
+        Retorna context manager que bloqueia o limiter.
+
+        Args:
+            limiter_path: Caminho do limiter (ex: 'routes.auth_routes.login_limiter')
+
+        Returns:
+            Context manager do patch
+        """
+        return patch(f'{limiter_path}.verificar', return_value=False)
+
+    return _bloquear_limiter
