@@ -171,6 +171,26 @@
         </div>
     </div>
     {% endif %}
+    {# Cards do Autor #}
+    {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
+    <!-- Card Meus Artigos -->
+    <div class="col">
+        <div class="card h-100 shadow-sm shadow-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-pencil-square text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="card-title">Meus Artigos</h5>
+                <p class="card-text text-muted">
+                    Crie e gerencie seus artigos do blog
+                </p>
+                <a href="/artigos/meus" class="btn btn-success">
+                    <i class="bi bi-pencil-square"></i> Acessar
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Estatísticas ou Informações Adicionais -->

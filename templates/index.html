@@ -1,129 +1,138 @@
 {% extends "base_publica.html" %}
 
-{% block titulo %}Bem-vindo!{% endblock %}
+{% block titulo %}Blog - {{ APP_NAME }}{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
+<!-- Hero Section - Blog -->
 <div class="mb-5">
-    <div class="bg-primary text-white rounded-4 shadow-lg p-5 pb-3">
+    <div class="bg-primary text-white rounded-4 shadow-lg p-5">
         <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">
-                    Bem-vindo ao {{ APP_NAME }}
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-newspaper"></i> {{ APP_NAME }}
                 </h1>
                 <p class="lead mb-4">
-                    Uma plataforma completa e moderna para gerenciar suas atividades de forma simples e eficiente.
+                    Bem-vindo ao nosso blog! Aqui você encontra artigos sobre diversos temas,
+                    escritos por nossos autores. Faça login para ler os artigos completos.
                 </p>
-                <div class="d-flex gap-3 flex-column flex-sm-row">
-                    <a href="/cadastrar" class="btn btn-light btn-lg">
-                        <i class="bi bi-person-plus"></i> Criar Conta
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="/artigos" class="btn btn-light btn-lg">
+                        <i class="bi bi-search"></i> Buscar Artigos
                     </a>
+                    {% if not usuario_logado %}
                     <a href="/login" class="btn btn-outline-light btn-lg">
                         <i class="bi bi-box-arrow-in-right"></i> Entrar
                     </a>
+                    <a href="/cadastrar" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-person-plus"></i> Criar Conta
+                    </a>
+                    {% else %}
+                    <a href="/usuario" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-person-circle"></i> Minha Conta
+                    </a>
+                    {% endif %}
                 </div>
             </div>
-            <div class="col-lg-6 text-center mt-4 mt-lg-0">
-                <i class="bi bi-laptop fs-hero opacity-25"></i>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0 d-none d-lg-block">
+                <i class="bi bi-journal-richtext" style="font-size: 8rem; opacity: 0.3;"></i>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Recursos Section -->
-<div class="mb-5" id="recursos">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">Recursos Principais</h2>
-        <p class="text-muted">Tudo que você precisa em um só lugar</p>
-    </div>
-
-    <div class="row g-4">
-        <!-- Recurso 1 -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm shadow-hover text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-shield-check text-primary display-3"></i>
-                    </div>
-                    <h5 class="card-title">Segurança</h5>
-                    <p class="card-text text-muted">
-                        Sistema seguro com autenticação robusta e criptografia de dados
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recurso 2 -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm shadow-hover text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-person-circle text-info display-3"></i>
-                    </div>
-                    <h5 class="card-title">Perfil Personalizável</h5>
-                    <p class="card-text text-muted">
-                        Personalize seu perfil com foto e informações pessoais
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recurso 4 -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm shadow-hover text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-speedometer2 text-warning display-3"></i>
-                    </div>
-                    <h5 class="card-title">Rápido e Responsivo</h5>
-                    <p class="card-text text-muted">
-                        Interface moderna que funciona em qualquer dispositivo
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recurso 5 -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm shadow-hover text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-bell text-danger display-3"></i>
-                    </div>
-                    <h5 class="card-title">Notificações</h5>
-                    <p class="card-text text-muted">
-                        Receba alertas e notificações sobre suas atividades
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recurso 6 -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm shadow-hover text-center">
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <i class="bi bi-gear text-secondary display-3"></i>
-                    </div>
-                    <h5 class="card-title">Configurável</h5>
-                    <p class="card-text text-muted">
-                        Ajuste o sistema de acordo com suas preferências
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- CTA Section -->
+<!-- Seção de Artigos Recentes -->
 <div class="mb-5">
-    <div class="card bg-primary text-white shadow-lg shadow-hover">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-clock-history text-primary"></i> Artigos Recentes
+        </h2>
+        <a href="/artigos" class="btn btn-outline-primary">
+            Ver todos <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+
+    {% if ultimos_artigos %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for artigo in ultimos_artigos %}
+        <div class="col">
+            <div class="card h-100 shadow-sm shadow-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary">{{ artigo.categoria_nome or 'Geral' }}</span>
+                        <small class="text-muted">
+                            <i class="bi bi-eye"></i> {{ artigo.qtde_visualizacoes or 0 }}
+                        </small>
+                    </div>
+                    <h5 class="card-title">{{ artigo.titulo }}</h5>
+                    <p class="card-text text-muted">
+                        {% if artigo.resumo %}
+                        {{ artigo.resumo[:120] }}{% if artigo.resumo|length > 120 %}...{% endif %}
+                        {% else %}
+                        {{ artigo.conteudo[:120]|striptags }}{% if artigo.conteudo|length > 120 %}...{% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ artigo.usuario_nome or 'Anônimo' }}
+                            <br>
+                            <i class="bi bi-calendar3"></i> {{ artigo.data_publicacao|data_br if artigo.data_publicacao
+                            else artigo.data_cadastro|data_br }}
+                        </small>
+                        {% if usuario_logado %}
+                        <a href="/artigos/ler/{{ artigo.id }}" class="btn btn-sm btn-primary">
+                            Ler <i class="bi bi-arrow-right"></i>
+                        </a>
+                        {% else %}
+                        <a href="/login?next=/artigos/ler/{{ artigo.id }}" class="btn btn-sm btn-outline-secondary"
+                            title="Faça login para ler">
+                            <i class="bi bi-lock"></i> Login
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-journal-x display-1 text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhum artigo publicado ainda</h4>
+            <p class="text-muted">Em breve teremos novos conteúdos para você!</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Categorias -->
+{% if categorias %}
+<div class="mb-5">
+    <h2 class="fw-bold mb-4">
+        <i class="bi bi-folder text-primary"></i> Categorias
+    </h2>
+    <div class="d-flex flex-wrap gap-2">
+        {% for cat in categorias %}
+        <a href="/artigos?categoria={{ cat.id }}" class="btn btn-outline-secondary">
+            <i class="bi bi-tag"></i> {{ cat.nome }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- CTA para não logados -->
+{% if not usuario_logado %}
+<div class="mb-5">
+    <div class="card bg-primary text-white shadow-lg">
         <div class="card-body text-center p-5">
-            <h2 class="fw-bold mb-4">Pronto para começar?</h2>
+            <h2 class="fw-bold mb-3">Quer ler os artigos completos?</h2>
             <p class="lead mb-4">
-                Crie sua conta gratuitamente e comece a usar agora mesmo!
+                Crie sua conta gratuitamente e tenha acesso a todo o conteúdo do blog!
             </p>
-            <div class="d-flex justify-content-center gap-3 flex-column flex-sm-row">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
                 <a href="/cadastrar" class="btn btn-light btn-lg">
                     <i class="bi bi-person-plus"></i> Criar Conta Grátis
                 </a>
@@ -134,79 +143,40 @@
         </div>
     </div>
 </div>
+{% endif %}
 
-<!-- FAQ Section (Opcional) -->
-<div class="mb-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">Perguntas Frequentes</h2>
-        <p class="text-muted">Tire suas dúvidas sobre o sistema</p>
+<!-- Informações do Blog -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm text-center">
+            <div class="card-body p-4">
+                <i class="bi bi-file-earmark-text text-primary display-4 mb-3"></i>
+                <h5 class="card-title">Artigos de Qualidade</h5>
+                <p class="card-text text-muted">
+                    Conteúdo escrito por autores especializados em diversos temas.
+                </p>
+            </div>
+        </div>
     </div>
-
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="accordion" id="faqAccordion">
-                <!-- FAQ 1 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                            Como criar uma conta?
-                        </button>
-                    </h2>
-                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Basta clicar em "Criar Conta" no menu superior, preencher seus dados e confirmar.
-                            O processo é rápido e gratuito!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FAQ 2 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq2">
-                            O sistema é seguro?
-                        </button>
-                    </h2>
-                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Sim! Utilizamos criptografia de ponta e as melhores práticas de segurança para
-                            proteger seus dados. Suas senhas são armazenadas de forma segura e nunca são expostas.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FAQ 3 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq3">
-                            Posso alterar meus dados depois?
-                        </button>
-                    </h2>
-                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Claro! Você pode atualizar seus dados pessoais, foto de perfil e senha a qualquer
-                            momento através da seção "Meu Perfil" no seu dashboard.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FAQ 4 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq4">
-                            Esqueci minha senha, o que fazer?
-                        </button>
-                    </h2>
-                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Na tela de login, clique em "Esqueci minha senha" e siga as instruções.
-                            Você receberá um e-mail com um link para redefinir sua senha.
-                        </div>
-                    </div>
-                </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm text-center">
+            <div class="card-body p-4">
+                <i class="bi bi-search text-info display-4 mb-3"></i>
+                <h5 class="card-title">Fácil de Encontrar</h5>
+                <p class="card-text text-muted">
+                    Busque por título, filtre por categoria e ordene como preferir.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm text-center">
+            <div class="card-body p-4">
+                <i class="bi bi-phone text-success display-4 mb-3"></i>
+                <h5 class="card-title">Leia em Qualquer Lugar</h5>
+                <p class="card-text text-muted">
+                    Design responsivo que funciona perfeitamente em qualquer dispositivo.
+                </p>
             </div>
         </div>
     </div>

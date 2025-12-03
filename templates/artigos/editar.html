@@ -1,0 +1,161 @@
+{% extends "base_privada.html" %}
+{% from "macros/form_fields.html" import field with context %}
+
+{% block titulo %}Editar Artigo{% endblock %}
+
+{% block head %}
+<!-- EasyMDE - Editor Markdown -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<style>
+    .EasyMDEContainer .CodeMirror {
+        border-radius: 0 0 4px 4px;
+    }
+    .editor-toolbar {
+        border-radius: 4px 4px 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex align-items-center mb-4">
+            <a href="/artigos/meus" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h2 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Artigo</h2>
+        </div>
+
+        <div class="card shadow-sm">
+            <form method="POST" action="/artigos/editar/{{ artigo.id }}" id="formArtigo">
+                {{ csrf_input() }}
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-12">
+                            {% include "components/alerta_erro.html" %}
+                        </div>
+
+                        <div class="col-md-8">
+                            {{ field(
+                                name='titulo',
+                                label='Título do Artigo',
+                                type='text',
+                                required=true,
+                                value=dados.titulo if dados is defined and dados.titulo else artigo.titulo,
+                                placeholder='Digite um título atrativo para seu artigo...',
+                                help_text='O título deve ter entre 5 e 200 caracteres'
+                            ) }}
+                        </div>
+
+                        <div class="col-md-4">
+                            {% set categorias_dict = {'': 'Selecione uma categoria...'} %}
+                            {% for cat in categorias %}
+                                {% set _ = categorias_dict.update({cat.id|string: cat.nome}) %}
+                            {% endfor %}
+                            {% set categoria_valor = dados.categoria_id if dados is defined and dados.categoria_id else artigo.categoria_id %}
+                            {{ field(
+                                name='categoria_id',
+                                label='Categoria',
+                                type='select',
+                                required=true,
+                                value=categoria_valor,
+                                options=categorias_dict
+                            ) }}
+                        </div>
+
+                        <div class="col-12">
+                            {{ field(
+                                name='resumo',
+                                label='Resumo',
+                                type='textarea',
+                                required=false,
+                                value=dados.resumo if dados is defined and dados.resumo else artigo.resumo,
+                                placeholder='Um breve resumo do artigo que será exibido na listagem...',
+                                help_text='Opcional. Máximo de 500 caracteres.',
+                                rows=2
+                            ) }}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="conteudo" class="form-label">Conteúdo <span class="text-danger">*</span></label>
+                            <textarea name="conteudo" id="conteudo">{{ dados.conteudo if dados is defined and dados.conteudo else artigo.conteudo }}</textarea>
+                            <small class="form-text text-muted">
+                                Use Markdown para formatar seu texto. Mínimo de 50 caracteres.
+                            </small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Informações</label>
+                            <div class="small text-muted">
+                                <p class="mb-1"><i class="bi bi-eye"></i> Visualizações: {{ artigo.qtde_visualizacoes or 0 }}</p>
+                                <p class="mb-1"><i class="bi bi-calendar"></i> Criado em: {{ artigo.data_cadastro|data_br if artigo.data_cadastro else '-' }}</p>
+                                {% if artigo.data_publicacao %}
+                                <p class="mb-0"><i class="bi bi-send"></i> Publicado em: {{ artigo.data_publicacao|data_br }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer p-4">
+                    <div class="d-flex gap-3">
+                        <input type="hidden" name="acao" id="acao" value="rascunho">
+                        <button type="submit" class="btn btn-secondary" onclick="document.getElementById('acao').value='rascunho'">
+                            <i class="bi bi-file-earmark"></i> Salvar Rascunho
+                        </button>
+                        <button type="submit" class="btn btn-success" onclick="document.getElementById('acao').value='finalizar'">
+                            <i class="bi bi-check-circle"></i> Concluir Artigo
+                        </button>
+                        <a href="/artigos/meus" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- EasyMDE - Editor Markdown -->
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const easyMDE = new EasyMDE({
+            element: document.getElementById('conteudo'),
+            spellChecker: false,
+            autosave: {
+                enabled: true,
+                uniqueId: 'artigo-{{ artigo.id }}',
+                delay: 1000,
+            },
+            toolbar: [
+                'bold', 'italic', 'heading', '|',
+                'quote', 'unordered-list', 'ordered-list', '|',
+                'link', 'image', '|',
+                'preview', 'side-by-side', 'fullscreen', '|',
+                'guide'
+            ],
+            status: ['autosave', 'lines', 'words'],
+            minHeight: '300px',
+        });
+
+        // Sincronizar valor do editor para o textarea antes do submit
+        document.getElementById('formArtigo').addEventListener('submit', function(e) {
+            // Sincroniza o valor do editor para o textarea
+            const conteudo = easyMDE.value();
+            document.getElementById('conteudo').value = conteudo;
+
+            // Valida se o conteúdo não está vazio
+            if (!conteudo || conteudo.trim().length < 50) {
+                e.preventDefault();
+                window.App.Modal.showWarning(
+                    'O conteúdo do artigo deve ter pelo menos 50 caracteres.',
+                    'Conteúdo obrigatório'
+                );
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -92,6 +92,13 @@
                             {{ 'aria-current=page' if '/chamados/' in request.path else '' }}>Chamados</a>
                     </li>
                     {% endif %}
+                    {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/artigos/meus' in request.path else '' }}"
+                            href="/artigos/meus"
+                            {{ 'aria-current=page' if '/artigos/meus' in request.path else '' }}>Meus Artigos</a>
+                    </li>
+                    {% endif %}
                 </ul>
 
                 <!-- Dropdown do Usuário -->
