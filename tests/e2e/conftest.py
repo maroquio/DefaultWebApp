@@ -3,6 +3,9 @@ Configuracoes e fixtures para testes E2E com Playwright.
 
 Gerencia o ciclo de vida do servidor FastAPI e fornece fixtures
 para interacao com o browser via Playwright.
+
+Testes E2E simulam interacoes reais do usuario via browser,
+testando fluxos completos da aplicacao.
 """
 import os
 import socket
@@ -226,3 +229,11 @@ def usuario_e2e_dados():
         "email": "e2e_teste@example.com",
         "senha": "SenhaE2E@123",
     }
+
+
+# Marca todos os testes nesta pasta como e2e
+def pytest_collection_modifyitems(items):
+    """Adiciona marca 'e2e' a todos os testes nesta pasta."""
+    for item in items:
+        if "e2e" in str(item.fspath):
+            item.add_marker(pytest.mark.e2e)

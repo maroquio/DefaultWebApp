@@ -17,20 +17,53 @@ Este documento define as convenções, padrões e melhores práticas para escrev
 
 ### Organização de Arquivos
 
+Os testes estão organizados em três categorias:
+
 ```
 tests/
-├── conftest.py              # Fixtures compartilhadas
-├── test_helpers.py          # Funções helper para assertions
-├── test_auth.py             # Testes de autenticação
-├── test_perfil.py           # Testes de perfil do usuário
-├── test_usuario.py          # Testes de dashboard do usuário
-├── test_categorias.py          # Testes CRUD de categorias
-├── test_admin_usuarios.py   # Testes de administração de usuários
-├── test_admin_backups.py    # Testes de backups
-├── test_admin_configuracoes.py  # Testes de configurações
-├── test_public.py           # Testes de rotas públicas
-└── README.md                # Este arquivo
+├── conftest.py                  # Fixtures compartilhadas (herdadas por todas as pastas)
+├── test_helpers.py              # Funções helper para assertions
+├── test_permission_helpers.py   # Helpers de permissão
+├── test_validation_helpers.py   # Helpers de validação
+├── test_repository_helpers.py   # Helpers de repositório
+├── README.md                    # Este arquivo
+│
+├── unit/                        # Testes unitários (isolados, com mocks)
+│   ├── conftest.py              # Configuração específica para testes unitários
+│   ├── test_validators.py       # Validadores Pydantic
+│   ├── test_senha_util.py       # Funções de senha
+│   ├── test_datetime_util.py    # Funções de datetime
+│   ├── test_config_cache.py     # Cache de configurações
+│   ├── test_enum_base.py        # Classe base de enums
+│   ├── test_usuario_logado_model.py  # Dataclass UsuarioLogado
+│   ├── test_rate_limiter.py     # Rate limiter
+│   ├── test_db_util.py          # Utilitários de banco
+│   └── test_configuracao_dto.py # DTOs de configuração
+│
+├── integration/                 # Testes de integração (HTTP + banco)
+│   ├── conftest.py              # Configuração específica para integração
+│   ├── test_auth.py             # Autenticação
+│   ├── test_security.py         # Segurança
+│   ├── test_perfil.py           # Perfil do usuário
+│   ├── test_usuario.py          # Dashboard do usuário
+│   ├── test_admin_usuarios.py   # Administração de usuários
+│   ├── test_admin_backups.py    # Backups
+│   ├── test_admin_configuracoes.py  # Configurações
+│   ├── test_public.py           # Rotas públicas
+│   ├── test_chamados.py         # Sistema de chamados
+│   └── ...                      # Outros testes de integração
+│
+└── e2e/                         # Testes end-to-end (Playwright)
+    ├── conftest.py              # Fixtures Playwright e servidor
+    ├── test_cadastro.py         # Fluxo de cadastro via browser
+    └── test_e2e_helpers.py      # Helpers E2E
 ```
+
+**Categorias de testes:**
+
+- **unit/**: Testes unitários - testam funções e classes isoladamente, usando mocks
+- **integration/**: Testes de integração - testam múltiplos componentes via HTTP/banco
+- **e2e/**: Testes end-to-end - simulam usuário real via Playwright
 
 ### Organização de Classes
 
@@ -577,10 +610,10 @@ pytest
 pytest -v
 
 # Rodar arquivo específico
-pytest tests/test_auth.py
+pytest tests/integration/test_auth.py
 
 # Rodar teste específico
-pytest tests/test_auth.py::TestLogin::test_login_com_credenciais_validas
+pytest tests/integration/test_auth.py::TestLogin::test_login_com_credenciais_validas
 
 # Rodar testes que contém palavra-chave
 pytest -k "login"
@@ -590,6 +623,24 @@ pytest --cov
 
 # Rodar com coverage e relatório HTML
 pytest --cov --cov-report=html
+```
+
+### Executar por Categoria
+
+```bash
+# Apenas testes unitários
+pytest tests/unit/
+
+# Apenas testes de integração
+pytest tests/integration/
+
+# Apenas testes E2E (requer Playwright instalado)
+pytest tests/e2e/
+
+# Usando markers (aplica automaticamente pelas pastas)
+pytest -m unit
+pytest -m integration
+pytest -m e2e
 ```
 
 ### Markers Úteis
@@ -603,16 +654,17 @@ def test_login():
 def test_criar_categoria():
     pass
 
-@pytest.mark.integration
-def test_fluxo_completo():
+@pytest.mark.slow
+def test_fluxo_lento():
     pass
 ```
 
 Executar por marker:
 ```bash
-pytest -m auth        # Apenas testes de autenticação
-pytest -m crud        # Apenas testes de CRUD
-pytest -m integration # Apenas testes de integração
+pytest -m auth            # Apenas testes de autenticação
+pytest -m crud            # Apenas testes de CRUD
+pytest -m "not slow"      # Excluir testes lentos
+pytest -m "unit and auth" # Unitários de autenticação
 ```
 
 ---
@@ -625,5 +677,5 @@ pytest -m integration # Apenas testes de integração
 
 ---
 
-**Última atualização**: 2025-10-22
-**Versão**: 1.0
+**Última atualização**: 2025-12-02
+**Versão**: 2.0 - Organização em unit/integration/e2e
