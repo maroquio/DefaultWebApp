@@ -20,10 +20,23 @@ class TestDashboard:
         response = cliente_autenticado.get("/usuario")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_dashboard_admin(self, admin_autenticado):
+    def test_dashboard_exibe_dados_usuario(self, cliente_autenticado, usuario_teste):
+        """Dashboard deve exibir informações do usuário logado"""
+        response = cliente_autenticado.get("/usuario")
+        assert response.status_code == status.HTTP_200_OK
+        assert usuario_teste["nome"] in response.text
+
+    def test_dashboard_admin(self, admin_autenticado, admin_teste):
         """Admin autenticado pode acessar dashboard"""
         response = admin_autenticado.get("/usuario")
         assert response.status_code == status.HTTP_200_OK
+        assert admin_teste["nome"] in response.text
+
+    def test_dashboard_vendedor(self, vendedor_autenticado, vendedor_teste):
+        """Vendedor autenticado pode acessar dashboard"""
+        response = vendedor_autenticado.get("/usuario")
+        assert response.status_code == status.HTTP_200_OK
+        assert vendedor_teste["nome"] in response.text
 
 
 class TestVisualizarPerfil:
