@@ -242,6 +242,19 @@ O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` qu
 
 > **Nota:** O método `is_admin()` deve ser mantido. Remova apenas `is_cliente()` e `is_vendedor()`.
 
+### 5.3. Substituindo os Perfis Antigos Pelos Novos no Restante do Projeto
+
+Clique na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilidade a maiúsculas e minúsculas e faça as seguintes substituições globais no projeto:
+
+| Buscar               | Substituir por      |
+|----------------------|---------------------|
+| `CLIENTE`            | `AUTOR`             |
+| `VENDEDOR`           | `LEITOR`            |
+| `Cliente`            | `Autor`             |
+| `Vendedor`           | `Leitor`            |
+| `cliente`            | `autor`             |
+| `vendedor`           | `leitor`            |
+
 ---
 
 ## 6. Criando o CRUD de Categorias
@@ -1217,14 +1230,16 @@ Adicione um novo card para **Categorias** junto aos outros cards administrativos
 
 ```html
                 <!-- Card Categorias -->
-                <div class="col-md-4 col-lg-3 mb-4">
-                    <div class="card h-100 shadow-sm border-0">
+                <div class="col">
+                    <div class="card h-100 shadow-sm shadow-hover">
                         <div class="card-body text-center">
                             <div class="mb-3">
                                 <i class="bi bi-folder text-primary" style="font-size: 3rem;"></i>
                             </div>
                             <h5 class="card-title">Categorias</h5>
-                            <p class="card-text text-muted">Gerencie as categorias do blog</p>
+                            <p class="card-text text-muted">
+                                Gerencie as categorias de artigos do blog
+                            </p>
                             <a href="/admin/categorias/listar" class="btn btn-primary">
                                 <i class="bi bi-folder"></i> Acessar
                             </a>
@@ -1278,8 +1293,8 @@ Após o login, teste as seguintes funcionalidades:
    - Nome: "Tecnologia", Descrição: "Artigos sobre tecnologia e programação"
    - Nome: "Esportes", Descrição: "Notícias e artigos sobre esportes"
    - Nome: "Cultura", Descrição: "Arte, música, cinema e literatura"
-5. **Editar categoria:** Clique no ícone de edição e altere os dados
-6. **Excluir categoria:** Clique no ícone de exclusão e confirme
+5. **Editar categoria:** Altere o nome da categoria "Cultura" para "Cultura e Entretenimento", salve e depois altere novamente para "Cultura"
+6. **Excluir categoria:** Crie uma categoria chamada "Teste Exclusão" e depois exclua essa categoria
 
 > **Dica:** Se encontrar erros, verifique o terminal onde a aplicação está rodando para ver as mensagens de log.
 
@@ -3745,3 +3760,14 @@ mudar linha 21 de dashboard e definir todas as divs como apenas col:
 
 mudar linha 41 de dashboard.html
 {% if usuario_logado and usuario_logado.perfil == 'Administrador' %}
+
+corrigir todas as rotas para que elas passem usuario_logado para os templates em vez de usuario, e acertar os templates para usar usuario_logado em vez de usuario
+
+em toda rota que requer autenticação, adicionar no início do corpo da função para eliminar erros de lint:
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+Alterar routes/admin_categorias_routes.py
+
+ 1. Linha 90: Mudar "admin/categorias/cadastro.html" para "admin/categorias/cadastrar.html"
+ 2. Linha 151: Mudar "admin/categorias/cadastro.html" para "admin/categorias/cadastrar.html"

@@ -29,9 +29,9 @@ class TestListarBackups:
         response = client.get("/admin/backups/listar", follow_redirects=False)
         assert response.status_code == status.HTTP_303_SEE_OTHER
 
-    def test_vendedor_nao_acessa_listagem(self, vendedor_autenticado):
-        """Vendedor não deve acessar listagem de backups"""
-        response = vendedor_autenticado.get("/admin/backups/listar", follow_redirects=False)
+    def test_autor_nao_acessa_listagem(self, autor_autenticado):
+        """Autor não deve acessar listagem de backups"""
+        response = autor_autenticado.get("/admin/backups/listar", follow_redirects=False)
         assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
 
@@ -76,9 +76,9 @@ class TestCriarBackup:
         response = cliente_autenticado.post("/admin/backups/criar", follow_redirects=False)
         assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
-    def test_vendedor_nao_pode_criar_backup(self, vendedor_autenticado):
-        """Vendedor não deve poder criar backup"""
-        response = vendedor_autenticado.post("/admin/backups/criar", follow_redirects=False)
+    def test_autor_nao_pode_criar_backup(self, autor_autenticado):
+        """Autor não deve poder criar backup"""
+        response = autor_autenticado.post("/admin/backups/criar", follow_redirects=False)
         assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
 
@@ -240,14 +240,14 @@ class TestDownloadBackup:
             )
             assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
-    def test_vendedor_nao_pode_baixar_backup(self, vendedor_autenticado, criar_backup):
-        """Vendedor não deve poder baixar backup"""
+    def test_autor_nao_pode_baixar_backup(self, autor_autenticado, criar_backup):
+        """Autor não deve poder baixar backup"""
         criar_backup()
         from util import backup_util
         backups = backup_util.listar_backups()
 
         if len(backups) > 0:
-            response = vendedor_autenticado.get(
+            response = autor_autenticado.get(
                 f"/admin/backups/download/{backups[0].nome_arquivo}",
                 follow_redirects=False
             )

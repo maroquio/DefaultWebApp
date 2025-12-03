@@ -37,8 +37,8 @@ class UsuarioLogado:
             True se o usuário tem um dos perfis, False caso contrário
 
         Exemplo:
-            if usuario.tem_perfil(Perfil.ADMIN.value, Perfil.VENDEDOR.value):
-                # lógica para admin ou vendedor
+            if usuario.tem_perfil(Perfil.ADMIN.value, Perfil.AUTOR.value):
+                # lógica para admin ou autor
         """
         return self.perfil in perfis
 

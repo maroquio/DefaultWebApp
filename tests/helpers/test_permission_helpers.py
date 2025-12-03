@@ -186,7 +186,7 @@ class TestVerificarPropriedadeOuAdmin:
     def test_proprietario_tem_acesso(self, request_mock):
         """Proprietário não-admin deve ter acesso à própria entidade"""
         entidade = EntidadeExemplo(id=1, usuario_id=10, nome="Teste")
-        usuario = UsuarioLogadoMock(id=10, perfil=Perfil.CLIENTE.value)
+        usuario = UsuarioLogadoMock(id=10, perfil=Perfil.LEITOR.value)
 
         resultado = verificar_propriedade_ou_admin(
             entity=entidade,
@@ -199,7 +199,7 @@ class TestVerificarPropriedadeOuAdmin:
     def test_nao_proprietario_nao_admin_bloqueado(self, request_mock):
         """Não-proprietário não-admin deve ser bloqueado"""
         entidade = EntidadeExemplo(id=1, usuario_id=10, nome="Teste")
-        usuario = UsuarioLogadoMock(id=20, perfil=Perfil.CLIENTE.value)
+        usuario = UsuarioLogadoMock(id=20, perfil=Perfil.LEITOR.value)
 
         resultado = verificar_propriedade_ou_admin(
             entity=entidade,
@@ -249,7 +249,7 @@ class TestVerificarPerfil:
     def test_perfil_nao_permitido(self, request_mock):
         """Perfil fora da lista de permitidos deve ser bloqueado"""
         resultado = verificar_perfil(
-            usuario_perfil=Perfil.CLIENTE.value,
+            usuario_perfil=Perfil.LEITOR.value,
             perfis_permitidos=[Perfil.ADMIN.value],
             request=request_mock
         )
@@ -259,8 +259,8 @@ class TestVerificarPerfil:
     def test_multiplos_perfis_permitidos(self, request_mock):
         """Deve funcionar com múltiplos perfis permitidos"""
         resultado = verificar_perfil(
-            usuario_perfil=Perfil.VENDEDOR.value,
-            perfis_permitidos=[Perfil.ADMIN.value, Perfil.VENDEDOR.value],
+            usuario_perfil=Perfil.AUTOR.value,
+            perfis_permitidos=[Perfil.ADMIN.value, Perfil.AUTOR.value],
             request=request_mock
         )
 
@@ -270,7 +270,7 @@ class TestVerificarPerfil:
         """Deve usar mensagem de erro customizada"""
         with patch('util.permission_helpers.informar_erro') as mock_erro:
             verificar_perfil(
-                usuario_perfil=Perfil.CLIENTE.value,
+                usuario_perfil=Perfil.LEITOR.value,
                 perfis_permitidos=[Perfil.ADMIN.value],
                 request=request_mock,
                 mensagem_erro="Apenas administradores"
@@ -284,7 +284,7 @@ class TestVerificarPerfil:
         """Deve registrar log de tentativa de acesso"""
         with patch('util.permission_helpers.logger') as mock_logger:
             verificar_perfil(
-                usuario_perfil=Perfil.CLIENTE.value,
+                usuario_perfil=Perfil.LEITOR.value,
                 perfis_permitidos=[Perfil.ADMIN.value],
                 request=request_mock,
                 log_tentativa=True

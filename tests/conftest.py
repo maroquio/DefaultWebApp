@@ -198,7 +198,7 @@ def usuario_teste():
         "nome": "Usuario Teste",
         "email": "teste@example.com",
         "senha": "Senha@123",
-        "perfil": Perfil.CLIENTE.value  # Usa Enum Perfil
+        "perfil": Perfil.LEITOR.value  # Usa Enum Perfil
     }
 
 
@@ -219,7 +219,7 @@ def criar_usuario(client):
     Fixture que retorna uma função para criar usuários
     Útil para criar múltiplos usuários em um teste
     """
-    def _criar_usuario(nome: str, email: str, senha: str, perfil: str = Perfil.CLIENTE.value):
+    def _criar_usuario(nome: str, email: str, senha: str, perfil: str = Perfil.LEITOR.value):
         """Cadastra um usuário via endpoint de cadastro"""
         response = client.post("/cadastrar", data={
             "perfil": perfil,
@@ -298,38 +298,38 @@ def admin_autenticado(client, criar_usuario, fazer_login, admin_teste):
 
 
 @pytest.fixture
-def vendedor_teste():
-    """Dados de um vendedor de teste"""
+def autor_teste():
+    """Dados de um autor de teste"""
     return {
-        "nome": "Vendedor Teste",
-        "email": "vendedor@example.com",
-        "senha": "Vendedor@123",
-        "perfil": Perfil.VENDEDOR.value
+        "nome": "Autor Teste",
+        "email": "autor@example.com",
+        "senha": "Autor@123",
+        "perfil": Perfil.AUTOR.value
     }
 
 
 @pytest.fixture
-def vendedor_autenticado(client, criar_usuario, fazer_login, vendedor_teste):
+def autor_autenticado(client, criar_usuario, fazer_login, autor_teste):
     """
-    Fixture que retorna um cliente autenticado como vendedor
+    Fixture que retorna um cliente autenticado como autor
     """
     # Importar para manipular diretamente o banco
     from repo import usuario_repo
     from model.usuario_model import Usuario
     from util.security import criar_hash_senha
 
-    # Criar vendedor diretamente no banco
-    vendedor = Usuario(
+    # Criar autor diretamente no banco
+    autor = Usuario(
         id=0,
-        nome=vendedor_teste["nome"],
-        email=vendedor_teste["email"],
-        senha=criar_hash_senha(vendedor_teste["senha"]),
-        perfil=Perfil.VENDEDOR.value
+        nome=autor_teste["nome"],
+        email=autor_teste["email"],
+        senha=criar_hash_senha(autor_teste["senha"]),
+        perfil=Perfil.AUTOR.value
     )
-    usuario_repo.inserir(vendedor)
+    usuario_repo.inserir(autor)
 
     # Fazer login
-    fazer_login(vendedor_teste["email"], vendedor_teste["senha"])
+    fazer_login(autor_teste["email"], autor_teste["senha"])
 
     # Retornar cliente autenticado
     return client
@@ -378,13 +378,13 @@ def dois_usuarios(client, criar_usuario):
         "nome": "Usuario Um",
         "email": "usuario1@example.com",
         "senha": "Senha@123",
-        "perfil": Perfil.CLIENTE.value
+        "perfil": Perfil.LEITOR.value
     }
     usuario2 = {
         "nome": "Usuario Dois",
         "email": "usuario2@example.com",
         "senha": "Senha@456",
-        "perfil": Perfil.CLIENTE.value
+        "perfil": Perfil.LEITOR.value
     }
 
     # Criar ambos usuários
@@ -456,7 +456,7 @@ def criar_usuario_direto():
         nome: str,
         email: str,
         senha: str,
-        perfil: str = Perfil.CLIENTE.value
+        perfil: str = Perfil.LEITOR.value
     ) -> int:
         """
         Cria usuário diretamente no banco.

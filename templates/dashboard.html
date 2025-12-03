@@ -10,7 +10,7 @@
         <div class="bg-primary text-white rounded p-4 shadow-sm">
             <h1 class="mb-2">
                 <i class="bi bi-house-door"></i>
-                Bem-vindo(a), {{ usuario.nome }}!
+                Bem-vindo(a), {{ usuario_logado.nome }}!
             </h1>
             <p class="mb-0 lead">Este é o seu painel de controle pessoal.</p>
         </div>
@@ -131,14 +131,16 @@
     </div>
 
     <!-- Card Categorias -->
-    <div class="col mb-4">
-        <div class="card h-100 shadow-sm border-0">
+    <div class="col">
+        <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
                     <i class="bi bi-folder text-primary" style="font-size: 3rem;"></i>
                 </div>
                 <h5 class="card-title">Categorias</h5>
-                <p class="card-text text-muted">Gerencie as categorias do blog</p>
+                <p class="card-text text-muted">
+                    Gerencie as categorias de artigos do blog
+                </p>
                 <a href="/admin/categorias/listar" class="btn btn-primary">
                     <i class="bi bi-folder"></i> Acessar
                 </a>

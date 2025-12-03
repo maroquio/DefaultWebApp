@@ -33,7 +33,7 @@ def usuario_repo_teste():
         nome="Usuario Repo Teste",
         email="usuario_repo@example.com",
         senha=criar_hash_senha("Senha@123"),
-        perfil=Perfil.CLIENTE.value
+        perfil=Perfil.LEITOR.value
     )
     usuario_id = usuario_repo.inserir(usuario)
     return usuario_id

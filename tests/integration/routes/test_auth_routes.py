@@ -95,7 +95,7 @@ class TestCadastro:
     def test_cadastro_com_dados_validos(self, client):
         """Deve cadastrar usuário com dados válidos"""
         response = client.post("/cadastrar", data={
-            "perfil": Perfil.CLIENTE.value,
+            "perfil": Perfil.LEITOR.value,
             "nome": "Novo Usuario",
             "email": "novo@example.com",
             "senha": "Senha@123",
@@ -116,7 +116,7 @@ class TestCadastro:
 
         # Tentar cadastrar com mesmo e-mail
         response = client.post("/cadastrar", data={
-            "perfil": Perfil.CLIENTE.value,
+            "perfil": Perfil.LEITOR.value,
             "nome": "Outro Nome",
             "email": usuario_teste["email"],  # E-mail duplicado
             "senha": "OutraSenha@123",
@@ -129,7 +129,7 @@ class TestCadastro:
     def test_cadastro_com_senhas_diferentes(self, client):
         """Deve rejeitar quando senhas não coincidem"""
         response = client.post("/cadastrar", data={
-            "perfil": Perfil.CLIENTE.value,
+            "perfil": Perfil.LEITOR.value,
             "nome": "Usuario Teste",
             "email": "teste@example.com",
             "senha": "Senha@123",
@@ -142,7 +142,7 @@ class TestCadastro:
     def test_cadastro_com_senha_fraca(self, client):
         """Deve rejeitar senha que não atende requisitos de força"""
         response = client.post("/cadastrar", data={
-            "perfil": Perfil.CLIENTE.value,
+            "perfil": Perfil.LEITOR.value,
             "nome": "Usuario Teste",
             "email": "teste@example.com",
             "senha": "123456",  # Senha fraca
@@ -153,12 +153,12 @@ class TestCadastro:
         # Deve ter mensagem sobre requisitos de senha
         assert any(palavra in response.text.lower() for palavra in ["mínimo", "maiúscula", "senha"])
 
-    def test_cadastro_cria_usuario_com_perfil_cliente(self, client):
-        """Cadastro público deve criar usuário com perfil CLIENTE (Enum Perfil)"""
+    def test_cadastro_cria_usuario_com_perfil_leitor(self, client):
+        """Cadastro público deve criar usuário com perfil LEITOR (Enum Perfil)"""
         from repo import usuario_repo
 
         client.post("/cadastrar", data={
-            "perfil": Perfil.CLIENTE.value,
+            "perfil": Perfil.LEITOR.value,
             "nome": "Usuario Teste",
             "email": "teste@example.com",
             "senha": "Senha@123",
@@ -168,7 +168,7 @@ class TestCadastro:
         # Verificar no banco que o usuário foi criado com perfil correto
         usuario = usuario_repo.obter_por_email("teste@example.com")
         assert usuario is not None
-        assert usuario.perfil == Perfil.CLIENTE.value  # Usa Enum Perfil
+        assert usuario.perfil == Perfil.LEITOR.value  # Usa Enum Perfil
 
 
 class TestLogout:

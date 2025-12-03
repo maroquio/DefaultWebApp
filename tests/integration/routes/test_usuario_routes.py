@@ -32,11 +32,11 @@ class TestDashboard:
         assert response.status_code == status.HTTP_200_OK
         assert admin_teste["nome"] in response.text
 
-    def test_dashboard_vendedor(self, vendedor_autenticado, vendedor_teste):
-        """Vendedor autenticado pode acessar dashboard"""
-        response = vendedor_autenticado.get("/usuario")
+    def test_dashboard_autor(self, autor_autenticado, autor_teste):
+        """Autor autenticado pode acessar dashboard"""
+        response = autor_autenticado.get("/usuario")
         assert response.status_code == status.HTTP_200_OK
-        assert vendedor_teste["nome"] in response.text
+        assert autor_teste["nome"] in response.text
 
 
 class TestVisualizarPerfil:

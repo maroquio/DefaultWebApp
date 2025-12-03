@@ -9,25 +9,25 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body text-center py-5">
                 <div class="mb-4">
-                    <img src="{{ usuario.id|foto_usuario }}" alt="Foto de Perfil" id="profile-photo"
+                    <img src="{{ usuario_logado.id|foto_usuario }}" alt="Foto de Perfil" id="profile-photo"
                         class="rounded-circle border border-3 border-primary object-fit-cover" width="150" height="150"
                         title="Clique para alterar a foto">
                 </div>
 
-                <h2 class="mb-2">{{ usuario.nome }}</h2>
+                <h2 class="mb-2">{{ usuario_logado.nome }}</h2>
                 <p class="text-muted mb-3">
-                    <i class="bi bi-envelope"></i> {{ usuario.email }}
+                    <i class="bi bi-envelope"></i> {{ usuario_logado.email }}
                 </p>
                 <p class="mb-3">
                     <span
-                        class="badge bg-{% if usuario.perfil == 'Administrador' %}danger{% else %}info{% endif %} px-3 py-2">
+                        class="badge bg-{% if usuario_logado.perfil == 'Administrador' %}danger{% else %}info{% endif %} px-3 py-2">
                         <i class="bi bi-person-badge"></i>
-                        {{ usuario.perfil }}
+                        {{ usuario_logado.perfil }}
                     </span>
                 </p>
-                {% if usuario.data_cadastro %}
+                {% if usuario_logado.data_cadastro %}
                 <p class="text-muted small">
-                    <i class="bi bi-calendar-check"></i> Membro desde {{ usuario.data_cadastro|data_br }}
+                    <i class="bi bi-calendar-check"></i> Membro desde {{ usuario_logado.data_cadastro|data_br }}
                 </p>
                 {% endif %}
             </div>

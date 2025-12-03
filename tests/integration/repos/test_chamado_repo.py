@@ -130,7 +130,7 @@ class TestChamadoRepoObterPorUsuario:
             nome="Usuario Sem Chamados",
             email="sem_chamados@example.com",
             senha=criar_hash_senha("Senha@123"),
-            perfil=Perfil.CLIENTE.value
+            perfil=Perfil.LEITOR.value
         )
         usuario_id = usuario_repo.inserir(usuario)
 
@@ -270,7 +270,7 @@ class TestChamadoRepoContadores:
             nome="Usuario Contador",
             email="contador@example.com",
             senha=criar_hash_senha("Senha@123"),
-            perfil=Perfil.CLIENTE.value
+            perfil=Perfil.LEITOR.value
         )
         usuario_id = usuario_repo.inserir(usuario)
 

@@ -56,7 +56,7 @@ class TestCadastrarUsuario:
             "nome": "Novo Usuario Admin",
             "email": "novousuario@example.com",
             "senha": "Senha@123",
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         }, follow_redirects=False)
 
         # Deve redirecionar para listagem
@@ -85,22 +85,22 @@ class TestCadastrarUsuario:
         assert usuario is not None
         assert usuario.perfil == Perfil.ADMIN.value
 
-    def test_cadastrar_usuario_com_perfil_vendedor(self, admin_autenticado):
-        """Admin deve poder cadastrar vendedor"""
+    def test_cadastrar_usuario_com_perfil_autor(self, admin_autenticado):
+        """Admin deve poder cadastrar autor"""
         response = admin_autenticado.post("/admin/usuarios/cadastrar", data={
-            "nome": "Novo Vendedor",
-            "email": "novovendedor@example.com",
-            "senha": "SenhaVendedor@123",
-            "perfil": Perfil.VENDEDOR.value
+            "nome": "Novo Autor",
+            "email": "novoautor@example.com",
+            "senha": "SenhaAutor@123",
+            "perfil": Perfil.AUTOR.value
         }, follow_redirects=False)
 
         assert response.status_code == status.HTTP_303_SEE_OTHER
 
         # Verificar perfil
         from repo import usuario_repo
-        usuario = usuario_repo.obter_por_email("novovendedor@example.com")
+        usuario = usuario_repo.obter_por_email("novoautor@example.com")
         assert usuario is not None
-        assert usuario.perfil == Perfil.VENDEDOR.value
+        assert usuario.perfil == Perfil.AUTOR.value
 
     def test_cadastrar_usuario_email_duplicado(self, admin_autenticado, admin_teste):
         """Deve rejeitar email já cadastrado"""
@@ -108,7 +108,7 @@ class TestCadastrarUsuario:
             "nome": "Outro Nome",
             "email": admin_teste["email"],  # Email já existe
             "senha": "Senha@123",
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         }, follow_redirects=True)
 
         assert response.status_code == status.HTTP_200_OK
@@ -120,7 +120,7 @@ class TestCadastrarUsuario:
             "nome": "Usuario Teste",
             "email": "teste@example.com",
             "senha": "123",  # Senha fraca
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         }, follow_redirects=True)
 
         assert response.status_code == status.HTTP_200_OK
@@ -176,7 +176,7 @@ class TestEditarUsuario:
         response = admin_autenticado.post(f"/admin/usuarios/editar/{usuario.id}", data={
             "nome": "Usuario Editado",
             "email": "editado@example.com",
-            "perfil": Perfil.VENDEDOR.value
+            "perfil": Perfil.AUTOR.value
         }, follow_redirects=False)
 
         assert response.status_code == status.HTTP_303_SEE_OTHER
@@ -185,7 +185,7 @@ class TestEditarUsuario:
         usuario_editado = usuario_repo.obter_por_id(usuario.id)
         assert usuario_editado.nome == "Usuario Editado"
         assert usuario_editado.email == "editado@example.com"
-        assert usuario_editado.perfil == Perfil.VENDEDOR.value
+        assert usuario_editado.perfil == Perfil.AUTOR.value
 
     def test_editar_usuario_email_duplicado(self, admin_autenticado, criar_usuario):
         """Deve rejeitar email já usado por outro usuário"""
@@ -200,7 +200,7 @@ class TestEditarUsuario:
         response = admin_autenticado.post(f"/admin/usuarios/editar/{usuario2.id}", data={
             "nome": "Usuario 2",
             "email": "usuario1@example.com",  # Email já existe
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         }, follow_redirects=True)
 
         assert response.status_code == status.HTTP_200_OK
@@ -218,7 +218,7 @@ class TestEditarUsuario:
         admin_autenticado.post(f"/admin/usuarios/editar/{usuario_original.id}", data={
             "nome": "Nome Editado",
             "email": "teste@example.com",
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         })
 
         # Verificar que senha não mudou
@@ -230,7 +230,7 @@ class TestEditarUsuario:
         response = admin_autenticado.post("/admin/usuarios/editar/99999", data={
             "nome": "Nome",
             "email": "email@example.com",
-            "perfil": Perfil.CLIENTE.value
+            "perfil": Perfil.LEITOR.value
         }, follow_redirects=False)
 
         # Deve redirecionar
@@ -315,7 +315,7 @@ class TestAdminUsuariosRateLimiting:
                 "nome": "Teste Rate Limit",
                 "email": "ratelimit@example.com",
                 "senha": "Senha@123",
-                "perfil": Perfil.CLIENTE.value
+                "perfil": Perfil.LEITOR.value
             }, follow_redirects=False)
 
             assert_redirects_to(response, "/admin/usuarios/listar")
@@ -331,7 +331,7 @@ class TestAdminUsuariosRateLimiting:
             response = admin_autenticado.post(f"/admin/usuarios/editar/{usuario.id}", data={
                 "nome": "Nome Editado",
                 "email": "editar_rate@example.com",
-                "perfil": Perfil.CLIENTE.value
+                "perfil": Perfil.LEITOR.value
             }, follow_redirects=False)
 
             assert_redirects_to(response, "/admin/usuarios/listar")

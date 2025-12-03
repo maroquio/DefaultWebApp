@@ -77,7 +77,7 @@ async def dashboard(request: Request, usuario_logado: Optional[UsuarioLogado] = 
     # Preparar dados do contexto
     context = {
         "request": request,
-        "usuario": usuario_logado
+        "usuario_logado": usuario_logado
     }
 
     # Adicionar contador de chamados conforme perfil
@@ -108,7 +108,7 @@ async def get_visualizar_perfil(request: Request, usuario_logado: Optional[Usuar
         return usuario
 
     return templates_usuario.TemplateResponse(
-        "perfil/visualizar.html", {"request": request, "usuario": usuario}
+        "perfil/visualizar.html", {"request": request, "usuario_logado": usuario}
     )
 
 

@@ -27,23 +27,23 @@ def criar_chamado_admin(admin_autenticado, admin_teste):
     from util.security import criar_hash_senha
     from util.perfis import Perfil
 
-    # Criar um usuario cliente para associar ao chamado
-    cliente = Usuario(
+    # Criar um usuario leitor para associar ao chamado
+    leitor = Usuario(
         id=0,
-        nome="Cliente Chamado Teste",
-        email="cliente_chamado@example.com",
+        nome="Leitor Chamado Teste",
+        email="leitor_chamado@example.com",
         senha=criar_hash_senha("Senha@123"),
-        perfil=Perfil.CLIENTE.value
+        perfil=Perfil.LEITOR.value
     )
-    cliente_id = usuario_repo.inserir(cliente)
+    leitor_id = usuario_repo.inserir(leitor)
 
-    # Criar chamado associado ao cliente
+    # Criar chamado associado ao leitor
     chamado = Chamado(
         id=0,
         titulo="Chamado de Teste Admin",
         status=StatusChamado.ABERTO,
         prioridade=PrioridadeChamado.MEDIA,
-        usuario_id=cliente_id
+        usuario_id=leitor_id
     )
     chamado_id = chamado_repo.inserir(chamado)
 
@@ -51,7 +51,7 @@ def criar_chamado_admin(admin_autenticado, admin_teste):
     interacao = ChamadoInteracao(
         id=0,
         chamado_id=chamado_id,
-        usuario_id=cliente_id,
+        usuario_id=leitor_id,
         mensagem="Descricao do problema inicial para teste",
         tipo=TipoInteracao.ABERTURA,
         data_interacao=None,

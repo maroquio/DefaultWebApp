@@ -87,7 +87,7 @@ async def get_cadastrar(
     Acessível em: GET /admin/categorias/cadastrar
     """
     return templates.TemplateResponse(
-        "admin/categorias/cadastro.html",
+        "admin/categorias/cadastrar.html",
         {"request": request, "usuario_logado": usuario_logado},
     )
 
@@ -148,7 +148,7 @@ async def post_cadastrar(
     except ValidationError as e:
         raise ErroValidacaoFormulario(
             validation_error=e,
-            template_path="admin/categorias/cadastro.html",
+            template_path="admin/categorias/cadastrar.html",
             dados_formulario={"nome": nome, "descricao": descricao},
             campo_padrao="nome",
         )
