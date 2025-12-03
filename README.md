@@ -1,44 +1,36 @@
 # DefaultWebApp - Boilerplate FastAPI Completo
 
-> Boilerplate profissional e educacional para desenvolvimento rápido de aplicações web modernas em Python, com componentes reutilizáveis, validação robusta e exemplos práticos. Agora com deploy via Jenkinsfile!
+> Boilerplate profissional e educacional para desenvolvimento rápido de aplicações web modernas em Python, com componentes reutilizáveis, validação robusta e exemplos práticos.
 
-## 🎯 Visão Geral
+## Visao Geral
 
 **DefaultWebApp** é um template completo de aplicação web que elimina a necessidade de "começar do zero". Ele fornece toda a estrutura base e componentes reutilizáveis para você focar no que realmente importa: **desenvolver as funcionalidades específicas do seu projeto**.
 
 ### Por que usar este boilerplate?
 
-✅ **Sistema de autenticação completo** - Login, cadastro, perfis de usuário, recuperação de senha
+- **Sistema de autenticação completo** - Login, cadastro, perfis de usuário, recuperação de senha
+- **Sistema de chamados/tickets** - Abertura, acompanhamento e resposta de chamados de suporte
+- **Chat em tempo real** - Comunicação entre usuários via SSE (Server-Sent Events)
+- **Componentes UI reutilizáveis** - Modais, formulários, galerias, tabelas responsivas
+- **Validação robusta** - 15+ validadores prontos (CPF, CNPJ, email, telefone, etc.)
+- **Tratamento de erros centralizado** - Sistema inteligente que elimina ~70% do código repetitivo
+- **Máscaras de input** - CPF, CNPJ, telefone, valores monetários, datas, placas de veículo
+- **Sistema de fotos** - Upload, crop, redimensionamento automático
+- **28+ temas prontos** - Bootswatch themes para customização instantânea
+- **Sistema de backups** - Backup e restauração do banco de dados via interface admin
+- **Auditoria de logs** - Visualização de logs do sistema com filtros por data e nível
+- **Configurações dinâmicas** - Gerenciamento de configurações via banco de dados com cache
+- **Rate limiting** - Proteção contra abuso em todas as rotas sensíveis
+- **Páginas de exemplo** - 9 exemplos completos de layouts e funcionalidades
+- **Padrão CRUD** - Template documentado para criar novas entidades rapidamente
+- **Logger profissional** - Sistema de logs com rotação automática
+- **Email integrado** - Envio de emails transacionais (Resend.com)
+- **Flash messages e toasts** - Feedback visual automático para o usuário
+- **Testes configurados** - Estrutura completa de testes com pytest (90%+ cobertura)
+- **Seed data** - Sistema de dados iniciais em JSON
+- **Segurança** - Rate limiting, security headers, hash de senhas, proteção SQL injection
 
-✅ **Componentes UI reutilizáveis** - Modais, formulários, galerias, tabelas responsivas
-
-✅ **Validação robusta** - 15+ validadores prontos (CPF, CNPJ, email, telefone, etc.)
-
-✅ **Tratamento de erros centralizado** - Sistema inteligente que elimina ~70% do código repetitivo
-
-✅ **Máscaras de input** - CPF, CNPJ, telefone, valores monetários, datas, placas de veículo
-
-✅ **Sistema de fotos** - Upload, crop, redimensionamento automático
-
-✅ **28+ temas prontos** - Bootswatch themes para customização instantânea
-
-✅ **Páginas de exemplo** - 9 exemplos completos de layouts e funcionalidades
-
-✅ **Padrão CRUD** - Template documentado para criar novas entidades rapidamente
-
-✅ **Logger profissional** - Sistema de logs com rotação automática
-
-✅ **Email integrado** - Envio de emails transacionais (Resend.com)
-
-✅ **Flash messages e toasts** - Feedback visual automático para o usuário
-
-✅ **Testes configurados** - Estrutura completa de testes com pytest
-
-✅ **Seed data** - Sistema de dados iniciais em JSON
-
-✅ **Segurança** - Rate limiting, security headers, hash de senhas, proteção SQL injection
-
-## 🚀 Instalação Rápida
+## Instalação Rápida
 
 ### Pré-requisitos
 - Python 3.10 ou superior
@@ -92,30 +84,109 @@
    http://localhost:8400/exemplos
    ```
 
-## 👥 Usuários Padrão
+## Usuários Padrão
 
 O sistema vem com usuários pré-cadastrados para facilitar os testes:
 
 | Perfil | E-mail | Senha | Descrição |
 |--------|--------|-------|-----------|
-| **Admininistrador** | administrador@email.com | 1234aA@# | Acesso administrativo completo |
+| **Administrador** | administrador@email.com | 1234aA@# | Acesso administrativo completo |
 | **Cliente** | cliente@email.com | 1234aA@# | Usuário com perfil Cliente |
 | **Vendedor** | vendedor@email.com | 1234aA@# | Usuário com perfil Vendedor |
 
-> ⚠️ **Importante**: Altere essas senhas em ambiente de produção!
+> **Importante**: Altere essas senhas em ambiente de produção!
 
-## 📚 O Que Este Boilerplate Oferece
+## Funcionalidades Principais
 
-### 🔐 Sistema de Autenticação Completo
+### Sistema de Autenticação
 
 - **Login/Logout** com sessões seguras
 - **Cadastro de usuários** com validação de senha forte
 - **Recuperação de senha** por email
 - **Perfis de usuário** (Admin, Cliente, Vendedor - extensível)
 - **Proteção de rotas** por perfil com decorator `@requer_autenticacao()`
+- **Verificação defensiva** - Todas as rotas autenticadas verificam `usuario_logado` antes de executar
 - **Gerenciamento de usuários** (CRUD completo para admins)
 
-### 🎨 Componentes UI Reutilizáveis
+### Sistema de Chamados (Tickets)
+
+Sistema completo de suporte ao usuário:
+
+- **Abertura de chamados** - Usuários podem abrir chamados com título, descrição e prioridade
+- **Acompanhamento** - Histórico completo de interações em cada chamado
+- **Respostas** - Usuários e admins podem trocar mensagens
+- **Status** - Aberto, Em Análise, Fechado
+- **Prioridades** - Baixa, Média, Alta, Urgente
+- **Notificações** - Contador de mensagens não lidas
+- **Exclusão** - Usuários podem excluir chamados próprios (apenas se abertos e sem resposta admin)
+
+**Rotas de usuário:**
+- `/chamados/listar` - Lista chamados do usuário
+- `/chamados/cadastrar` - Abre novo chamado
+- `/chamados/{id}/visualizar` - Detalhes e histórico
+- `/chamados/{id}/responder` - Adiciona resposta
+- `/chamados/{id}/excluir` - Exclui chamado
+
+**Rotas administrativas:**
+- `/admin/chamados/listar` - Lista todos os chamados
+- `/admin/chamados/{id}/responder` - Responde e altera status
+- `/admin/chamados/{id}/fechar` - Fecha chamado
+- `/admin/chamados/{id}/reabrir` - Reabre chamado fechado
+
+### Chat em Tempo Real
+
+Sistema de chat entre usuários usando Server-Sent Events (SSE):
+
+- **Conversas privadas** - Chat 1:1 entre usuários
+- **Tempo real** - Mensagens entregues instantaneamente via SSE
+- **Histórico** - Mensagens persistidas no banco de dados
+- **Status de leitura** - Marcação de mensagens como lidas
+- **Contador de não lidas** - Badge com total de mensagens não lidas
+- **Busca de usuários** - Autocomplete para iniciar conversa
+- **Widget integrado** - Chat disponível em todas as páginas autenticadas
+
+**Rotas (API JSON):**
+- `/chat/stream` - SSE para receber mensagens em tempo real
+- `/chat/salas/criar` - Cria ou obtém sala de chat
+- `/chat/conversas` - Lista conversas do usuário
+- `/chat/salas/{id}/mensagens` - Lista mensagens de uma sala
+- `/chat/salas/{id}/enviar` - Envia mensagem
+- `/chat/salas/{id}/lidas` - Marca mensagens como lidas
+- `/chat/usuarios/buscar` - Busca usuários para chat
+- `/chat/nao-lidas/total` - Conta mensagens não lidas
+
+### Área Administrativa
+
+**Gerenciamento de Usuários** (`/admin/usuarios/`)
+- Listagem com todos os usuários
+- Cadastro de novos usuários
+- Edição de dados (nome, email, perfil)
+- Exclusão de usuários
+
+**Configurações do Sistema** (`/admin/configuracoes`)
+- Gerenciamento de configurações por categoria
+- Edição em lote com salvamento único
+- Cache automático para performance
+- Rate limiters configuráveis
+
+**Temas Visuais** (`/admin/tema`)
+- 28+ temas Bootswatch disponíveis
+- Preview visual de cada tema
+- Aplicação instantânea
+
+**Auditoria de Logs** (`/admin/auditoria`)
+- Visualização de logs por data
+- Filtro por nível (INFO, WARNING, ERROR, etc.)
+- Exibição formatada com destaque de níveis
+
+**Backups** (`/admin/backups/`)
+- Listagem de backups existentes
+- Criação de novos backups
+- Restauração com backup automático do estado atual
+- Download de arquivos de backup
+- Exclusão de backups antigos
+
+### Componentes UI Reutilizáveis
 
 #### Templates Components (use `{% include %}`)
 
@@ -133,13 +204,18 @@ abrirModalConfirmacao({
 - Upload via drag & drop
 - Redimensionamento automático
 
+**Chat Widget** (`components/chat_widget.html`)
+- Widget de chat integrado
+- Lista de conversas
+- Envio/recebimento de mensagens em tempo real
+
 **Galeria de Fotos** (`components/galeria_fotos.html`)
 ```jinja
 {% from 'components/galeria_fotos.html' import galeria_fotos %}
 {{ galeria_fotos(images, gallery_id='gallery1') }}
 ```
 
-#### Macros de Formulário (use `{% from ... import ... %}`)
+#### Macros de Formulário
 
 Biblioteca completa em `macros/form_fields.html`:
 
@@ -156,21 +232,14 @@ Biblioteca completa em `macros/form_fields.html`:
 {# Senha com toggle de visibilidade #}
 {{ input_password('senha', 'Senha', required=True) }}
 
-{# Data com calendário #}
-{{ input_date('data_nascimento', 'Data de Nascimento', value=data) }}
-
 {# Valores monetários/decimais #}
 {{ input_decimal('preco', 'Preço', prefix='R$ ', decimal_places=2) }}
 
 {# Select dropdown #}
 {{ select('categoria', 'Categoria', options=categorias, value=categoria_atual) }}
-
-{# Checkbox e radio buttons #}
-{{ checkbox('aceito_termos', 'Aceito os termos de uso', checked=True) }}
-{{ radio('tipo', 'Tipo', options=tipos, value=tipo_selecionado) }}
 ```
 
-### 🎭 Máscaras de Input Automáticas
+### Máscaras de Input Automáticas
 
 Sistema completo de máscaras em `static/js/input-mask.js`:
 
@@ -187,15 +256,6 @@ Sistema completo de máscaras em `static/js/input-mask.js`:
 <!-- CEP -->
 <input data-mask="CEP" name="cep">
 
-<!-- Data -->
-<input data-mask="DATA" name="data">
-
-<!-- Placa de veículo Mercosul -->
-<input data-mask="PLACA_MERCOSUL" name="placa">
-
-<!-- Cartão de crédito -->
-<input data-mask="CARTAO" name="cartao">
-
 <!-- Valores monetários (formato brasileiro) -->
 <input data-decimal
        data-decimal-places="2"
@@ -204,54 +264,9 @@ Sistema completo de máscaras em `static/js/input-mask.js`:
        name="preco">
 ```
 
-**Máscaras pré-definidas disponíveis:**
-- CPF: `000.000.000-00`
-- CNPJ: `00.000.000/0000-00`
-- TELEFONE: `(00) 00000-0000`
-- TELEFONE_FIXO: `(00) 0000-0000`
-- CEP: `00000-000`
-- DATA: `00/00/0000`
-- HORA: `00:00`
-- DATA_HORA: `00/00/0000 00:00`
-- PLACA_ANTIGA: `AAA-0000`
-- PLACA_MERCOSUL: `AAA-0A00`
-- CARTAO: `0000 0000 0000 0000`
-- CVV: `000`
-- VALIDADE_CARTAO: `00/00`
+**Máscaras disponíveis:** CPF, CNPJ, TELEFONE, TELEFONE_FIXO, CEP, DATA, HORA, DATA_HORA, PLACA_ANTIGA, PLACA_MERCOSUL, CARTAO, CVV, VALIDADE_CARTAO
 
-### 🛡️ Tratamento de Erros Centralizado
-
-Sistema de tratamento de erros de validação que garante consistência em toda aplicação:
-
-```python
-from util.exceptions import FormValidationError
-from pydantic import ValidationError
-
-@router.post("/cadastrar")
-async def post_cadastrar(request: Request, email: str = Form(), senha: str = Form()):
-    # Armazena dados do formulário para reexibição em caso de erro
-    dados_formulario = {"email": email}
-
-    try:
-        dto = CadastroDTO(email=email, senha=senha)
-        # lógica de negócio...
-
-    except ValidationError as e:
-        raise FormValidationError(
-            validation_error=e,
-            template_path="auth/cadastro.html",
-            dados_formulario=dados_formulario,
-            campo_padrao="senha"
-        )
-```
-
-**O handler global automaticamente:**
-- ✅ Processa os erros de validação
-- ✅ Exibe mensagem flash ao usuário
-- ✅ Renderiza o template com dados e erros
-- ✅ Registra o erro nos logs
-
-### ✅ Validadores Reutilizáveis
+### Validadores Reutilizáveis
 
 15+ validadores prontos em `dtos/validators.py`:
 
@@ -273,632 +288,45 @@ class ProdutoDTO(BaseModel):
     email: str
     cpf: str
     preco: float
-    estoque: int
 
     _validar_email = field_validator('email')(validar_email())
     _validar_cpf = field_validator('cpf')(validar_cpf())
     _validar_preco = field_validator('preco')(validar_decimal_positivo())
-    _validar_estoque = field_validator('estoque')(validar_inteiro_positivo())
 ```
 
-**Validadores disponíveis:**
-- **Texto**: `validar_string_obrigatoria()`, `validar_comprimento()`
-- **Email**: `validar_email()`
-- **Senha**: `validar_senha_forte()`, `validar_senhas_coincidem()`
-- **Brasileiro**: `validar_cpf()`, `validar_cnpj()`, `validar_telefone_br()`, `validar_cep()`
-- **Datas**: `validar_data()`, `validar_data_futura()`, `validar_data_passada()`
-- **Números**: `validar_inteiro_positivo()`, `validar_decimal_positivo()`
-- **Arquivos**: `validar_extensao_arquivo()`, `validar_tamanho_arquivo()`
-
-### 📸 Sistema de Fotos de Perfil
-
-Sistema completo de upload e crop de fotos em `util/foto_util.py`:
-
-```python
-from util.foto_util import (
-    obter_caminho_foto_usuario,
-    criar_foto_padrao_usuario,
-    salvar_foto_cropada_usuario
-)
-
-# No template
-<img src="{{ obter_caminho_foto_usuario(usuario.id) }}" alt="Foto">
-
-# Criar foto padrão para novo usuário
-criar_foto_padrao_usuario(usuario_id)
-
-# Salvar foto cropada (recebida do frontend)
-salvar_foto_cropada_usuario(usuario_id, base64_data)
-```
-
-**Funcionalidades:**
-- Upload com drag & drop
-- Crop interativo (Cropper.js)
-- Redimensionamento automático (256px por padrão)
-- Formato padronizado: `static/img/usuarios/{id:06d}.jpg`
-
-### 🎨 28+ Temas Bootswatch Prontos
-
-Acesse `/exemplos/bootswatch` para visualizar e escolher entre 28+ temas:
-
-**Temas Claros**: Cerulean, Cosmo, Flatly, Journal, Litera, Lumen, Minty, Pulse, Sandstone, Simplex, Sketchy, United, Yeti, Zephyr, Brite, Morph, Quartz, Spacelab
-
-**Temas Escuros**: Cyborg, Darkly, Slate, Solar, Superhero, Vapor
-
-**Temas Únicos**: Lux, Materia, Original
-
-Para trocar o tema, edite a linha do CSS no `base_publica.html` ou `base_privada.html`:
-```html
-<link rel="stylesheet" href="/static/css/bootswatch/flatly.bootstrap.min.css">
-```
-
-### 📋 Páginas de Exemplo (`/exemplos`)
-
-9 exemplos completos e funcionais para você usar como referência:
-
-1. **Form Fields Demo** - Todos os macros de formulário
-2. **Cards Grid** - Grid responsivo com cards
-3. **Table List** - Tabela de dados com ações e badges
-4. **Product Detail** - Página de produto e-commerce
-5. **Service Detail** - Página de serviço profissional
-6. **Profile Detail** - Perfil de pessoa/profissional
-7. **Property Detail** - Página de imóvel
-8. **Bootswatch Themes** - Seletor interativo de temas
-9. **Examples Index** - Galeria de todos os exemplos
-
-Cada exemplo inclui:
-- Código HTML completo
-- Uso de componentes reutilizáveis
-- Layout responsivo
-- Boas práticas de UI/UX
-
-### 🔔 Sistema de Notificações
+### Sistema de Notificações
 
 **Flash Messages** (backend → frontend):
 ```python
 from util.flash_messages import informar_sucesso, informar_erro, informar_aviso, informar_info
 
-# Em qualquer rota
-informar_sucesso(request, "Produto cadastrado com sucesso!")
-informar_erro(request, "Erro ao processar pagamento.")
-informar_aviso(request, "Seu plano expira em 3 dias.")
-informar_info(request, "Nova atualização disponível.")
+informar_sucesso(request, "Operação realizada com sucesso!")
+informar_erro(request, "Erro ao processar.")
+informar_aviso(request, "Atenção!")
+informar_info(request, "Informação importante.")
 ```
 
 **Toast Programático** (JavaScript):
 ```javascript
-// Exibir toast via JavaScript
 window.App.Toasts.show('Operação realizada!', 'success');
-window.App.Toasts.show('Atenção!', 'warning');
 window.App.Toasts.show('Erro ao salvar.', 'danger');
-window.App.Toasts.show('Informação importante.', 'info');
 ```
 
-### 📝 Logger Profissional
+### Rate Limiting
 
-Sistema de logs com rotação automática:
+Proteção contra abuso configurável por rota:
 
-```python
-from util.logger_config import logger
+- Login e cadastro
+- Criação/resposta de chamados
+- Envio de mensagens no chat
+- Alteração de senha
+- Upload de foto
+- Operações administrativas
+- Download de backups
 
-logger.info("Usuário realizou login")
-logger.warning("Tentativa de acesso não autorizado")
-logger.error("Falha ao conectar com API externa")
-logger.debug("Variável X = 123")
-```
+Configurações ajustáveis via banco de dados em `/admin/configuracoes`.
 
-**Características:**
-- Logs diários: `logs/app.2025.10.20.log`
-- Rotação automática à meia-noite
-- Retenção configurável (padrão: 30 dias)
-- Níveis: DEBUG, INFO, WARNING, ERROR, CRITICAL
-- Logs coloridos no console (desenvolvimento)
-
-### 📧 Sistema de E-mail
-
-Integrado com Resend.com para envio transacional:
-
-```python
-from util.email_service import enviar_email
-
-# Email de boas-vindas
-enviar_email_boas_vindas(usuario.email, usuario.nome)
-
-# Email de recuperação de senha
-enviar_email_recuperacao_senha(email, token)
-
-# Email customizado
-enviar_email(
-    destinatario="user@example.com",
-    assunto="Assunto do Email",
-    corpo_html="<h1>Olá!</h1><p>Mensagem aqui</p>"
-)
-```
-
-## 🛠️ Como Implementar Novas Funcionalidades
-
-### Criando um Novo CRUD (Passo a Passo)
-
-Exemplo: vamos criar um CRUD de **Produtos**
-
-#### 1. Criar o Model (`model/produto_model.py`)
-
-```python
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
-
-@dataclass
-class Produto:
-    id: Optional[int]
-    nome: str
-    descricao: str
-    preco: float
-    estoque: int
-    ativo: bool
-    data_cadastro: Optional[datetime]
-```
-
-#### 2. Criar os SQLs (`sql/produto_sql.py`)
-
-```python
-CRIAR_TABELA = """
-CREATE TABLE IF NOT EXISTS produto (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    descricao TEXT,
-    preco REAL NOT NULL,
-    estoque INTEGER NOT NULL DEFAULT 0,
-    ativo INTEGER NOT NULL DEFAULT 1,
-    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-"""
-
-INSERIR = """
-INSERT INTO produto (nome, descricao, preco, estoque, ativo)
-VALUES (?, ?, ?, ?, ?)
-"""
-
-OBTER_TODOS = "SELECT * FROM produto ORDER BY nome"
-
-OBTER_POR_ID = "SELECT * FROM produto WHERE id = ?"
-
-ATUALIZAR = """
-UPDATE produto
-SET nome = ?, descricao = ?, preco = ?, estoque = ?, ativo = ?
-WHERE id = ?
-"""
-
-EXCLUIR = "DELETE FROM produto WHERE id = ?"
-```
-
-#### 3. Criar o Repository (`repo/produto_repo.py`)
-
-```python
-from typing import List, Optional
-from model.produto_model import Produto
-from sql.produto_sql import *
-from util.db_util import get_connection
-
-def _row_to_produto(row) -> Produto:
-    """Converte linha do banco em objeto Produto"""
-    return Produto(
-        id=row["id"],
-        nome=row["nome"],
-        descricao=row["descricao"],
-        preco=row["preco"],
-        estoque=row["estoque"],
-        ativo=bool(row["ativo"]),
-        data_cadastro=row["data_cadastro"]
-    )
-
-def criar_tabela():
-    """Cria a tabela de produtos"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(CRIAR_TABELA)
-
-def inserir(produto: Produto) -> int:
-    """Insere um novo produto e retorna o ID"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(INSERIR, (
-            produto.nome,
-            produto.descricao,
-            produto.preco,
-            produto.estoque,
-            1 if produto.ativo else 0
-        ))
-        return cursor.lastrowid
-
-def obter_todos() -> List[Produto]:
-    """Retorna todos os produtos"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(OBTER_TODOS)
-        return [_row_to_produto(row) for row in cursor.fetchall()]
-
-def obter_por_id(produto_id: int) -> Optional[Produto]:
-    """Retorna um produto pelo ID"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(OBTER_POR_ID, (produto_id,))
-        row = cursor.fetchone()
-        return _row_to_produto(row) if row else None
-
-def atualizar(produto: Produto):
-    """Atualiza um produto"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(ATUALIZAR, (
-            produto.nome,
-            produto.descricao,
-            produto.preco,
-            produto.estoque,
-            1 if produto.ativo else 0,
-            produto.id
-        ))
-
-def excluir(produto_id: int):
-    """Exclui um produto"""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(EXCLUIR, (produto_id,))
-```
-
-#### 4. Criar os DTOs (`dtos/produto_dto.py`)
-
-```python
-from pydantic import BaseModel, field_validator
-from dtos.validators import validar_string_obrigatoria, validar_decimal_positivo, validar_inteiro_positivo
-
-class ProdutoCriarDTO(BaseModel):
-    nome: str
-    descricao: str
-    preco: float
-    estoque: int
-
-    _validar_nome = field_validator('nome')(
-        validar_string_obrigatoria('Nome', tamanho_minimo=3, tamanho_maximo=100)
-    )
-    _validar_preco = field_validator('preco')(validar_decimal_positivo())
-    _validar_estoque = field_validator('estoque')(validar_inteiro_positivo())
-
-class ProdutoAlterarDTO(BaseModel):
-    nome: str
-    descricao: str
-    preco: float
-    estoque: int
-    ativo: bool
-
-    _validar_nome = field_validator('nome')(
-        validar_string_obrigatoria('Nome', tamanho_minimo=3, tamanho_maximo=100)
-    )
-    _validar_preco = field_validator('preco')(validar_decimal_positivo())
-    _validar_estoque = field_validator('estoque')(validar_inteiro_positivo())
-```
-
-#### 5. Criar as Rotas (`routes/produto_routes.py`)
-
-```python
-from fastapi import APIRouter, Request, Form, status
-from fastapi.responses import RedirectResponse
-from pydantic import ValidationError
-
-from util.auth_decorator import requer_autenticacao
-from util.template_util import criar_templates
-from util.flash_messages import informar_sucesso, informar_erro
-from util.exceptions import FormValidationError
-from util.perfis import Perfil
-
-import repo.produto_repo as produto_repo
-from dtos.produto_dto import ProdutoCriarDTO, ProdutoAlterarDTO
-from model.produto_model import Produto
-
-router = APIRouter(prefix="/produtos")
-templates = criar_templates("templates")
-
-@router.get("/listar")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def listar(request: Request, usuario_logado: dict):
-    produtos = produto_repo.obter_todos()
-    return templates.TemplateResponse(
-        "produtos/listar.html",
-        {"request": request, "produtos": produtos}
-    )
-
-@router.get("/cadastrar")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def cadastrar_get(request: Request, usuario_logado: dict):
-    return templates.TemplateResponse(
-        "produtos/cadastrar.html",
-        {"request": request}
-    )
-
-@router.post("/cadastrar")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def cadastrar_post(
-    request: Request,
-    usuario_logado: dict,
-    nome: str = Form(...),
-    descricao: str = Form(...),
-    preco: float = Form(...),
-    estoque: int = Form(...)
-):
-    # Armazena dados do formulário para reexibição em caso de erro
-    dados_formulario = {
-        "nome": nome,
-        "descricao": descricao,
-        "preco": preco,
-        "estoque": estoque
-    }
-
-    try:
-        # Validar com DTO
-        dto = ProdutoCriarDTO(
-            nome=nome,
-            descricao=descricao,
-            preco=preco,
-            estoque=estoque
-        )
-
-        # Criar produto
-        produto = Produto(
-            id=None,
-            nome=dto.nome,
-            descricao=dto.descricao,
-            preco=dto.preco,
-            estoque=dto.estoque,
-            ativo=True,
-            data_cadastro=None
-        )
-
-        produto_repo.inserir(produto)
-        informar_sucesso(request, "Produto cadastrado com sucesso!")
-        return RedirectResponse("/produtos/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    except ValidationError as e:
-        raise FormValidationError(
-            validation_error=e,
-            template_path="produtos/cadastrar.html",
-            dados_formulario=dados_formulario,
-            campo_padrao="nome"
-        )
-
-@router.get("/editar/{produto_id}")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def editar_get(request: Request, produto_id: int, usuario_logado: dict):
-    produto = produto_repo.obter_por_id(produto_id)
-    if not produto:
-        informar_erro(request, "Produto não encontrado.")
-        return RedirectResponse("/produtos/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    return templates.TemplateResponse(
-        "produtos/editar.html",
-        {"request": request, "produto": produto}
-    )
-
-@router.post("/editar/{produto_id}")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def editar_post(
-    request: Request,
-    produto_id: int,
-    usuario_logado: dict,
-    nome: str = Form(...),
-    descricao: str = Form(...),
-    preco: float = Form(...),
-    estoque: int = Form(...),
-    ativo: bool = Form(False)
-):
-    # Armazena dados do formulário para reexibição em caso de erro
-    dados_formulario = {
-        "nome": nome,
-        "descricao": descricao,
-        "preco": preco,
-        "estoque": estoque,
-        "ativo": ativo
-    }
-
-    try:
-        # Validar com DTO
-        dto = ProdutoAlterarDTO(
-            nome=nome,
-            descricao=descricao,
-            preco=preco,
-            estoque=estoque,
-            ativo=ativo
-        )
-
-        # Atualizar produto
-        produto = Produto(
-            id=produto_id,
-            nome=dto.nome,
-            descricao=dto.descricao,
-            preco=dto.preco,
-            estoque=dto.estoque,
-            ativo=dto.ativo,
-            data_cadastro=None
-        )
-
-        produto_repo.atualizar(produto)
-        informar_sucesso(request, "Produto atualizado com sucesso!")
-        return RedirectResponse("/produtos/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    except ValidationError as e:
-        # Adicionar produto aos dados para renderizar o formulário
-        dados_formulario["produto"] = produto_repo.obter_por_id(produto_id)
-        raise FormValidationError(
-            validation_error=e,
-            template_path="produtos/editar.html",
-            dados_formulario=dados_formulario,
-            campo_padrao="nome"
-        )
-
-@router.post("/excluir/{produto_id}")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def excluir(request: Request, produto_id: int, usuario_logado: dict):
-    produto_repo.excluir(produto_id)
-    informar_sucesso(request, "Produto excluído com sucesso!")
-    return RedirectResponse("/produtos/listar", status_code=status.HTTP_303_SEE_OTHER)
-```
-
-#### 6. Criar os Templates
-
-**`templates/produtos/listar.html`**:
-```html
-{% extends "base_privada.html" %}
-
-{% block titulo %}Produtos{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="bi bi-box-seam"></i> Produtos</h2>
-            <a href="/produtos/cadastrar" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Novo Produto
-            </a>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-body">
-                {% if produtos %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nome</th>
-                                <th>Preço</th>
-                                <th>Estoque</th>
-                                <th>Status</th>
-                                <th class="text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for produto in produtos %}
-                            <tr>
-                                <td>{{ produto.id }}</td>
-                                <td>{{ produto.nome }}</td>
-                                <td>R$ {{ "%.2f"|format(produto.preco) }}</td>
-                                <td>{{ produto.estoque }}</td>
-                                <td>
-                                    <span class="badge bg-{{ 'success' if produto.ativo else 'secondary' }}">
-                                        {{ 'Ativo' if produto.ativo else 'Inativo' }}
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="/produtos/editar/{{ produto.id }}"
-                                           class="btn btn-outline-primary">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger"
-                                                onclick="excluirProduto({{ produto.id }}, '{{ produto.nome|replace("'", "\\'") }}')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="alert alert-info text-center mb-0">
-                    <i class="bi bi-info-circle"></i> Nenhum produto cadastrado.
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-{% include 'components/modal_confirmacao.html' %}
-{% endblock %}
-
-{% block scripts %}
-<script>
-function excluirProduto(id, nome) {
-    abrirModalConfirmacao({
-        url: `/produtos/excluir/${id}`,
-        mensagem: 'Tem certeza que deseja excluir este produto?',
-        detalhes: `<div class="alert alert-warning"><strong>${nome}</strong></div>`
-    });
-}
-</script>
-{% endblock %}
-```
-
-**`templates/produtos/cadastrar.html`**:
-```html
-{% extends "base_privada.html" %}
-{% from 'macros/form_fields.html' import input_text, input_decimal, textarea %}
-
-{% block titulo %}Cadastrar Produto{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-12 col-lg-8 offset-lg-2">
-        <h2 class="mb-4"><i class="bi bi-plus-circle"></i> Cadastrar Produto</h2>
-
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <form method="POST" action="/produtos/cadastrar">
-                    {{ input_text('nome', 'Nome do Produto', required=True,
-                                  error=erros.get('nome'), value=dados.get('nome', '')) }}
-
-                    {{ textarea('descricao', 'Descrição', rows=4,
-                               error=erros.get('descricao'), value=dados.get('descricao', '')) }}
-
-                    {{ input_decimal('preco', 'Preço', prefix='R$ ', decimal_places=2,
-                                    required=True, error=erros.get('preco')) }}
-
-                    {{ input_text('estoque', 'Estoque', type='number', required=True,
-                                 error=erros.get('estoque'), value=dados.get('estoque', '0')) }}
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Cadastrar
-                        </button>
-                        <a href="/produtos/listar" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-```
-
-#### 7. Registrar no `main.py`
-
-```python
-# Importar o repositório
-import repo.produto_repo as produto_repo
-
-# Importar as rotas
-from routes import produto_routes
-
-# Criar tabela na inicialização
-@app.on_event("startup")
-async def startup():
-    # ... outras tabelas
-    produto_repo.criar_tabela()
-    logger.info("Tabela 'produto' criada/verificada")
-
-# Incluir o router
-app.include_router(produto_routes.router)
-logger.info("Router de produtos incluído")
-```
-
-### ✅ Pronto! Seu CRUD está completo
-
-Acesse: `http://localhost:8400/produtos/listar`
-
-## 📖 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 DefaultWebApp/
@@ -911,118 +339,133 @@ DefaultWebApp/
 │   └── QUICK_START.md      # Início rápido
 │
 ├── dtos/                    # DTOs Pydantic para validação
-│   ├── validators.py       # ⭐ 15+ validadores reutilizáveis
+│   ├── validators.py       # 15+ validadores reutilizáveis
 │   ├── usuario_dto.py
-│   └── login_dto.py
+│   ├── chamado_dto.py
+│   ├── chamado_interacao_dto.py
+│   └── ...
 │
 ├── model/                   # Modelos de entidades (dataclasses)
 │   ├── usuario_model.py
+│   ├── usuario_logado_model.py
+│   ├── chamado_model.py
+│   ├── chamado_interacao_model.py
+│   ├── chat_sala_model.py
+│   ├── chat_mensagem_model.py
+│   ├── chat_participante_model.py
 │   └── configuracao_model.py
 │
 ├── repo/                    # Repositórios de acesso a dados
 │   ├── usuario_repo.py
+│   ├── chamado_repo.py
+│   ├── chamado_interacao_repo.py
+│   ├── chat_sala_repo.py
+│   ├── chat_mensagem_repo.py
+│   ├── chat_participante_repo.py
 │   └── configuracao_repo.py
 │
 ├── routes/                  # Rotas organizadas por módulo
-│   ├── auth_routes.py
-│   ├── perfil_routes.py
-│   ├── usuario_routes.py
-│   ├── admin_usuarios_routes.py
-│   ├── admin_configuracoes_routes.py
-│   ├── public_routes.py
-│   └── examples_routes.py  # ⭐ 9 exemplos práticos
+│   ├── auth_routes.py           # Login, cadastro, recuperação
+│   ├── usuario_routes.py        # Dashboard e perfil do usuário
+│   ├── chamados_routes.py       # Chamados do usuário
+│   ├── chat_routes.py           # API do chat (SSE)
+│   ├── admin_usuarios_routes.py # CRUD de usuários
+│   ├── admin_chamados_routes.py # Gerenciamento de chamados
+│   ├── admin_configuracoes_routes.py # Configurações e temas
+│   ├── admin_backups_routes.py  # Backup e restauração
+│   ├── public_routes.py         # Páginas públicas
+│   └── examples_routes.py       # Exemplos práticos
 │
 ├── sql/                     # Comandos SQL
 │   ├── usuario_sql.py
+│   ├── chamado_sql.py
+│   ├── chat_sql.py
 │   └── configuracao_sql.py
 │
 ├── static/                  # Arquivos estáticos
 │   ├── css/
 │   │   ├── bootstrap.min.css
-│   │   ├── bootswatch/     # ⭐ 28+ temas prontos
+│   │   ├── bootswatch/     # 28+ temas prontos
 │   │   └── custom.css
 │   ├── js/
-│   │   ├── toasts.js       # ⭐ Sistema de notificações
-│   │   ├── input-mask.js   # ⭐ Máscaras automáticas
+│   │   ├── toasts.js
+│   │   ├── input-mask.js
+│   │   ├── chat-widget.js  # Widget do chat
 │   │   ├── image-cropper.js
-│   │   ├── password-validator.js
-│   │   └── perfil-photo-handler.js
+│   │   └── ...
 │   └── img/
 │       └── usuarios/        # Fotos de perfil
 │
 ├── templates/               # Templates Jinja2
 │   ├── base_publica.html   # Base para páginas públicas
 │   ├── base_privada.html   # Base para páginas autenticadas
+│   ├── dashboard.html      # Dashboard do usuário
 │   ├── auth/               # Login, cadastro, recuperação
 │   ├── perfil/             # Perfil do usuário
+│   ├── chamados/           # Páginas de chamados
 │   ├── admin/              # Área administrativa
 │   │   ├── usuarios/
-│   │   └── configuracoes/
-│   ├── components/         # ⭐ Componentes reutilizáveis
+│   │   ├── chamados/
+│   │   ├── configuracoes/
+│   │   ├── backups/
+│   │   ├── tema.html
+│   │   └── auditoria.html
+│   ├── components/         # Componentes reutilizáveis
 │   │   ├── modal_confirmacao.html
 │   │   ├── modal_corte_imagem.html
-│   │   └── galeria_fotos.html
-│   ├── macros/             # ⭐ Macros de formulário
-│   │   └── form_fields.html
-│   ├── exemplos/           # ⭐ 9 páginas de exemplo
-│   │   ├── index.html
-│   │   ├── demo_campos_formulario.html
-│   │   ├── grade_cartoes.html
-│   │   ├── lista_tabela.html
-│   │   ├── bootswatch.html
-│   │   ├── detalhes_produto.html
-│   │   ├── detalhes_servico.html
-│   │   ├── detalhes_perfil.html
-│   │   └── detalhes_imovel.html
-│   └── errors/             # Páginas de erro
-│       ├── 404.html
-│       └── 500.html
+│   │   ├── chat_widget.html
+│   │   └── ...
+│   ├── macros/             # Macros de formulário
+│   ├── exemplos/           # 9 páginas de exemplo
+│   └── errors/             # Páginas de erro (404, 429, 500)
 │
 ├── util/                    # Utilitários
-│   ├── auth_decorator.py   # ⭐ Decorator de autenticação
-│   ├── perfis.py           # ⭐ Enum de perfis
+│   ├── auth_decorator.py   # Decorator de autenticação
+│   ├── perfis.py           # Enum de perfis
 │   ├── db_util.py          # Gerenciamento de conexão
 │   ├── security.py         # Hash de senhas
-│   ├── senha_util.py       # Validação de senha forte
+│   ├── backup_util.py      # Funções de backup
 │   ├── email_service.py    # Envio de emails
-│   ├── foto_util.py        # ⭐ Sistema de fotos
-│   ├── exceptions.py       # ⭐ Exceções customizadas
-│   ├── exception_handlers.py # ⭐ Handlers globais de exceções
-│   ├── validation_util.py  # ⭐ Processamento de erros de validação
-│   ├── flash_messages.py   # ⭐ Flash messages
-│   ├── logger_config.py    # ⭐ Logger profissional
-│   ├── template_util.py    # Helpers de templates
-│   ├── config.py           # Configurações
+│   ├── foto_util.py        # Sistema de fotos
+│   ├── exceptions.py       # Exceções customizadas
+│   ├── exception_handlers.py # Handlers globais
+│   ├── flash_messages.py   # Flash messages
+│   ├── logger_config.py    # Logger profissional
+│   ├── rate_limiter.py     # Rate limiting dinâmico
 │   ├── config_cache.py     # Cache de configurações
-│   ├── seed_data.py        # Carregamento de seeds
-│   └── security_headers.py
+│   ├── permission_helpers.py # Helpers de permissão
+│   └── ...
 │
 ├── tests/                   # Testes automatizados
 │   ├── conftest.py         # Fixtures do pytest
-│   └── test_*.py
+│   └── test_*.py           # 90%+ cobertura
+│
+├── logs/                    # Logs da aplicação
+├── backups/                 # Backups do banco de dados
 │
 ├── .env.example             # Exemplo de variáveis de ambiente
-├── .gitignore
-├── CLAUDE.md                # ⭐ Documentação técnica completa
+├── CLAUDE.md                # Documentação técnica completa
+├── BLOG.md                  # Tutorial passo a passo
 ├── main.py                  # Arquivo principal
 ├── requirements.txt
-└── README.md                # Este arquivo
+└── README.md
 ```
 
-## 🔧 Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 ### Backend
 - **FastAPI 0.115+** - Framework web moderno e rápido
 - **Uvicorn** - Servidor ASGI de alta performance
 - **Pydantic 2.0+** - Validação de dados com type hints
 - **Passlib + Bcrypt** - Hash de senhas seguro
+- **SSE (Server-Sent Events)** - Chat em tempo real
 
 ### Frontend
 - **Jinja2** - Engine de templates
-- **Bootstrap 5.3.8** - Framework CSS responsivo
+- **Bootstrap 5.3** - Framework CSS responsivo
 - **Bootstrap Icons** - Biblioteca de ícones
 - **Bootswatch** - 28+ temas prontos
-- **JavaScript vanilla** - Sem dependências frontend pesadas
+- **JavaScript vanilla** - Sem dependências pesadas
 - **Cropper.js** - Crop de imagens
 
 ### Banco de Dados
@@ -1031,14 +474,13 @@ DefaultWebApp/
 
 ### Comunicação
 - **Resend** - Envio de e-mails transacionais
-- **Requests** - Cliente HTTP
 
 ### Desenvolvimento
 - **Python-dotenv** - Gerenciamento de variáveis de ambiente
-- **Pytest** - Framework de testes
-- **Logging** - Sistema de logs profissional
+- **Pytest** - Framework de testes (90%+ cobertura)
+- **Logging** - Sistema de logs profissional com rotação
 
-## ⚙️ Variáveis de Ambiente
+## Variáveis de Ambiente
 
 Copie o arquivo `.env.example` para `.env` e configure:
 
@@ -1070,7 +512,7 @@ RESEND_FROM_NAME=Sistema
 FOTO_PERFIL_TAMANHO_MAX=256
 ```
 
-## 🧪 Testes
+## Testes
 
 Execute os testes com pytest:
 
@@ -1081,36 +523,28 @@ pytest
 # Com verbose
 pytest -v
 
-# Teste específico
-pytest tests/test_auth.py
-
-# Por marcador
-pytest -m auth
-pytest -m crud
-
 # Com cobertura
 pytest --cov=. --cov-report=html
+
+# Teste específico
+pytest tests/test_auth_routes.py
+pytest tests/test_chat_routes.py
 ```
 
-## 📚 Documentação Adicional
-
-- **[CLAUDE.md](CLAUDE.md)** - Documentação técnica completa para desenvolvedores
-- **[docs/CRIAR_CRUD.md](docs/CRIAR_CRUD.md)** - Tutorial detalhado para criar CRUDs
-- **[docs/PERFIS.md](docs/PERFIS.md)** - Como adicionar novos perfis de usuário
-- **[docs/QUICK_START.md](docs/QUICK_START.md)** - Guia de início rápido
-- **[/exemplos](http://localhost:8400/exemplos)** - 9 exemplos práticos funcionais
-
-## 🔒 Segurança
+## Segurança
 
 ### Implementações Atuais
-✅ Senhas com hash bcrypt
-✅ Sessões com chave secreta
-✅ Rate limiting no login
-✅ Validação de força de senha
-✅ Security headers (X-Frame-Options, etc.)
-✅ Proteção contra SQL injection (prepared statements)
-✅ Validação de dados com Pydantic
-✅ XSS protection via Jinja2 auto-escaping
+- Senhas com hash bcrypt
+- Sessões com chave secreta
+- Rate limiting em todas as rotas sensíveis
+- Validação de força de senha
+- Security headers (X-Frame-Options, etc.)
+- Proteção contra SQL injection (prepared statements)
+- Validação de dados com Pydantic
+- XSS protection via Jinja2 auto-escaping
+- Verificação defensiva de `usuario_logado` em todas as rotas autenticadas
+- Whitelist de temas para prevenção de Path Traversal
+- Validação de propriedade de recursos (usuário só acessa seus próprios dados)
 
 ### Checklist para Produção
 - [ ] Alterar `SECRET_KEY` para valor único e seguro
@@ -1119,64 +553,20 @@ pytest --cov=. --cov-report=html
 - [ ] Configurar firewall
 - [ ] Backup regular do banco de dados
 - [ ] Monitoramento de logs
-- [ ] Limitar tentativas de login por IP
 - [ ] Configurar CSRF tokens
-- [ ] Adicionar controle de acesso a fotos de perfil
 
-## 🚀 Próximos Passos
+## Documentação Adicional
 
-Após instalar e explorar o projeto:
+- **[CLAUDE.md](CLAUDE.md)** - Documentação técnica completa para desenvolvedores
+- **[BLOG.md](BLOG.md)** - Tutorial passo a passo para criar o projeto do zero
+- **[docs/CRIAR_CRUD.md](docs/CRIAR_CRUD.md)** - Tutorial detalhado para criar CRUDs
+- **[docs/PERFIS.md](docs/PERFIS.md)** - Como adicionar novos perfis de usuário
+- **[/exemplos](http://localhost:8400/exemplos)** - 9 exemplos práticos funcionais
 
-1. **Explore os exemplos**: Acesse `/exemplos` para ver todos os componentes em ação
-2. **Leia o CLAUDE.md**: Documentação técnica completa do projeto
-3. **Crie seu primeiro CRUD**: Siga o tutorial em `docs/CRIAR_CRUD.md`
-4. **Customize o tema**: Escolha um tema em `/exemplos/bootswatch`
-5. **Adicione suas funcionalidades**: Use os componentes reutilizáveis
-6. **Configure o email**: Obtenha API key gratuita em [resend.com](https://resend.com)
-7. **Execute os testes**: Garanta que tudo está funcionando
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Para contribuir:
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
-
-## 📝 Licença
+## Licença
 
 Este projeto é um boilerplate educacional livre para uso.
 
-## 💬 Suporte
-
-Para dúvidas e suporte:
-- Consulte a documentação em `/docs` e `CLAUDE.md`
-- Explore os exemplos em `/exemplos`
-- Verifique os exemplos no código
-- Abra uma issue no GitHub
-
-## 🎯 Roadmap
-
-### Em Desenvolvimento
-- [ ] Docker e docker-compose
-- [ ] CI/CD com GitHub Actions
-- [ ] Paginação de listagens
-- [ ] Filtros e busca avançada
-- [ ] Exportação de dados (CSV, Excel)
-
-### Futuras Melhorias
-- [ ] API REST endpoints
-- [ ] Documentação automática (Swagger/OpenAPI)
-- [ ] Internacionalização (i18n)
-- [ ] Theme switcher persistente
-- [ ] WebSockets para notificações real-time
-- [ ] Upload de múltiplos arquivos
-- [ ] Dashboard com gráficos
-
 ---
 
-**Desenvolvido com 💙 para acelerar o desenvolvimento de aplicações web com Python e FastAPI**
-
-**⭐ Se este projeto foi útil, considere dar uma estrela no GitHub!**
+**Desenvolvido para acelerar o desenvolvimento de aplicações web com Python e FastAPI**
