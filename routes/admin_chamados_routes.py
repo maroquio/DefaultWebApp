@@ -67,7 +67,8 @@ admin_chamado_responder_limiter = DynamicRateLimiter(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os chamados do sistema (apenas administradores)."""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     # Passa ID do admin para contar apenas mensagens de OUTROS usuários
     chamados = chamado_repo.obter_todos(usuario_logado.id)
     return templates.TemplateResponse(
@@ -80,7 +81,8 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_responder(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário para responder um chamado com histórico completo."""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(
@@ -114,7 +116,8 @@ async def post_responder(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Salva resposta do administrador ao chamado e atualiza status."""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting por IP
     ip = obter_identificador_cliente(request)
@@ -195,7 +198,8 @@ async def post_responder(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def fechar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Fecha um chamado alterando apenas o status, sem adicionar mensagem."""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(
@@ -226,7 +230,8 @@ async def fechar(request: Request, id: int, usuario_logado: Optional[UsuarioLoga
 @requer_autenticacao([Perfil.ADMIN.value])
 async def reabrir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Reabre um chamado fechado, alterando status para 'Em Análise'."""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Obter chamado ou retornar 404
     chamado = obter_ou_404(

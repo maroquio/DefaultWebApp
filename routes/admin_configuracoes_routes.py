@@ -70,6 +70,8 @@ admin_config_limiter = DynamicRateLimiter(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_listar_configuracoes(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todas as configurações agrupadas por categoria"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     try:
         # Obter configurações agrupadas por categoria
         configs_por_categoria = configuracao_repo.obter_por_categoria()
@@ -118,7 +120,8 @@ async def post_salvar_lote_configuracoes(
     Returns:
         Redirect para listagem com mensagem de sucesso ou erro
     """
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -208,6 +211,8 @@ async def post_salvar_lote_configuracoes(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_tema(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe seletor de temas visuais da aplicação"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     # Obter tema atual do banco de dados
     config_tema = configuracao_repo.obter_por_chave("theme")
     tema_atual = config_tema.valor if config_tema else "original"
@@ -253,7 +258,8 @@ async def post_aplicar_tema(
     Copia o arquivo CSS do tema para static/css/bootstrap.min.css
     e salva a configuração no banco de dados
     """
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -371,6 +377,8 @@ def _ler_log_arquivo(data: str, nivel: str) -> tuple[str, int, Optional[str]]:
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_auditoria(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe página de auditoria de logs do sistema"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     # Data padrão: hoje
     data_hoje = agora().strftime('%Y-%m-%d')
 
@@ -400,7 +408,8 @@ async def post_filtrar_auditoria(
         data: Data no formato YYYY-MM-DD
         nivel: Nível de log (INFO, WARNING, ERROR, DEBUG, CRITICAL, TODOS)
     """
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)

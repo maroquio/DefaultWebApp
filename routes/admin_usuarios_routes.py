@@ -56,6 +56,8 @@ admin_usuarios_limiter = DynamicRateLimiter(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def index(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Redireciona para lista de usuários"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
@@ -63,6 +65,8 @@ async def index(request: Request, usuario_logado: Optional[UsuarioLogado] = None
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Lista todos os usuários do sistema"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     usuarios = usuario_repo.obter_todos()
     return templates.TemplateResponse(
         "admin/usuarios/listar.html",
@@ -74,6 +78,8 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário de cadastro de usuário"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     perfis = Perfil.valores()
     return templates.TemplateResponse(
         "admin/usuarios/cadastro.html",
@@ -92,7 +98,8 @@ async def post_cadastrar(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Cadastra um novo usuário"""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -160,6 +167,8 @@ async def post_cadastrar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_editar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe formulário de alteração de usuário"""
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     # Obter usuário ou retornar 404
     usuario = obter_ou_404(
         usuario_repo.obter_por_id(id),
@@ -198,7 +207,8 @@ async def post_editar(
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """Altera dados de um usuário"""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
@@ -275,7 +285,8 @@ async def post_editar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_excluir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
     """Exclui um usuário"""
-    # usuario_logado garantido pelo decorator @requer_autenticacao
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     # Rate limiting
     ip = obter_identificador_cliente(request)
