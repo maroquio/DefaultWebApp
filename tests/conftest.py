@@ -3,38 +3,46 @@ Configurações e fixtures para testes pytest.
 
 Fornece fixtures reutilizáveis e helpers para testes da aplicação.
 """
+# ============================================================
+# CRÍTICO: Configurar banco de dados ANTES de qualquer import
+# que possa carregar db_util.py (via repos ou outros módulos)
+# ============================================================
+import os
+import tempfile
+
+# Criar arquivo temporário para o banco de testes
+_test_db = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.db')
+_TEST_DB_PATH = _test_db.name
+_test_db.close()
+
+# Configurar variáveis de ambiente ANTES de importar qualquer módulo da aplicação
+os.environ['DATABASE_PATH'] = _TEST_DB_PATH
+os.environ['RESEND_API_KEY'] = ''
+os.environ['LOG_LEVEL'] = 'ERROR'
+
+# ============================================================
+# Agora sim, importar o resto (db_util já lerá o valor correto)
+# ============================================================
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import status
-import os
-import tempfile
 from typing import Optional
 from util.perfis import Perfil
 
 
-# Configurar banco de dados de teste ANTES de importar a aplicação
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Configura banco de dados de teste em memória para toda a sessão"""
-    # Criar arquivo temporário para o banco de testes
-    test_db = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.db')
-    test_db_path = test_db.name
-    test_db.close()
+    """
+    Garante que o banco de teste está configurado e limpa ao final.
 
-    # Configurar variável de ambiente para usar DB de teste
-    os.environ['DATABASE_PATH'] = test_db_path
-
-    # Desabilitar envio de e-mails durante testes
-    os.environ['RESEND_API_KEY'] = ''
-
-    # Configurar nível de log para testes
-    os.environ['LOG_LEVEL'] = 'ERROR'
-
-    yield test_db_path
+    O banco já foi configurado no nível de módulo (acima), esta fixture
+    apenas gerencia o cleanup ao final da sessão.
+    """
+    yield _TEST_DB_PATH
 
     # Limpar: remover arquivo de banco após todos os testes
     try:
-        os.unlink(test_db_path)
+        os.unlink(_TEST_DB_PATH)
     except Exception:
         pass
 
@@ -91,6 +99,36 @@ def limpar_rate_limiter():
     # Limpar depois do teste também
     for limiter in limiters:
         limiter.limpar()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def limpar_config_cache():
+    """Limpa o cache de configurações antes de cada teste para evitar interferência"""
+    from util.config_cache import config
+
+    # Limpar antes do teste
+    config.limpar()
+
+    yield
+
+    # Limpar depois do teste também
+    config.limpar()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def limpar_chat_manager():
+    """Limpa o gerenciador de chat antes de cada teste para evitar interferência"""
+    from util.chat_manager import gerenciador_chat
+
+    # Limpar antes do teste
+    gerenciador_chat._connections.clear()
+    gerenciador_chat._active_connections.clear()
+
+    yield
+
+    # Limpar depois do teste também
+    gerenciador_chat._connections.clear()
+    gerenciador_chat._active_connections.clear()
 
 
 @pytest.fixture(scope="function", autouse=True)
