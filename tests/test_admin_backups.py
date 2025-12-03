@@ -254,6 +254,90 @@ class TestDownloadBackup:
             assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
 
+class TestRateLimitBackups:
+    """Testes de rate limiting para operações de backup"""
+
+    def test_rate_limit_criar_backup(self, admin_autenticado):
+        """Deve bloquear quando rate limit de criar backup é excedido"""
+        from unittest.mock import patch
+
+        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
+            response = admin_autenticado.post("/admin/backups/criar", follow_redirects=True)
+
+            assert response.status_code == status.HTTP_200_OK
+            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
+
+    def test_rate_limit_restaurar_backup(self, admin_autenticado, criar_backup):
+        """Deve bloquear quando rate limit de restaurar backup é excedido"""
+        from unittest.mock import patch
+        from util import backup_util
+
+        # Criar backup para restaurar
+        criar_backup()
+        backups = backup_util.listar_backups()
+        nome_backup = backups[0].nome_arquivo if backups else "test.db"
+
+        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
+            response = admin_autenticado.post(
+                f"/admin/backups/restaurar/{nome_backup}",
+                follow_redirects=True
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
+
+    def test_rate_limit_excluir_backup(self, admin_autenticado, criar_backup):
+        """Deve bloquear quando rate limit de excluir backup é excedido"""
+        from unittest.mock import patch
+        from util import backup_util
+
+        # Criar backup para excluir
+        criar_backup()
+        backups = backup_util.listar_backups()
+        nome_backup = backups[0].nome_arquivo if backups else "test.db"
+
+        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
+            response = admin_autenticado.post(
+                f"/admin/backups/excluir/{nome_backup}",
+                follow_redirects=True
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
+
+    def test_rate_limit_download_backup(self, admin_autenticado, criar_backup):
+        """Deve bloquear quando rate limit de download é excedido"""
+        from unittest.mock import patch
+        from util import backup_util
+
+        # Criar backup para download
+        criar_backup()
+        backups = backup_util.listar_backups()
+        nome_backup = backups[0].nome_arquivo if backups else "test.db"
+
+        with patch('routes.admin_backups_routes.backup_download_limiter.verificar', return_value=False):
+            response = admin_autenticado.get(
+                f"/admin/backups/download/{nome_backup}",
+                follow_redirects=True
+            )
+
+            assert response.status_code == status.HTTP_200_OK
+            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
+
+
+class TestErroCriarBackup:
+    """Testes de erro ao criar backup"""
+
+    def test_erro_criar_backup(self, admin_autenticado):
+        """Deve mostrar mensagem de erro quando criação falha"""
+        from unittest.mock import patch
+
+        with patch('routes.admin_backups_routes.backup_util.criar_backup', return_value=(False, "Erro ao criar backup")):
+            response = admin_autenticado.post("/admin/backups/criar", follow_redirects=True)
+
+            assert response.status_code == status.HTTP_200_OK
+
+
 class TestFluxoCompletoBackup:
     """Testes de fluxo completo de backup"""
 

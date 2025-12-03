@@ -36,5 +36,9 @@ pytest-asyncio==0.21.0
 httpx==0.24.1
 pytest-cov==7.0.0
 
+# Testes E2E com Playwright
+playwright==1.56.0
+pytest-playwright==0.7.2
+
 # Timezone Handling
 tzdata==2025.2

@@ -127,9 +127,25 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     # Em desenvolvimento, adicionar detalhes técnicos
     if IS_DEVELOPMENT:
+        # Converter erros para formato JSON-serializável
+        # (alguns campos como 'input' podem ser bytes)
+        erros_serializaveis = []
+        for erro in exc.errors():
+            erro_dict = dict(erro)
+            # Converter valores bytes para string
+            for chave, valor in erro_dict.items():
+                if isinstance(valor, bytes):
+                    erro_dict[chave] = valor.decode('utf-8', errors='replace')
+                elif isinstance(valor, (list, tuple)):
+                    erro_dict[chave] = [
+                        v.decode('utf-8', errors='replace') if isinstance(v, bytes) else v
+                        for v in valor
+                    ]
+            erros_serializaveis.append(erro_dict)
+
         context["error_details"] = {
             "type": "RequestValidationError",
-            "errors": exc.errors(),
+            "errors": erros_serializaveis,
             "body": str(exc.body),
             "path": request.url.path,
             "method": request.method

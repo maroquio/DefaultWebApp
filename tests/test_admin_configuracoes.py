@@ -4,6 +4,10 @@ Testa seleção de temas visuais e sistema de auditoria de logs
 """
 from fastapi import status
 from pathlib import Path
+from unittest.mock import patch, MagicMock
+import pytest
+import sqlite3
+
 from util.datetime_util import agora
 
 
@@ -186,6 +190,45 @@ class TestAuditoria:
 
         assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
 
+    def test_filtrar_logs_arquivo_muito_grande(self, admin_autenticado):
+        """Deve rejeitar arquivos de log muito grandes (>10MB)"""
+        from routes.admin_configuracoes_routes import _ler_log_arquivo
+        from unittest.mock import MagicMock
+
+        data_hoje = agora().strftime('%Y-%m-%d')
+
+        with patch('routes.admin_configuracoes_routes.Path') as mock_path:
+            mock_arquivo = MagicMock()
+            mock_arquivo.exists.return_value = True
+            mock_arquivo.stat.return_value.st_size = 15 * 1024 * 1024  # 15MB
+            mock_path.return_value = mock_arquivo
+
+            conteudo, total, erro = _ler_log_arquivo(data_hoje, "TODOS")
+
+            assert conteudo == ""
+            assert total == 0
+            assert "muito grande" in erro.lower()
+
+    def test_filtrar_logs_oserror(self, admin_autenticado):
+        """Deve tratar OSError ao ler arquivo de log"""
+        from routes.admin_configuracoes_routes import _ler_log_arquivo
+        from unittest.mock import MagicMock
+
+        data_hoje = agora().strftime('%Y-%m-%d')
+
+        with patch('routes.admin_configuracoes_routes.Path') as mock_path:
+            mock_arquivo = MagicMock()
+            mock_arquivo.exists.return_value = True
+            mock_arquivo.stat.return_value.st_size = 1024  # 1KB
+            mock_path.return_value = mock_arquivo
+
+            with patch('builtins.open', side_effect=OSError("Permission denied")):
+                conteudo, total, erro = _ler_log_arquivo(data_hoje, "TODOS")
+
+                assert conteudo == ""
+                assert total == 0
+                assert "erro" in erro.lower()
+
 
 class TestSegurancaConfiguracoes:
     """Testes de segurança das configurações"""
@@ -209,3 +252,314 @@ class TestSegurancaConfiguracoes:
         """Vendedor não deve acessar auditoria"""
         response = vendedor_autenticado.get("/admin/auditoria", follow_redirects=False)
         assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+
+
+class TestListarConfiguracoes:
+    """Testes para listagem de configurações"""
+
+    def test_listar_configuracoes_admin(self, admin_autenticado):
+        """Admin deve acessar listagem de configurações"""
+        response = admin_autenticado.get("/admin/configuracoes")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_listar_configuracoes_erro_banco(self, admin_autenticado):
+        """Erro de banco deve redirecionar com mensagem"""
+        with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+            mock_repo.obter_por_categoria.side_effect = sqlite3.Error("Database error")
+
+            response = admin_autenticado.get(
+                "/admin/configuracoes",
+                follow_redirects=False
+            )
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestAplicarTemaErros:
+    """Testes de erros ao aplicar tema"""
+
+    def test_aplicar_tema_rate_limit(self, admin_autenticado):
+        """Rate limit deve bloquear aplicação de tema"""
+        with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=False):
+            response = admin_autenticado.post(
+                "/admin/tema/aplicar",
+                data={"tema": "original"},
+                follow_redirects=False
+            )
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_aplicar_tema_arquivo_nao_existe(self, admin_autenticado):
+        """Tema na whitelist mas arquivo não existe"""
+        with patch('routes.admin_configuracoes_routes.Path') as mock_path:
+            # Simula que arquivo não existe
+            mock_css = MagicMock()
+            mock_css.exists.return_value = False
+            mock_path.return_value = mock_css
+
+            response = admin_autenticado.post(
+                "/admin/tema/aplicar",
+                data={"tema": "original"},
+                follow_redirects=False
+            )
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_aplicar_tema_erro_salvar_banco(self, admin_autenticado):
+        """Erro ao salvar tema no banco"""
+        css_original = Path("static/css/bootswatch/original.bootstrap.min.css")
+
+        if css_original.exists():
+            with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+                mock_repo.obter_por_chave.return_value = MagicMock(valor="original")
+                mock_repo.inserir_ou_atualizar.return_value = False
+
+                response = admin_autenticado.post(
+                    "/admin/tema/aplicar",
+                    data={"tema": "original"},
+                    follow_redirects=False
+                )
+
+                assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_aplicar_tema_erro_copiar_arquivo(self, admin_autenticado):
+        """Erro ao copiar arquivo CSS"""
+        css_original = Path("static/css/bootswatch/original.bootstrap.min.css")
+
+        if css_original.exists():
+            with patch('routes.admin_configuracoes_routes.shutil.copy2') as mock_copy:
+                mock_copy.side_effect = OSError("Permission denied")
+
+                response = admin_autenticado.post(
+                    "/admin/tema/aplicar",
+                    data={"tema": "original"},
+                    follow_redirects=False
+                )
+
+                assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestAuditoriaErros:
+    """Testes de erros na auditoria"""
+
+    def test_auditoria_rate_limit(self, admin_autenticado):
+        """Rate limit deve bloquear filtro de auditoria"""
+        with patch('routes.admin_configuracoes_routes.admin_config_limiter') as mock_limiter:
+            mock_limiter.verificar.return_value = False
+
+            response = admin_autenticado.post(
+                "/admin/auditoria/filtrar",
+                data={"data": "2025-01-01", "nivel": "TODOS"},
+                follow_redirects=False
+            )
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestSalvarLoteConfiguracoes:
+    """Testes para salvamento em lote de configurações (testes unitários)
+
+    Nota: Esta rota usa request.form() ao invés de Form(), então não podemos
+    testar via HTTP pois FastAPI interpreta usuario_logado como body.
+    Testamos a lógica interna diretamente, mockando o decorator.
+    """
+
+    def _criar_request_mock(self, form_data=None):
+        """Cria mock de request com form data"""
+        from starlette.datastructures import FormData
+
+        async def get_form():
+            return form_data or FormData({})
+
+        mock_request = MagicMock()
+        mock_request.client.host = "127.0.0.1"
+        mock_request.form = get_form
+        return mock_request
+
+    def _criar_usuario_admin(self):
+        """Cria UsuarioLogado admin para testes"""
+        from model.usuario_logado_model import UsuarioLogado
+        return UsuarioLogado(id=1, nome="Admin", email="admin@test.com", perfil="Administrador")
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_rate_limit(self):
+        """Rate limit deve bloquear salvamento em lote"""
+        from starlette.datastructures import FormData
+
+        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=False):
+                from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                response = await post_salvar_lote_configuracoes(mock_request)
+
+                assert response.status_code == status.HTTP_303_SEE_OTHER
+                assert response.headers["location"] == "/admin/configuracoes"
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_configs_vazias(self):
+        """Deve avisar quando não há configurações para salvar"""
+        from starlette.datastructures import FormData
+
+        # Apenas categoria, sem configs reais
+        mock_request = self._criar_request_mock(FormData({"categoria": "interface"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                response = await post_salvar_lote_configuracoes(mock_request)
+
+                assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_sucesso(self):
+        """Deve salvar configurações com sucesso"""
+        from starlette.datastructures import FormData
+
+        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+                    mock_repo.atualizar_multiplas.return_value = (1, [])
+
+                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                    response = await post_salvar_lote_configuracoes(mock_request)
+
+                    assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_sucesso_com_avisos(self):
+        """Deve salvar com sucesso e avisar sobre chaves não encontradas"""
+        from starlette.datastructures import FormData
+
+        mock_request = self._criar_request_mock(FormData({
+            "toast_delay": "5000",
+            "chave_inexistente": "valor"
+        }))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+                    mock_repo.atualizar_multiplas.return_value = (1, ["chave_inexistente"])
+
+                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                    response = await post_salvar_lote_configuracoes(mock_request)
+
+                    assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_nenhum_atualizado(self):
+        """Deve informar erro quando nenhuma configuração foi atualizada"""
+        from starlette.datastructures import FormData
+
+        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+                    mock_repo.atualizar_multiplas.return_value = (0, [])
+
+                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                    response = await post_salvar_lote_configuracoes(mock_request)
+
+                    assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_validation_error(self):
+        """Deve tratar erro de validação"""
+        from starlette.datastructures import FormData
+        from pydantic import ValidationError as PydanticValidationError
+        from pydantic import BaseModel, field_validator
+
+        mock_request = self._criar_request_mock(FormData({"campo_invalido": "abc"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                with patch('routes.admin_configuracoes_routes.SalvarConfiguracaoLoteDTO') as mock_dto:
+                    # Criar uma ValidationError real
+                    class TestModel(BaseModel):
+                        campo: str
+
+                        @field_validator('campo')
+                        @classmethod
+                        def validar(cls, v):
+                            raise ValueError("Valor inválido")
+
+                    try:
+                        TestModel(campo="abc")
+                    except PydanticValidationError as e:
+                        mock_dto.side_effect = e
+
+                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                    response = await post_salvar_lote_configuracoes(mock_request)
+
+                    assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    @pytest.mark.asyncio
+    async def test_salvar_lote_erro_banco(self):
+        """Deve tratar erro de banco de dados"""
+        from starlette.datastructures import FormData
+
+        mock_request = self._criar_request_mock(FormData({"toast_delay": "5000"}))
+        usuario = self._criar_usuario_admin()
+
+        with patch('util.auth_decorator.obter_usuario_logado', return_value=usuario):
+            with patch('routes.admin_configuracoes_routes.admin_config_limiter.verificar', return_value=True):
+                with patch('routes.admin_configuracoes_routes.configuracao_repo') as mock_repo:
+                    mock_repo.atualizar_multiplas.side_effect = sqlite3.Error("Database error")
+
+                    from routes.admin_configuracoes_routes import post_salvar_lote_configuracoes
+                    response = await post_salvar_lote_configuracoes(mock_request)
+
+                    assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestLerLogArquivo:
+    """Testes para função _ler_log_arquivo"""
+
+    def test_arquivo_muito_grande(self, admin_autenticado):
+        """Arquivo de log muito grande deve retornar erro"""
+        import tempfile
+        import os
+
+        data_hoje = agora().strftime('%Y-%m-%d')
+        data_formatada = data_hoje.replace('-', '.')
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Criar arquivo de log grande (fake)
+            log_dir = Path(tmpdir) / "logs"
+            log_dir.mkdir()
+            log_file = log_dir / f"app.{data_formatada}.log"
+
+            # Simular arquivo grande verificando tamanho
+            with patch('routes.admin_configuracoes_routes._ler_log_arquivo') as mock_ler:
+                mock_ler.return_value = ("", 0, "Arquivo de log muito grande (11.00 MB)")
+
+                response = admin_autenticado.post(
+                    "/admin/auditoria/filtrar",
+                    data={"data": data_hoje, "nivel": "TODOS"}
+                )
+
+                # Verifica resposta mesmo com mock
+                assert response.status_code == status.HTTP_200_OK
+
+    def test_erro_leitura_arquivo(self, admin_autenticado):
+        """Erro ao ler arquivo deve retornar mensagem"""
+        data_hoje = agora().strftime('%Y-%m-%d')
+
+        with patch('routes.admin_configuracoes_routes._ler_log_arquivo') as mock_ler:
+            mock_ler.return_value = ("", 0, "Erro ao ler arquivo de log: Permission denied")
+
+            response = admin_autenticado.post(
+                "/admin/auditoria/filtrar",
+                data={"data": data_hoje, "nivel": "TODOS"}
+            )
+
+            assert response.status_code == status.HTTP_200_OK

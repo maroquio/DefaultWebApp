@@ -141,6 +141,10 @@ VERSION = "1.0.0"
 TIMEZONE = os.getenv("TIMEZONE", "America/Sao_Paulo")
 APP_TIMEZONE = ZoneInfo(TIMEZONE)
 
+# === MCP API Keys ===
+CONTEXT7_API_KEY = os.getenv("CONTEXT7_API_KEY", "")
+RUNWARE_API_KEY = os.getenv("RUNWARE_API_KEY", "")
+
 # === Funções Helper para Leitura Híbrida (Database + .env) ===
 
 

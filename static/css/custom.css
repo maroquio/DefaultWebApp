@@ -84,3 +84,55 @@
     line-height: 1.5;
     max-height: 4.5em; /* 3 lines * 1.5 line-height */
 }
+
+/* ===== BTN-GROUP RESPONSIVO ===== */
+/* Vertical por padrão, horizontal em telas >= sm (576px) */
+
+.btn-group-responsive {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.btn-group-responsive > .btn,
+.btn-group-responsive > .btn-check + .btn {
+    border-radius: 0;
+}
+
+.btn-group-responsive > .btn:first-of-type,
+.btn-group-responsive > .btn-check:first-of-type + .btn {
+    border-top-left-radius: var(--bs-btn-border-radius);
+    border-top-right-radius: var(--bs-btn-border-radius);
+}
+
+.btn-group-responsive > .btn:last-of-type,
+.btn-group-responsive > .btn-check:last-of-type + .btn {
+    border-bottom-left-radius: var(--bs-btn-border-radius);
+    border-bottom-right-radius: var(--bs-btn-border-radius);
+}
+
+@media (min-width: 576px) {
+    .btn-group-responsive {
+        flex-direction: row;
+    }
+
+    .btn-group-responsive > .btn,
+    .btn-group-responsive > .btn-check + .btn {
+        border-radius: 0;
+        flex: 1;
+    }
+
+    .btn-group-responsive > .btn:first-of-type,
+    .btn-group-responsive > .btn-check:first-of-type + .btn {
+        border-top-left-radius: var(--bs-btn-border-radius);
+        border-bottom-left-radius: var(--bs-btn-border-radius);
+        border-top-right-radius: 0;
+    }
+
+    .btn-group-responsive > .btn:last-of-type,
+    .btn-group-responsive > .btn-check:last-of-type + .btn {
+        border-top-right-radius: var(--bs-btn-border-radius);
+        border-bottom-right-radius: var(--bs-btn-border-radius);
+        border-bottom-left-radius: 0;
+    }
+}

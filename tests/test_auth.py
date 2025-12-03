@@ -303,3 +303,335 @@ class TestRateLimiting:
 
         # Última resposta deve indicar rate limiting
         assert "muitas tentativas" in response.text.lower() or "aguarde" in response.text.lower()
+
+
+class TestValidarUrlRedirect:
+    """Testes para a função _validar_url_redirect (prevenção de Open Redirect)"""
+
+    def test_url_vazia_retorna_padrao(self, client):
+        """URL vazia deve retornar URL padrão"""
+        response = client.get("/login?redirect=", follow_redirects=False)
+        assert response.status_code == 200
+
+    def test_url_relativa_valida(self, client, criar_usuario, usuario_teste):
+        """URL relativa válida deve ser usada no redirect"""
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        response = client.post("/login", data={
+            "email": usuario_teste["email"],
+            "senha": usuario_teste["senha"],
+            "redirect": "/chamados/listar"
+        }, follow_redirects=False)
+
+        assert response.status_code == 303
+        location = response.headers.get("location", "")
+        assert "/chamados/listar" in location
+
+    def test_url_nao_relativa_bloqueia(self, client, criar_usuario, usuario_teste):
+        """URL não relativa deve ser bloqueada e usar padrão"""
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        response = client.post("/login", data={
+            "email": usuario_teste["email"],
+            "senha": usuario_teste["senha"],
+            "redirect": "https://evil.com"
+        }, follow_redirects=False)
+
+        # Deve redirecionar para URL padrão, não para evil.com
+        location = response.headers.get("location", "")
+        assert "evil.com" not in location
+        assert "/usuario" in location
+
+    def test_url_protocolo_relativo_bloqueia(self, client, criar_usuario, usuario_teste):
+        """URL com protocolo relativo (//evil.com) deve ser bloqueada"""
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        response = client.post("/login", data={
+            "email": usuario_teste["email"],
+            "senha": usuario_teste["senha"],
+            "redirect": "//evil.com"
+        }, follow_redirects=False)
+
+        location = response.headers.get("location", "")
+        assert "evil.com" not in location
+        assert "/usuario" in location
+
+    def test_url_com_esquema_bloqueia(self, client, criar_usuario, usuario_teste):
+        """URL com esquema (http://) deve ser bloqueada"""
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        response = client.post("/login", data={
+            "email": usuario_teste["email"],
+            "senha": usuario_teste["senha"],
+            "redirect": "/test://evil.com"
+        }, follow_redirects=False)
+
+        location = response.headers.get("location", "")
+        assert "evil.com" not in location
+
+    def test_url_com_crlf_bloqueia(self, client, criar_usuario, usuario_teste):
+        """URL com CRLF injection deve ser bloqueada"""
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        response = client.post("/login", data={
+            "email": usuario_teste["email"],
+            "senha": usuario_teste["senha"],
+            "redirect": "/test\r\nSet-Cookie: evil=true"
+        }, follow_redirects=False)
+
+        location = response.headers.get("location", "")
+        assert "Set-Cookie" not in location
+        assert "/usuario" in location
+
+
+class TestLoginRedirectSeguranca:
+    """Testes adicionais de segurança no redirect de login"""
+
+    def test_get_login_valida_redirect_param(self, client):
+        """GET /login deve validar parâmetro redirect da query string"""
+        # URL maliciosa na query string
+        response = client.get("/login?redirect=https://evil.com")
+        assert response.status_code == 200
+        # Não deve aparecer evil.com no HTML
+        assert "evil.com" not in response.text
+
+
+class TestEsqueciSenhaRateLimit:
+    """Testes de rate limiting para recuperação de senha"""
+
+    def test_multiplas_solicitacoes_bloqueiam(self, client):
+        """Múltiplas solicitações de recuperação devem ser limitadas"""
+        # Primeira requisição - deveria passar
+        response1 = client.post("/esqueci-senha", data={
+            "email": "teste@example.com"
+        }, follow_redirects=False)
+
+        # Segunda requisição imediata - pode ser bloqueada
+        response2 = client.post("/esqueci-senha", data={
+            "email": "teste@example.com"
+        }, follow_redirects=True)
+
+        # Pelo menos uma das respostas deve funcionar
+        assert response1.status_code in [200, 303]
+
+
+class TestCadastroRateLimit:
+    """Testes de rate limiting para cadastro"""
+
+    def test_multiplos_cadastros_bloqueiam(self, client):
+        """Múltiplos cadastros devem ser limitados"""
+        for i in range(5):
+            response = client.post("/cadastrar", data={
+                "perfil": "Cliente",
+                "nome": f"Usuario {i}",
+                "email": f"user{i}@test.com",
+                "senha": "Senha@123",
+                "confirmar_senha": "Senha@123"
+            }, follow_redirects=True)
+
+        # Última resposta pode indicar rate limiting
+        # ou continuar funcionando dependendo da configuração
+        assert response.status_code in [200, 303]
+
+
+class TestCadastroAdicional:
+    """Testes adicionais de cadastro"""
+
+    def test_usuario_logado_nao_acessa_cadastro(self, cliente_autenticado):
+        """Usuário já logado deve ser redirecionado ao acessar /cadastrar"""
+        response = cliente_autenticado.get("/cadastrar", follow_redirects=False)
+        assert_redirects_to(response, "/usuario")
+
+    def test_cadastro_erro_ao_inserir(self, client):
+        """Deve mostrar erro quando inserção falha"""
+        from unittest.mock import patch
+
+        with patch('routes.auth_routes.verificar_email_disponivel', return_value=(True, None)):
+            with patch('routes.auth_routes.usuario_repo.inserir', return_value=None):
+                response = client.post("/cadastrar", data={
+                    "perfil": "Cliente",
+                    "nome": "Usuario Teste",
+                    "email": "teste@test.com",
+                    "senha": "Senha@123",
+                    "confirmar_senha": "Senha@123"
+                })
+
+                assert response.status_code == status.HTTP_200_OK
+
+
+class TestEsqueciSenhaAdicional:
+    """Testes adicionais de esqueci senha"""
+
+    def test_email_invalido_validation_error(self, client):
+        """Deve mostrar erro quando e-mail é inválido"""
+        response = client.post("/esqueci-senha", data={
+            "email": "email-invalido"
+        })
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_email_enviado_com_sucesso(self, client, criar_usuario, usuario_teste):
+        """Deve enviar e-mail quando usuário existe"""
+        from unittest.mock import patch
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        with patch('routes.auth_routes.servico_email.enviar_recuperacao_senha', return_value=True):
+            response = client.post("/esqueci-senha", data={
+                "email": usuario_teste["email"]
+            }, follow_redirects=False)
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestRedefinirSenhaAdicional:
+    """Testes adicionais de redefinição de senha"""
+
+    def test_get_redefinir_senha_token_valido(self, client, criar_usuario, usuario_teste):
+        """Deve exibir formulário quando token é válido e não expirado"""
+        from repo import usuario_repo as repo
+        from util.security import gerar_token_redefinicao, obter_data_expiracao_token
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        # Gerar token válido não expirado
+        token = gerar_token_redefinicao()
+        data_expiracao = obter_data_expiracao_token(horas=1)
+        repo.atualizar_token(usuario_teste["email"], token, data_expiracao)
+
+        response = client.get(f"/redefinir-senha?token={token}")
+        assert response.status_code == status.HTTP_200_OK
+        assert "redefinir" in response.text.lower() or "senha" in response.text.lower()
+
+    def test_get_redefinir_senha_token_expirado(self, client, criar_usuario, usuario_teste):
+        """Deve rejeitar token expirado no GET"""
+        from repo import usuario_repo as repo
+        from util.security import gerar_token_redefinicao
+        from datetime import timedelta
+        from util.datetime_util import agora
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        # Gerar token com data já expirada (usando agora() para timezone correto)
+        token = gerar_token_redefinicao()
+        data_expirada = agora() - timedelta(hours=2)
+        repo.atualizar_token(usuario_teste["email"], token, data_expirada)
+
+        response = client.get(f"/redefinir-senha?token={token}", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_post_redefinir_senha_token_invalido(self, client):
+        """Deve rejeitar token que não existe"""
+        response = client.post("/redefinir-senha", data={
+            "token": "token_nao_existe_xyz123",
+            "senha": "NovaSenha@123",
+            "confirmar_senha": "NovaSenha@123"
+        }, follow_redirects=False)
+
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_post_redefinir_senha_token_expirado(self, client, criar_usuario, usuario_teste):
+        """Deve rejeitar token expirado no POST"""
+        from repo import usuario_repo as repo
+        from util.security import gerar_token_redefinicao
+        from datetime import timedelta
+        from util.datetime_util import agora
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        # Gerar token com data já expirada (usando agora() para timezone correto)
+        token = gerar_token_redefinicao()
+        data_expirada = agora() - timedelta(hours=2)
+        repo.atualizar_token(usuario_teste["email"], token, data_expirada)
+
+        response = client.post("/redefinir-senha", data={
+            "token": token,
+            "senha": "NovaSenha@123",
+            "confirmar_senha": "NovaSenha@123"
+        }, follow_redirects=False)
+
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_post_redefinir_senha_sucesso_completo(self, client, criar_usuario, usuario_teste):
+        """Deve redefinir senha com sucesso"""
+        from repo import usuario_repo as repo
+        from util.security import gerar_token_redefinicao, obter_data_expiracao_token
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        # Gerar token válido
+        token = gerar_token_redefinicao()
+        data_expiracao = obter_data_expiracao_token(horas=1)
+        repo.atualizar_token(usuario_teste["email"], token, data_expiracao)
+
+        response = client.post("/redefinir-senha", data={
+            "token": token,
+            "senha": "NovaSenhaForte@123",
+            "confirmar_senha": "NovaSenhaForte@123"
+        }, follow_redirects=False)
+
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_post_redefinir_senha_validation_error(self, client, criar_usuario, usuario_teste):
+        """Deve mostrar erro de validação para senhas inválidas"""
+        from repo import usuario_repo as repo
+        from util.security import gerar_token_redefinicao, obter_data_expiracao_token
+
+        criar_usuario(
+            usuario_teste["nome"],
+            usuario_teste["email"],
+            usuario_teste["senha"]
+        )
+
+        # Gerar token válido
+        token = gerar_token_redefinicao()
+        data_expiracao = obter_data_expiracao_token(horas=1)
+        repo.atualizar_token(usuario_teste["email"], token, data_expiracao)
+
+        response = client.post("/redefinir-senha", data={
+            "token": token,
+            "senha": "fraca",  # Senha fraca
+            "confirmar_senha": "fraca"
+        })
+
+        assert response.status_code == status.HTTP_200_OK

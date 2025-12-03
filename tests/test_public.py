@@ -3,6 +3,8 @@ Testes de rotas públicas
 Testa páginas acessíveis sem autenticação (landing page, sobre, etc.)
 """
 from fastapi import status
+from unittest.mock import patch
+import pytest
 
 
 class TestRotasPublicas:
@@ -150,3 +152,32 @@ class TestErros:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         # Deve ter alguma mensagem sobre não encontrado
         assert "404" in response.text or "não encontrad" in response.text.lower()
+
+
+class TestPublicRateLimiting:
+    """Testes de rate limiting para páginas públicas"""
+
+    @pytest.fixture
+    def mock_rate_limit_block(self):
+        """Fixture para mockar rate limiter que bloqueia"""
+        with patch('routes.public_routes.public_limiter') as mock_limiter:
+            mock_limiter.verificar.return_value = False
+            yield mock_limiter
+
+    def test_rate_limit_home(self, client, mock_rate_limit_block):
+        """Rate limit na página home"""
+        response = client.get("/")
+
+        assert response.status_code == 429
+
+    def test_rate_limit_index(self, client, mock_rate_limit_block):
+        """Rate limit na página index"""
+        response = client.get("/index")
+
+        assert response.status_code == 429
+
+    def test_rate_limit_sobre(self, client, mock_rate_limit_block):
+        """Rate limit na página sobre"""
+        response = client.get("/sobre")
+
+        assert response.status_code == 429

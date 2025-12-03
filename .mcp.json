@@ -7,8 +7,15 @@
         "/Users/maroquio/Projetos/runware-mcp-server/server.js"
       ],
       "env": {
-        "RUNWARE_API_KEY": "anw54OQoNls6zMsfNvzgoNmMyWQaCcJ0",
+        "RUNWARE_API_KEY": "${RUNWARE_API_KEY}",
         "NODE_ENV": "production"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-bf4a950c-75f8-41a9-94c9-2013cde5fe45"
       }
     }
   }

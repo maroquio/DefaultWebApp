@@ -535,3 +535,280 @@ class TestFluxoCompleto:
         # 5. Verificar que todas operações foram bem sucedidas
         response = admin_autenticado.get("/admin/chamados/listar")
         assert response.status_code == status.HTTP_200_OK
+
+
+class TestReabrirChamado:
+    """Testes para reabertura de chamados fechados"""
+
+    def test_admin_reabre_chamado_fechado(self, cliente_autenticado, admin_autenticado):
+        """Admin deve poder reabrir chamado fechado"""
+        from model.chamado_model import StatusChamado
+
+        # Criar chamado
+        response = cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para reabrir",
+            "descricao": "Descrição do chamado que será reaberto",
+            "prioridade": "Alta"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        # Admin fecha o chamado
+        response = admin_autenticado.post("/admin/chamados/1/fechar", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        # Admin reabre o chamado
+        response = admin_autenticado.post("/admin/chamados/1/reabrir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+        assert response.headers["location"] == "/admin/chamados/listar"
+
+    def test_reabrir_chamado_nao_fechado(self, cliente_autenticado, admin_autenticado):
+        """Não deve reabrir chamado que não está fechado"""
+        # Criar chamado (status inicial é "Aberto")
+        response = cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado aberto",
+            "descricao": "Descrição do chamado ainda aberto",
+            "prioridade": "Média"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        # Tentar reabrir sem ter fechado
+        response = admin_autenticado.post("/admin/chamados/1/reabrir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_reabrir_chamado_inexistente(self, admin_autenticado):
+        """Deve tratar erro ao reabrir chamado inexistente"""
+        response = admin_autenticado.post("/admin/chamados/999/reabrir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestErrosAdminChamados:
+    """Testes de cenários de erro em admin chamados"""
+
+    def test_erro_ao_salvar_resposta(self, cliente_autenticado, admin_autenticado):
+        """Deve tratar erro ao salvar resposta do admin"""
+        from unittest.mock import patch
+
+        # Criar chamado
+        response = cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado com erro",
+            "descricao": "Descrição do chamado que terá erro",
+            "prioridade": "Alta"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        # Simular erro no banco ao atualizar status
+        with patch('repo.chamado_repo.atualizar_status', return_value=False):
+            response = admin_autenticado.post("/admin/chamados/1/responder", data={
+                "mensagem": "Resposta que falhará ao salvar no sistema",
+                "status_chamado": "Em Análise"
+            }, follow_redirects=False)
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_erro_ao_fechar_chamado(self, cliente_autenticado, admin_autenticado):
+        """Deve tratar erro ao fechar chamado"""
+        from unittest.mock import patch
+
+        # Criar chamado
+        response = cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para fechar",
+            "descricao": "Descrição do chamado que terá erro ao fechar",
+            "prioridade": "Média"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        # Simular erro ao fechar
+        with patch('repo.chamado_repo.atualizar_status', return_value=False):
+            response = admin_autenticado.post("/admin/chamados/1/fechar", follow_redirects=False)
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_erro_ao_reabrir_chamado(self, cliente_autenticado, admin_autenticado):
+        """Deve tratar erro ao reabrir chamado"""
+        from unittest.mock import patch
+
+        # Criar e fechar chamado
+        response = cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para reabrir com erro",
+            "descricao": "Descrição do chamado que terá erro ao reabrir",
+            "prioridade": "Baixa"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+        admin_autenticado.post("/admin/chamados/1/fechar")
+
+        # Simular erro ao reabrir
+        with patch('repo.chamado_repo.atualizar_status', return_value=False):
+            response = admin_autenticado.post("/admin/chamados/1/reabrir", follow_redirects=False)
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestRateLimitChamados:
+    """Testes de rate limiting para chamados"""
+
+    def test_rate_limit_criar_chamado(self, cliente_autenticado):
+        """Rate limit deve bloquear criação excessiva de chamados"""
+        from unittest.mock import patch
+
+        with patch('routes.chamados_routes.chamado_criar_limiter.verificar', return_value=False):
+            response = cliente_autenticado.post("/chamados/cadastrar", data={
+                "titulo": "Título do chamado teste",
+                "descricao": "Descrição do chamado teste com texto suficiente",
+                "prioridade": "Média"
+            })
+
+            assert response.status_code == status.HTTP_200_OK
+            assert "muitas tentativas" in response.text.lower() or "aguarde" in response.text.lower()
+
+    def test_rate_limit_responder_chamado(self, cliente_autenticado):
+        """Rate limit deve bloquear resposta excessiva em chamados"""
+        from unittest.mock import patch
+
+        # Criar chamado
+        cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para rate limit resposta",
+            "descricao": "Descrição do chamado para testar rate limit",
+            "prioridade": "Alta"
+        })
+
+        with patch('routes.chamados_routes.chamado_responder_limiter.verificar', return_value=False):
+            response = cliente_autenticado.post("/chamados/1/responder", data={
+                "mensagem": "Mensagem de resposta no chamado"
+            }, follow_redirects=False)
+
+            assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestPermissoesChamados:
+    """Testes de permissões e propriedade de chamados"""
+
+    def test_visualizar_chamado_de_outro_usuario(self, client, criar_usuario, fazer_login):
+        """Usuário não pode visualizar chamado de outro usuário"""
+        # Criar primeiro usuário e chamado
+        criar_usuario("Usuario 1", "user1@test.com", "Senha@123")
+        fazer_login("user1@test.com", "Senha@123")
+
+        client.post("/chamados/cadastrar", data={
+            "titulo": "Chamado do usuário 1",
+            "descricao": "Descrição do chamado do primeiro usuário",
+            "prioridade": "Alta"
+        })
+
+        # Logout e login com segundo usuário
+        client.get("/logout")
+        criar_usuario("Usuario 2", "user2@test.com", "Senha@123")
+        fazer_login("user2@test.com", "Senha@123")
+
+        # Tentar visualizar chamado do primeiro usuário
+        response = client.get("/chamados/1/visualizar", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_responder_chamado_de_outro_usuario(self, client, criar_usuario, fazer_login):
+        """Usuário não pode responder chamado de outro usuário"""
+        # Criar primeiro usuário e chamado
+        criar_usuario("Usuario 1", "user1@test.com", "Senha@123")
+        fazer_login("user1@test.com", "Senha@123")
+
+        client.post("/chamados/cadastrar", data={
+            "titulo": "Chamado do usuário 1",
+            "descricao": "Descrição do chamado do primeiro usuário",
+            "prioridade": "Alta"
+        })
+
+        # Logout e login com segundo usuário
+        client.get("/logout")
+        criar_usuario("Usuario 2", "user2@test.com", "Senha@123")
+        fazer_login("user2@test.com", "Senha@123")
+
+        # Tentar responder chamado do primeiro usuário
+        response = client.post("/chamados/1/responder", data={
+            "mensagem": "Tentativa de resposta indevida no chamado"
+        }, follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_excluir_chamado_de_outro_usuario(self, client, criar_usuario, fazer_login):
+        """Usuário não pode excluir chamado de outro usuário"""
+        # Criar primeiro usuário e chamado
+        criar_usuario("Usuario 1", "user1@test.com", "Senha@123")
+        fazer_login("user1@test.com", "Senha@123")
+
+        client.post("/chamados/cadastrar", data={
+            "titulo": "Chamado do usuário 1",
+            "descricao": "Descrição do chamado do primeiro usuário",
+            "prioridade": "Alta"
+        })
+
+        # Logout e login com segundo usuário
+        client.get("/logout")
+        criar_usuario("Usuario 2", "user2@test.com", "Senha@123")
+        fazer_login("user2@test.com", "Senha@123")
+
+        # Tentar excluir chamado do primeiro usuário
+        response = client.post("/chamados/1/excluir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestExclusaoChamado:
+    """Testes de restrições para exclusão de chamados"""
+
+    def test_excluir_chamado_nao_aberto(self, cliente_autenticado, admin_autenticado):
+        """Não deve permitir excluir chamado que não está aberto"""
+        # Criar chamado
+        cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para testar exclusão",
+            "descricao": "Descrição do chamado para testar exclusão",
+            "prioridade": "Média"
+        })
+
+        # Admin fecha o chamado
+        admin_autenticado.post("/admin/chamados/1/fechar")
+
+        # Tentar excluir chamado fechado
+        response = cliente_autenticado.post("/chamados/1/excluir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+    def test_excluir_chamado_com_resposta_admin(self, cliente_autenticado, admin_autenticado):
+        """Não deve permitir excluir chamado que possui resposta de admin"""
+        # Criar chamado
+        cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para testar exclusão com resposta",
+            "descricao": "Descrição do chamado para testar exclusão",
+            "prioridade": "Alta"
+        })
+
+        # Admin responde ao chamado (mantendo status Aberto para passar no primeiro check)
+        admin_autenticado.post("/admin/chamados/1/responder", data={
+            "mensagem": "Resposta do administrador no chamado",
+            "status_chamado": "Aberto"  # Mantém status Aberto para não falhar no check de status
+        })
+
+        # Tentar excluir chamado que tem resposta de admin
+        response = cliente_autenticado.post("/chamados/1/excluir", follow_redirects=False)
+        assert response.status_code == status.HTTP_303_SEE_OTHER
+
+
+class TestValidacaoResposta:
+    """Testes de validação em respostas de chamados"""
+
+    def test_resposta_invalida_validation_error(self, cliente_autenticado):
+        """Deve mostrar erro quando resposta não atende requisitos"""
+        # Criar chamado
+        cliente_autenticado.post("/chamados/cadastrar", data={
+            "titulo": "Chamado para testar resposta inválida",
+            "descricao": "Descrição do chamado para testar validação de resposta",
+            "prioridade": "Média"
+        })
+
+        # Responder com mensagem muito curta
+        response = cliente_autenticado.post("/chamados/1/responder", data={
+            "mensagem": "abc"  # Muito curta
+        })
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_responder_chamado_inexistente(self, cliente_autenticado):
+        """Deve redirecionar quando chamado não existe"""
+        response = cliente_autenticado.post("/chamados/9999/responder", data={
+            "mensagem": "Tentativa de resposta em chamado inexistente"
+        }, follow_redirects=False)
+
+        assert response.status_code == status.HTTP_303_SEE_OTHER
