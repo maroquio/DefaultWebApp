@@ -166,11 +166,7 @@ Edite o arquivo `.env` e atualize as seguintes variáveis:
 
 ### 4.6. Testando a instalação
 
-```bash
-python main.py
-```
-
-Acesse http://localhost:8400 para verificar se está funcionando (porta padrão do projeto).
+Rode a aplicação com Ctrl + F5 e acesse Acesse http://localhost:8400 para verificar se está funcionando (porta padrão do projeto).
 
 ---
 
@@ -258,6 +254,7 @@ Clique na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilida
 | `cliente`            | `autor`             |
 | `vendedor`           | `leitor`            |
 
+**ATENÇÃO:** a função obter_identificador_cliente nao deve ser renomeada! Ela está nos arquivos rate_limiter.py e rate_limit_decorator.py.
 ---
 
 ## 6. Criando o CRUD de Categorias
@@ -1004,7 +1001,7 @@ Crie a pasta `templates/admin/categorias/` e dentro dela crie o arquivo `listar.
 
 #### 6.6.2. Template de Cadastro
 
-Crie o arquivo `templates/admin/categorias/cadastro.html`:
+Crie o arquivo `templates/admin/categorias/cadastrar.html`:
 
 ```html
 {% extends "base_privada.html" %}
@@ -3904,7 +3901,7 @@ Espero que tenham gostado!
 
 ### Templates (Interface)
 - `templates/admin/categorias/listar.html`
-- `templates/admin/categorias/cadastro.html`
+- `templates/admin/categorias/cadastrar.html`
 - `templates/admin/categorias/editar.html`
 - `templates/artigos/listar.html`
 - `templates/artigos/cadastrar.html`
