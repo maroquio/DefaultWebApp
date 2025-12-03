@@ -17,7 +17,11 @@ class TestGerenciadorChat:
     @pytest.fixture
     def gerenciador(self):
         """Cria instância nova do gerenciador para cada teste"""
-        return GerenciadorChat()
+        g = GerenciadorChat()
+        yield g
+        # Cleanup: limpar conexões e queues para evitar interferência
+        g._connections.clear()
+        g._active_connections.clear()
 
     @pytest.mark.asyncio
     async def test_conectar_usuario(self, gerenciador):
