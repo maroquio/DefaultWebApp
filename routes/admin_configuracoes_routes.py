@@ -82,7 +82,8 @@ async def get_listar_configuracoes(request: Request, usuario_logado: Optional[Us
             {
                 "request": request,
                 "configs_por_categoria": configs_por_categoria,
-                "total_configs": total_configs
+                "total_configs": total_configs,
+                "usuario_logado": usuario_logado,
             }
         )
 
@@ -233,7 +234,8 @@ async def get_tema(request: Request, usuario_logado: Optional[UsuarioLogado] = N
         {
             "request": request,
             "temas": temas_disponiveis,
-            "tema_atual": tema_atual
+            "tema_atual": tema_atual,
+            "usuario_logado": usuario_logado,
         }
     )
 
@@ -377,7 +379,8 @@ async def get_auditoria(request: Request, usuario_logado: Optional[UsuarioLogado
         {
             "request": request,
             "data_selecionada": data_hoje,
-            "nivel_selecionado": "TODOS"
+            "nivel_selecionado": "TODOS",
+            "usuario_logado": usuario_logado,
         }
     )
 
@@ -422,6 +425,7 @@ async def post_filtrar_auditoria(
             "nivel_selecionado": nivel,
             "logs": logs,
             "total_linhas": total_linhas,
-            "mensagem_erro": mensagem_erro
+            "mensagem_erro": mensagem_erro,
+            "usuario_logado": usuario_logado,
         }
     )

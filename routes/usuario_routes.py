@@ -179,6 +179,7 @@ async def post_editar_perfil(
                     "erros": {
                         "email": mensagem_erro
                     },
+                    "usuario_logado": usuario_logado,
                 },
             )
 
@@ -208,6 +209,7 @@ async def post_editar_perfil(
                     "request": request,
                     "dados": dados_formulario,
                     "erros": {"geral": msg_erro},
+                    "usuario_logado": usuario_logado,
                 },
             )
 
@@ -237,7 +239,7 @@ async def get_alterar_senha(request: Request, usuario_logado: Optional[UsuarioLo
         logger.warning(f"Rate limit excedido para formulário GET - IP: {ip}")
         return RedirectResponse("/usuario", status_code=status.HTTP_303_SEE_OTHER)
 
-    return templates_usuario.TemplateResponse("perfil/alterar-senha.html", {"request": request})
+    return templates_usuario.TemplateResponse("perfil/alterar-senha.html", {"request": request, "usuario_logado": usuario_logado})
 
 
 @router.post("/usuario/perfil/alterar-senha")
@@ -266,7 +268,7 @@ async def post_alterar_senha(
         )
         return templates_usuario.TemplateResponse(
             "perfil/alterar-senha.html",
-            {"request": request, "erros": {"geral": msg_rate}},
+            {"request": request, "erros": {"geral": msg_rate}, "usuario_logado": usuario_logado},
         )
 
     try:
@@ -298,6 +300,7 @@ async def post_alterar_senha(
                 {
                     "request": request,
                     "erros": {"senha_atual": "Senha atual está incorreta."},
+                    "usuario_logado": usuario_logado,
                 },
             )
 
@@ -311,6 +314,7 @@ async def post_alterar_senha(
                     "erros": {
                         "senha_nova": "A nova senha deve ser diferente da senha atual."
                     },
+                    "usuario_logado": usuario_logado,
                 },
             )
 
@@ -330,7 +334,7 @@ async def post_alterar_senha(
             informar_erro(request, "Erro ao alterar senha. Tente novamente.")
             return templates_usuario.TemplateResponse(
                 "perfil/alterar-senha.html",
-                {"request": request, "erros": {"geral": msg_erro}},
+                {"request": request, "erros": {"geral": msg_erro}, "usuario_logado": usuario_logado},
             )
 
     except ValidationError as e:

@@ -72,7 +72,7 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
     chamados = chamado_repo.obter_todos(usuario_logado.id)
     return templates.TemplateResponse(
         "admin/chamados/listar.html",
-        {"request": request, "chamados": chamados}
+        {"request": request, "chamados": chamados, "usuario_logado": usuario_logado}
     )
 
 
@@ -100,7 +100,7 @@ async def get_responder(request: Request, id: int, usuario_logado: Optional[Usua
 
     return templates.TemplateResponse(
         "admin/chamados/responder.html",
-        {"request": request, "chamado": chamado, "interacoes": interacoes}
+        {"request": request, "chamado": chamado, "interacoes": interacoes, "usuario_logado": usuario_logado}
     )
 
 

@@ -66,7 +66,7 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
     usuarios = usuario_repo.obter_todos()
     return templates.TemplateResponse(
         "admin/usuarios/listar.html",
-        {"request": request, "usuarios": usuarios}
+        {"request": request, "usuarios": usuarios, "usuario_logado": usuario_logado}
     )
 
 
@@ -77,7 +77,7 @@ async def get_cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado
     perfis = Perfil.valores()
     return templates.TemplateResponse(
         "admin/usuarios/cadastro.html",
-        {"request": request, "perfis": perfis}
+        {"request": request, "perfis": perfis, "usuario_logado": usuario_logado}
     )
 
 
@@ -122,7 +122,8 @@ async def post_cadastrar(
                 {
                     "request": request,
                     "perfis": perfis,
-                    "dados": {"nome": nome, "email": email, "perfil": perfil}
+                    "dados": {"nome": nome, "email": email, "perfil": perfil},
+                    "usuario_logado": usuario_logado,
                 }
             )
 
@@ -180,7 +181,8 @@ async def get_editar(request: Request, id: int, usuario_logado: Optional[Usuario
             "request": request,
             "usuario": usuario,
             "dados": dados_usuario,
-            "perfis": perfis
+            "perfis": perfis,
+            "usuario_logado": usuario_logado,
         }
     )
 
@@ -237,7 +239,8 @@ async def post_editar(
                     "request": request,
                     "usuario": usuario_atual,
                     "perfis": perfis,
-                    "dados": {"id": id, "nome": nome, "email": email, "perfil": perfil}
+                    "dados": {"id": id, "nome": nome, "email": email, "perfil": perfil},
+                    "usuario_logado": usuario_logado,
                 }
             )
 

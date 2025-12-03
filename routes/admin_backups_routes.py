@@ -58,7 +58,8 @@ async def get_listar(request: Request, usuario_logado: Optional[UsuarioLogado] =
         "admin/backups/listar.html",
         {
             "request": request,
-            "backups": backups
+            "backups": backups,
+            "usuario_logado": usuario_logado,
         }
     )
 

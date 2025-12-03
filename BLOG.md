@@ -3962,10 +3962,6 @@ Essa separação de responsabilidades facilita a manutenção e evolução do c�
 
 ---
 
-**Bons estudos e bom desenvolvimento!**
-
-corrigir todas as rotas para que elas passem usuario_logado para os templates em vez de usuario, e acertar os templates para usar usuario_logado em vez de usuario
-
 em toda rota que requer autenticação, adicionar no início do corpo da função para eliminar erros de lint:
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)

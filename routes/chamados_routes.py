@@ -80,7 +80,7 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
     chamados = chamado_repo.obter_por_usuario(usuario_logado.id)
     return templates.TemplateResponse(
         "chamados/listar.html",
-        {"request": request, "chamados": chamados}
+        {"request": request, "chamados": chamados, "usuario_logado": usuario_logado}
     )
 
 
@@ -90,7 +90,7 @@ async def get_cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado
     """Exibe formulário de abertura de chamado."""
     return templates.TemplateResponse(
         "chamados/cadastrar.html",
-        {"request": request}
+        {"request": request, "usuario_logado": usuario_logado}
     )
 
 
@@ -121,6 +121,7 @@ async def post_cadastrar(
                 "erros": {
                     "geral": "Muitas tentativas de criação de chamados. Aguarde alguns minutos."
                 },
+                "usuario_logado": usuario_logado,
             },
         )
 
@@ -212,7 +213,7 @@ async def visualizar(request: Request, id: int, usuario_logado: Optional[Usuario
 
     return templates.TemplateResponse(
         "chamados/visualizar.html",
-        {"request": request, "chamado": chamado, "interacoes": interacoes}
+        {"request": request, "chamado": chamado, "interacoes": interacoes, "usuario_logado": usuario_logado}
     )
 
 
