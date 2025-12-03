@@ -132,18 +132,58 @@ class LoginPage:
         """Navega para a pagina de login."""
         self.page.goto(self.url)
 
-    def fazer_login(self, email: str, senha: str) -> None:
-        """Preenche e submete formulario de login."""
-        # Aguardar campos estarem disponiveis
+    def preencher_formulario(self, email: str, senha: str) -> None:
+        """Preenche o formulario de login sem submeter."""
         self.page.wait_for_selector('input[name="email"]')
         self.page.fill('input[name="email"]', email)
         self.page.fill('input[name="senha"]', senha)
-        # Usar seletor CSS para o botao submit do formulario de login
+
+    def submeter(self) -> None:
+        """Submete o formulario de login."""
         self.page.locator('form button[type="submit"]').first.click()
+
+    def fazer_login(self, email: str, senha: str) -> None:
+        """Preenche e submete formulario de login."""
+        self.preencher_formulario(email, senha)
+        self.submeter()
 
     def esta_na_pagina_login(self) -> bool:
         """Verifica se esta na pagina de login."""
         return "/login" in self.page.url
+
+    def aguardar_navegacao_usuario(self, timeout: int = 10000) -> bool:
+        """
+        Aguarda redirecionamento para area do usuario.
+
+        Args:
+            timeout: Tempo maximo em ms
+
+        Returns:
+            True se redirecionou, False caso contrario
+        """
+        try:
+            self.page.wait_for_url("**/usuario**", timeout=timeout)
+            return True
+        except Exception:
+            # Pode ter ido para /home
+            return "/usuario" in self.page.url or "/home" in self.page.url
+
+    def obter_mensagem_flash(self) -> Optional[str]:
+        """
+        Obtem mensagem flash (toast ou alert).
+
+        Returns:
+            Texto da mensagem ou None
+        """
+        toast = self.page.locator('.toast-body').first
+        if toast.is_visible():
+            return toast.text_content()
+
+        alert = self.page.locator('.alert').first
+        if alert.is_visible():
+            return alert.text_content()
+
+        return None
 
 
 def verificar_mensagem_sucesso_cadastro(page: Page) -> bool:

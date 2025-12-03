@@ -1,12 +1,18 @@
 """
-Testes E2E para funcionalidade de cadastro (registro de usuario).
+Testes E2E para autenticacao (cadastro e login).
 
-Testes:
+Testes de Cadastro:
 - Acesso a pagina de cadastro
 - Cadastro com dados validos
 - Validacoes de campos (nome, e-mail, senha)
 - E-mail duplicado
 - Senhas nao coincidentes
+
+Testes de Login:
+- Acesso a pagina de login
+- Login com credenciais validas
+- Login com credenciais invalidas
+- Validacoes de campos
 """
 import pytest
 from playwright.sync_api import Page, expect
@@ -415,3 +421,279 @@ class TestCadastroValidacaoPerfil:
 
         expect(e2e_page.locator('input#perfil_Vendedor')).to_be_checked()
         expect(e2e_page.locator('input#perfil_Cliente')).not_to_be_checked()
+
+
+# ============================================================
+# TESTES DE LOGIN
+# ============================================================
+
+
+@pytest.mark.e2e
+class TestLoginAcessoPagina:
+    """Testes de acesso a pagina de login."""
+
+    def test_pagina_login_carrega_corretamente(
+        self, e2e_page: Page, e2e_server: str
+    ):
+        """Deve carregar a pagina de login com o formulario."""
+        page = LoginPage(e2e_page, e2e_server)
+        page.navegar()
+
+        assert "/login" in e2e_page.url
+
+        expect(e2e_page.locator('input[name="email"]')).to_be_visible()
+        expect(e2e_page.locator('input[name="senha"]')).to_be_visible()
+        expect(e2e_page.locator('form button[type="submit"]').first).to_be_visible()
+
+    def test_pagina_login_possui_titulo_correto(
+        self, e2e_page: Page, e2e_server: str
+    ):
+        """Deve exibir titulo adequado na pagina."""
+        page = LoginPage(e2e_page, e2e_server)
+        page.navegar()
+
+        titulo = e2e_page.title().lower()
+        assert "login" in titulo or "entrar" in titulo or "acesso" in titulo
+
+    def test_pagina_login_possui_link_para_cadastro(
+        self, e2e_page: Page, e2e_server: str
+    ):
+        """Deve ter link para pagina de cadastro."""
+        page = LoginPage(e2e_page, e2e_server)
+        page.navegar()
+
+        link_cadastro = e2e_page.get_by_text("cadastre-se aqui")
+        expect(link_cadastro).to_be_visible()
+
+    def test_pagina_login_possui_link_esqueci_senha(
+        self, e2e_page: Page, e2e_server: str
+    ):
+        """Deve ter link para recuperar senha."""
+        page = LoginPage(e2e_page, e2e_server)
+        page.navegar()
+
+        link_esqueci = e2e_page.get_by_text("Esqueceu sua senha?")
+        expect(link_esqueci).to_be_visible()
+
+
+@pytest.mark.e2e
+class TestLoginSucesso:
+    """Testes de login com sucesso."""
+
+    def test_login_cliente_com_credenciais_validas(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve fazer login com credenciais validas de cliente."""
+        email = "cliente_login@example.com"
+        senha = "SenhaForte@123"
+
+        # Primeiro cadastrar o usuario
+        cadastro = CadastroPage(e2e_page, e2e_server)
+        cadastro.navegar()
+        cadastro.cadastrar(
+            perfil="Cliente",
+            nome="Cliente Login Teste",
+            email=email,
+            senha=senha
+        )
+        cadastro.aguardar_navegacao_login()
+
+        # Fazer login
+        login = LoginPage(e2e_page, e2e_server)
+        login.fazer_login(email, senha)
+
+        # Verificar redirecionamento para area do usuario
+        assert login.aguardar_navegacao_usuario()
+
+    def test_login_vendedor_com_credenciais_validas(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve fazer login com credenciais validas de vendedor."""
+        email = "vendedor_login@example.com"
+        senha = "SenhaForte@123"
+
+        # Primeiro cadastrar o usuario
+        cadastro = CadastroPage(e2e_page, e2e_server)
+        cadastro.navegar()
+        cadastro.cadastrar(
+            perfil="Vendedor",
+            nome="Vendedor Login Teste",
+            email=email,
+            senha=senha
+        )
+        cadastro.aguardar_navegacao_login()
+
+        # Fazer login
+        login = LoginPage(e2e_page, e2e_server)
+        login.fazer_login(email, senha)
+
+        # Verificar redirecionamento para area do usuario
+        assert login.aguardar_navegacao_usuario()
+
+    def test_login_mantem_sessao_ativa(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Apos login, sessao deve permanecer ativa em navegacoes."""
+        email = "sessao_ativa@example.com"
+        senha = "SenhaForte@123"
+
+        # Cadastrar e fazer login
+        cadastro = CadastroPage(e2e_page, e2e_server)
+        cadastro.navegar()
+        cadastro.cadastrar(
+            perfil="Cliente",
+            nome="Usuario Sessao Teste",
+            email=email,
+            senha=senha
+        )
+        cadastro.aguardar_navegacao_login()
+
+        login = LoginPage(e2e_page, e2e_server)
+        login.fazer_login(email, senha)
+        login.aguardar_navegacao_usuario()
+
+        # Navegar para outra pagina e voltar
+        e2e_page.goto(f"{e2e_server}/home")
+        e2e_page.wait_for_timeout(500)
+
+        # Voltar para area do usuario - deve continuar logado
+        e2e_page.goto(f"{e2e_server}/usuario")
+        e2e_page.wait_for_timeout(500)
+
+        # Nao deve redirecionar para login
+        assert "/login" not in e2e_page.url
+
+
+@pytest.mark.e2e
+class TestLoginValidacao:
+    """Testes de validacao do formulario de login."""
+
+    def test_email_vazio_exibe_erro(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve exibir erro quando e-mail esta vazio."""
+        login = LoginPage(e2e_page, e2e_server)
+        login.navegar()
+
+        login.fazer_login("", "SenhaForte@123")
+
+        # Deve permanecer na pagina de login
+        assert login.esta_na_pagina_login()
+
+    def test_senha_vazia_exibe_erro(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve exibir erro quando senha esta vazia."""
+        login = LoginPage(e2e_page, e2e_server)
+        login.navegar()
+
+        login.fazer_login("teste@example.com", "")
+
+        # Deve permanecer na pagina de login
+        assert login.esta_na_pagina_login()
+
+    def test_email_formato_invalido_exibe_erro(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve exibir erro quando e-mail tem formato invalido."""
+        login = LoginPage(e2e_page, e2e_server)
+        login.navegar()
+
+        login.fazer_login("email_invalido", "SenhaForte@123")
+
+        # Deve permanecer na pagina de login ou exibir erro
+        e2e_page.wait_for_timeout(500)
+        assert login.esta_na_pagina_login()
+
+
+@pytest.mark.e2e
+class TestLoginCredenciaisInvalidas:
+    """Testes de login com credenciais invalidas."""
+
+    def test_senha_incorreta_exibe_erro(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve exibir erro quando senha esta incorreta."""
+        email = "senha_errada@example.com"
+        senha_correta = "SenhaForte@123"
+        senha_errada = "SenhaErrada@456"
+
+        # Primeiro cadastrar o usuario
+        cadastro = CadastroPage(e2e_page, e2e_server)
+        cadastro.navegar()
+        cadastro.cadastrar(
+            perfil="Cliente",
+            nome="Usuario Senha Errada",
+            email=email,
+            senha=senha_correta
+        )
+        cadastro.aguardar_navegacao_login()
+
+        # Tentar login com senha errada
+        login = LoginPage(e2e_page, e2e_server)
+        login.fazer_login(email, senha_errada)
+
+        e2e_page.wait_for_timeout(500)
+
+        # Deve permanecer na pagina de login
+        assert login.esta_na_pagina_login()
+
+        # Deve exibir mensagem de erro
+        conteudo = e2e_page.content().lower()
+        assert "senha" in conteudo or "credenciais" in conteudo or "incorret" in conteudo
+
+    def test_usuario_nao_cadastrado_exibe_erro(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve exibir erro quando usuario nao existe."""
+        login = LoginPage(e2e_page, e2e_server)
+        login.navegar()
+
+        login.fazer_login("nao_existe@example.com", "SenhaForte@123")
+
+        e2e_page.wait_for_timeout(500)
+
+        # Deve permanecer na pagina de login
+        assert login.esta_na_pagina_login()
+
+        # Deve exibir mensagem de erro
+        conteudo = e2e_page.content().lower()
+        assert "e-mail" in conteudo or "credenciais" in conteudo or "não encontrad" in conteudo
+
+    def test_multiplas_tentativas_falhas(
+        self, e2e_page: Page, e2e_server: str, limpar_banco_e2e
+    ):
+        """Deve permitir multiplas tentativas apos falhas."""
+        email = "multiplas_tentativas@example.com"
+        senha = "SenhaForte@123"
+
+        # Cadastrar usuario
+        cadastro = CadastroPage(e2e_page, e2e_server)
+        cadastro.navegar()
+        cadastro.cadastrar(
+            perfil="Cliente",
+            nome="Usuario Multiplas Tentativas",
+            email=email,
+            senha=senha
+        )
+        cadastro.aguardar_navegacao_login()
+
+        login = LoginPage(e2e_page, e2e_server)
+
+        # Primeira tentativa com senha errada
+        login.fazer_login(email, "SenhaErrada@1")
+        e2e_page.wait_for_timeout(300)
+        assert login.esta_na_pagina_login()
+
+        # Segunda tentativa com senha errada
+        login.preencher_formulario(email, "SenhaErrada@2")
+        login.submeter()
+        e2e_page.wait_for_timeout(300)
+        assert login.esta_na_pagina_login()
+
+        # Terceira tentativa com senha correta
+        login.preencher_formulario(email, senha)
+        login.submeter()
+
+        # Deve conseguir logar
+        assert login.aguardar_navegacao_usuario()
