@@ -255,14 +255,28 @@ Crie o arquivo `repo/categoria_repo.py`:
 from typing import Optional
 from model.categoria_model import Categoria
 from sql.categoria_sql import *
-from util.db_util import obter_conexao as get_connection
+from util.db_util import obter_conexao
+
+
+def _row_to_categoria(row) -> Categoria:
+    """
+    Converte uma linha do banco de dados em objeto Categoria.
+    """
+    return Categoria(
+        id=row["id"],
+        nome=row["nome"],
+        descricao=row["descricao"],
+        data_cadastro=row["data_cadastro"],
+        data_atualizacao=row["data_atualizacao"]
+    )
+
 
 def criar_tabela():
     """
     Cria a tabela de categorias se ela não existir.
     Deve ser chamada na inicialização do sistema.
     """
-    with get_connection() as conn:
+    with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(CRIAR_TABELA)
 
@@ -278,7 +292,7 @@ def inserir(categoria: Categoria) -> Optional[Categoria]:
         Categoria com ID preenchido se sucesso, None se erro
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(INSERIR, (categoria.nome, categoria.descricao))
 
@@ -303,7 +317,7 @@ def alterar(categoria: Categoria) -> bool:
         True se atualizou, False se erro
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 ALTERAR,
@@ -326,7 +340,7 @@ def excluir(id: int) -> bool:
         True se excluiu, False se erro ou não encontrou
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(EXCLUIR, (id,))
             return cursor.rowcount > 0
@@ -346,19 +360,13 @@ def obter_por_id(id: int) -> Optional[Categoria]:
         Objeto Categoria se encontrou, None se não encontrou
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_POR_ID, (id,))
             row = cursor.fetchone()
 
             if row:
-                return Categoria(
-                    id=row["id"],
-                    nome=row["nome"],
-                    descricao=row["descricao"],
-                    data_cadastro=row["data_cadastro"],
-                    data_atualizacao=row["data_atualizacao"]
-                )
+                return _row_to_categoria(row)
             return None
     except Exception as e:
         print(f"Erro ao obter categoria por ID: {e}")
@@ -373,21 +381,12 @@ def obter_todos() -> list[Categoria]:
         Lista de objetos Categoria (pode ser vazia)
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_TODOS)
             rows = cursor.fetchall()
 
-            return [
-                Categoria(
-                    id=row["id"],
-                    nome=row["nome"],
-                    descricao=row["descricao"],
-                    data_cadastro=row["data_cadastro"],
-                    data_atualizacao=row["data_atualizacao"]
-                )
-                for row in rows
-            ]
+            return [_row_to_categoria(row) for row in rows]
     except Exception as e:
         print(f"Erro ao obter todas as categorias: {e}")
         return []
@@ -405,19 +404,13 @@ def obter_por_nome(nome: str) -> Optional[Categoria]:
         Objeto Categoria se encontrou, None se não encontrou
     """
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_POR_NOME, (nome,))
             row = cursor.fetchone()
 
             if row:
-                return Categoria(
-                    id=row["id"],
-                    nome=row["nome"],
-                    descricao=row["descricao"],
-                    data_cadastro=row["data_cadastro"],
-                    data_atualizacao=row["data_atualizacao"]
-                )
+                return _row_to_categoria(row)
             return None
     except Exception as e:
         print(f"Erro ao obter categoria por nome: {e}")
@@ -457,10 +450,6 @@ class CriarCategoriaDTO(BaseModel):
         validar_comprimento(tamanho_maximo=200)
     )
 
-    class Config:
-        """Configurações do Pydantic"""
-        str_strip_whitespace = True  # Remove espaços extras no início/fim
-
 
 class AlterarCategoriaDTO(BaseModel):
     """
@@ -482,9 +471,6 @@ class AlterarCategoriaDTO(BaseModel):
     _validar_descricao = field_validator("descricao")(
         validar_comprimento(tamanho_maximo=200)
     )
-
-    class Config:
-        str_strip_whitespace = True
 ```
 
 ### 6.5. Rotas de Categoria
@@ -501,6 +487,7 @@ from pydantic import ValidationError
 # DTOs e modelo
 from dtos.categoria_dto import CriarCategoriaDTO, AlterarCategoriaDTO
 from model.categoria_model import Categoria
+from model.usuario_logado_model import UsuarioLogado
 
 # Repositório
 from repo import categoria_repo
@@ -517,7 +504,7 @@ from util.template_util import criar_templates
 # Configurações do router e dos templates
 # ----------------------------------------------------------------------
 router = APIRouter(prefix="/admin/categorias")
-templates = criar_templates("templates")
+templates = criar_templates()
 
 # Rate limiter: máximo 10 operações por minuto
 admin_categorias_limiter = RateLimiter(
@@ -534,7 +521,7 @@ admin_categorias_limiter = RateLimiter(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def index(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
     Redireciona a raiz para /listar
@@ -549,7 +536,7 @@ async def index(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
     Lista todas as categorias.
@@ -571,7 +558,7 @@ async def listar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_cadastrar(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
     Exibe o formulário de cadastro.
@@ -587,7 +574,7 @@ async def get_cadastrar(
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_cadastrar(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
     nome: str = Form(""),
     descricao: str = Form(""),
 ):
@@ -650,7 +637,7 @@ async def post_cadastrar(
 async def get_editar(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
     Exibe o formulário de edição de uma categoria.
@@ -680,7 +667,7 @@ async def get_editar(
 async def post_editar(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
     nome: str = Form(""),
     descricao: str = Form(""),
 ):
@@ -760,7 +747,7 @@ async def post_editar(
 async def post_excluir(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
     Exclui uma categoria.
@@ -1070,14 +1057,16 @@ class StatusArtigo(Enum):
 
 @dataclass
 class Artigo:
-    id: int
-    titulo: str
-    conteudo: str
-    status: str
-    usuario_id: int
-    categoria_id: int
+    # Campos obrigatórios (com defaults para permitir criação)
+    titulo: str = ""
+    conteudo: str = ""
+    status: str = "Rascunho"
+    usuario_id: int = 0
+    categoria_id: int = 0
+    # Campos opcionais
+    id: Optional[int] = None
     resumo: Optional[str] = None
-    qtde_visualizacoes: Optional[int] = 0
+    qtde_visualizacoes: int = 0
     data_cadastro: Optional[datetime] = None
     data_atualizacao: Optional[datetime] = None
     data_publicacao: Optional[datetime] = None
@@ -1268,7 +1257,7 @@ Crie o arquivo `repo/artigo_repo.py`:
 from typing import Optional
 from model.artigo_model import Artigo
 from sql.artigo_sql import *
-from util.db_util import obter_conexao as get_connection
+from util.db_util import obter_conexao
 
 
 def _row_to_artigo(row) -> Artigo:
@@ -1297,7 +1286,7 @@ def _row_to_artigo(row) -> Artigo:
 def criar_tabela() -> bool:
     """Cria a tabela de artigos se não existir."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(CRIAR_TABELA)
             return True
@@ -1309,7 +1298,7 @@ def criar_tabela() -> bool:
 def inserir(artigo: Artigo) -> Optional[int]:
     """Insere um novo artigo e retorna o ID gerado."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(INSERIR, (
                 artigo.titulo,
@@ -1328,7 +1317,7 @@ def inserir(artigo: Artigo) -> Optional[int]:
 def alterar(artigo: Artigo) -> bool:
     """Atualiza um artigo existente."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(ALTERAR, (
                 artigo.titulo,
@@ -1347,7 +1336,7 @@ def alterar(artigo: Artigo) -> bool:
 def alterar_status(id: int, status: str) -> bool:
     """Atualiza apenas o status de um artigo."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(ALTERAR_STATUS, (status, status, status, id))
             return cursor.rowcount > 0
@@ -1359,7 +1348,7 @@ def alterar_status(id: int, status: str) -> bool:
 def excluir(id: int) -> bool:
     """Exclui um artigo pelo ID."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(EXCLUIR, (id,))
             return cursor.rowcount > 0
@@ -1371,7 +1360,7 @@ def excluir(id: int) -> bool:
 def obter_por_id(id: int) -> Optional[Artigo]:
     """Busca um artigo pelo ID."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_POR_ID, (id,))
             row = cursor.fetchone()
@@ -1386,7 +1375,7 @@ def obter_por_id(id: int) -> Optional[Artigo]:
 def obter_todos() -> list[Artigo]:
     """Retorna todos os artigos."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_TODOS)
             rows = cursor.fetchall()
@@ -1399,7 +1388,7 @@ def obter_todos() -> list[Artigo]:
 def obter_por_usuario(usuario_id: int) -> list[Artigo]:
     """Retorna todos os artigos de um usuário específico."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_POR_USUARIO, (usuario_id,))
             rows = cursor.fetchall()
@@ -1412,7 +1401,7 @@ def obter_por_usuario(usuario_id: int) -> list[Artigo]:
 def obter_publicados() -> list[Artigo]:
     """Retorna todos os artigos publicados."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_PUBLICADOS)
             rows = cursor.fetchall()
@@ -1425,7 +1414,7 @@ def obter_publicados() -> list[Artigo]:
 def obter_ultimos_publicados(limite: int = 6) -> list[Artigo]:
     """Retorna os últimos N artigos publicados."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_ULTIMOS_PUBLICADOS, (limite,))
             rows = cursor.fetchall()
@@ -1438,7 +1427,7 @@ def obter_ultimos_publicados(limite: int = 6) -> list[Artigo]:
 def buscar_por_titulo(termo: str) -> list[Artigo]:
     """Busca artigos publicados pelo título."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(BUSCAR_POR_TITULO, (f"%{termo}%",))
             rows = cursor.fetchall()
@@ -1451,7 +1440,7 @@ def buscar_por_titulo(termo: str) -> list[Artigo]:
 def obter_por_categoria(categoria_id: int) -> list[Artigo]:
     """Retorna artigos publicados de uma categoria específica."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_POR_CATEGORIA, (categoria_id,))
             rows = cursor.fetchall()
@@ -1464,7 +1453,7 @@ def obter_por_categoria(categoria_id: int) -> list[Artigo]:
 def incrementar_visualizacoes(id: int) -> bool:
     """Incrementa o contador de visualizações de um artigo."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(INCREMENTAR_VISUALIZACOES, (id,))
             return cursor.rowcount > 0
@@ -1476,7 +1465,7 @@ def incrementar_visualizacoes(id: int) -> bool:
 def obter_quantidade() -> int:
     """Retorna a quantidade total de artigos."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_QUANTIDADE)
             row = cursor.fetchone()
@@ -1489,7 +1478,7 @@ def obter_quantidade() -> int:
 def obter_quantidade_publicados() -> int:
     """Retorna a quantidade de artigos publicados."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(OBTER_QUANTIDADE_PUBLICADOS)
             row = cursor.fetchone()
@@ -1502,7 +1491,7 @@ def obter_quantidade_publicados() -> int:
 def titulo_existe(titulo: str, excluir_id: int = 0) -> bool:
     """Verifica se um título já existe (excluindo um ID específico)."""
     try:
-        with get_connection() as conn:
+        with obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(VERIFICAR_TITULO_EXISTE, (titulo, excluir_id))
             row = cursor.fetchone()
@@ -1598,6 +1587,7 @@ from pydantic import ValidationError
 
 from dtos.artigo_dto import CriarArtigoDTO, AlterarArtigoDTO
 from model.artigo_model import Artigo, StatusArtigo
+from model.usuario_logado_model import UsuarioLogado
 from repo import artigo_repo, categoria_repo
 from util.auth_decorator import requer_autenticacao
 from util.flash_messages import informar_sucesso, informar_erro
@@ -1608,7 +1598,7 @@ from util.template_util import criar_templates
 from util.logger_config import logger
 
 router = APIRouter(prefix="/artigos")
-templates = criar_templates("templates")
+templates = criar_templates()
 
 # Rate limiter: máximo 20 operações por minuto
 artigos_limiter = RateLimiter(
@@ -1622,10 +1612,10 @@ artigos_limiter = RateLimiter(
 @requer_autenticacao([Perfil.AUTOR.value, Perfil.ADMIN.value])
 async def meus_artigos(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Lista os artigos do autor logado."""
-    artigos = artigo_repo.obter_por_usuario(usuario_logado["id"])
+    artigos = artigo_repo.obter_por_usuario(usuario_logado.id)
 
     return templates.TemplateResponse(
         "artigos/listar.html",
@@ -1642,7 +1632,7 @@ async def meus_artigos(
 @requer_autenticacao([Perfil.AUTOR.value, Perfil.ADMIN.value])
 async def get_cadastrar(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exibe o formulário de cadastro de artigo."""
     categorias = categoria_repo.obter_todos()
@@ -1662,7 +1652,7 @@ async def get_cadastrar(
 @requer_autenticacao([Perfil.AUTOR.value, Perfil.ADMIN.value])
 async def post_cadastrar(
     request: Request,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
     titulo: str = Form(""),
     resumo: str = Form(""),
     conteudo: str = Form(""),
@@ -1706,14 +1696,14 @@ async def post_cadastrar(
             resumo=dto.resumo,
             conteudo=dto.conteudo,
             status=dto.status,
-            usuario_id=usuario_logado["id"],
+            usuario_id=usuario_logado.id,
             categoria_id=dto.categoria_id
         )
 
         artigo_id = artigo_repo.inserir(novo_artigo)
 
         if artigo_id:
-            logger.info(f"Artigo '{dto.titulo}' criado por usuário {usuario_logado['id']}")
+            logger.info(f"Artigo '{dto.titulo}' criado por usuário {usuario_logado.id}")
             informar_sucesso(request, "Artigo cadastrado com sucesso!")
             return RedirectResponse(
                 url="/artigos/meus",
@@ -1736,12 +1726,10 @@ async def post_cadastrar(
                 "conteudo": conteudo,
                 "status_artigo": status_artigo,
                 "categoria_id": categoria_id,
+                "categorias": categorias,
+                "StatusArtigo": StatusArtigo,
             },
             campo_padrao="titulo",
-            contexto_extra={
-                "categorias": categorias,
-                "status_artigo": StatusArtigo,
-            }
         )
 
 
@@ -1750,7 +1738,7 @@ async def post_cadastrar(
 async def get_editar(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exibe o formulário de edição de artigo."""
     artigo = artigo_repo.obter_por_id(id)
@@ -1763,7 +1751,7 @@ async def get_editar(
         )
 
     # Verifica se o usuário é o autor do artigo ou admin
-    if artigo.usuario_id != usuario_logado["id"] and usuario_logado["perfil"] != Perfil.ADMIN.value:
+    if artigo.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
         informar_erro(request, "Você não tem permissão para editar este artigo.")
         return RedirectResponse(
             url="/artigos/meus",
@@ -1789,7 +1777,7 @@ async def get_editar(
 async def post_editar(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
     titulo: str = Form(""),
     resumo: str = Form(""),
     conteudo: str = Form(""),
@@ -1817,7 +1805,7 @@ async def post_editar(
         )
 
     # Verifica permissão
-    if artigo_atual.usuario_id != usuario_logado["id"] and usuario_logado["perfil"] != Perfil.ADMIN.value:
+    if artigo_atual.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
         informar_erro(request, "Você não tem permissão para editar este artigo.")
         return RedirectResponse(
             url="/artigos/meus",
@@ -1851,7 +1839,7 @@ async def post_editar(
         artigo_atual.categoria_id = dto.categoria_id
 
         if artigo_repo.alterar(artigo_atual):
-            logger.info(f"Artigo {id} alterado por usuário {usuario_logado['id']}")
+            logger.info(f"Artigo {id} alterado por usuário {usuario_logado.id}")
             informar_sucesso(request, "Artigo alterado com sucesso!")
             return RedirectResponse(
                 url="/artigos/meus",
@@ -1875,13 +1863,11 @@ async def post_editar(
                 "status_artigo": status_artigo,
                 "categoria_id": categoria_id,
                 "id": id,
-            },
-            campo_padrao="titulo",
-            contexto_extra={
                 "artigo": artigo_atual,
                 "categorias": categorias,
-                "status_artigo": StatusArtigo,
-            }
+                "StatusArtigo": StatusArtigo,
+            },
+            campo_padrao="titulo",
         )
 
 
@@ -1890,7 +1876,7 @@ async def post_editar(
 async def post_excluir(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exclui um artigo."""
     ip = obter_identificador_cliente(request)
@@ -1913,7 +1899,7 @@ async def post_excluir(
         )
 
     # Verifica permissão
-    if artigo.usuario_id != usuario_logado["id"] and usuario_logado["perfil"] != Perfil.ADMIN.value:
+    if artigo.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
         informar_erro(request, "Você não tem permissão para excluir este artigo.")
         return RedirectResponse(
             url="/artigos/meus",
@@ -1921,7 +1907,7 @@ async def post_excluir(
         )
 
     if artigo_repo.excluir(id):
-        logger.info(f"Artigo {id} excluído por usuário {usuario_logado['id']}")
+        logger.info(f"Artigo {id} excluído por usuário {usuario_logado.id}")
         informar_sucesso(request, f"Artigo '{artigo.titulo}' excluído com sucesso!")
     else:
         informar_erro(request, "Erro ao excluir artigo.")
@@ -1937,7 +1923,7 @@ async def post_excluir(
 async def post_publicar(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Publica um artigo."""
     artigo = artigo_repo.obter_por_id(id)
@@ -1949,7 +1935,7 @@ async def post_publicar(
         )
 
     # Verifica permissão
-    if artigo.usuario_id != usuario_logado["id"] and usuario_logado["perfil"] != Perfil.ADMIN.value:
+    if artigo.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
         informar_erro(request, "Você não tem permissão para publicar este artigo.")
         return RedirectResponse(
             url="/artigos/meus",
@@ -1957,7 +1943,7 @@ async def post_publicar(
         )
 
     if artigo_repo.alterar_status(id, StatusArtigo.PUBLICADO.value):
-        logger.info(f"Artigo {id} publicado por usuário {usuario_logado['id']}")
+        logger.info(f"Artigo {id} publicado por usuário {usuario_logado.id}")
         informar_sucesso(request, "Artigo publicado com sucesso!")
     else:
         informar_erro(request, "Erro ao publicar artigo.")
@@ -2018,7 +2004,7 @@ async def listar_artigos(
 async def ler_artigo(
     request: Request,
     id: int,
-    usuario_logado: Optional[dict] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """Exibe um artigo completo (somente para usuários autenticados)."""
     artigo = artigo_repo.obter_por_id(id)
@@ -2032,7 +2018,7 @@ async def ler_artigo(
 
     # Verifica se o artigo está publicado ou se o usuário é o autor/admin
     if artigo.status != StatusArtigo.PUBLICADO.value:
-        if artigo.usuario_id != usuario_logado["id"] and usuario_logado["perfil"] != Perfil.ADMIN.value:
+        if artigo.usuario_id != usuario_logado.id and not usuario_logado.is_admin():
             informar_erro(request, "Este artigo não está disponível.")
             return RedirectResponse(
                 url="/artigos",
@@ -2831,356 +2817,60 @@ Crie o arquivo `templates/artigos/ler.html`:
 
 Agora vamos modificar os templates base do boilerplate para incluir a navegação do blog e criar a página inicial.
 
+> **IMPORTANTE**: NÃO substitua os templates base inteiros! Adicione apenas os novos itens de menu conforme instruído abaixo.
+
 ### 8.1 Atualizando o Template Base Privada
 
-O template `templates/base_privada.html` já existe no boilerplate. Precisamos adicionar os links de navegação para Categorias (admin) e Artigos (autores).
+O template `templates/base_privada.html` já existe no boilerplate. Você precisa adicionar os links de navegação para **Categorias** (admin) e **Meus Artigos** (autores).
 
-Localize a seção de navegação no arquivo `templates/base_privada.html` e modifique para incluir os novos itens de menu:
+#### Passo 1: Adicionar link de Categorias (apenas para Admin)
+
+No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if request.session.get('usuario_logado')['perfil'] == 'Administrador' %}`).
+
+Após o link de **Backup**, adicione o link para **Categorias**:
 
 ```html
-{% set erros = erros if erros is defined else {} %}
-{% set dados = dados if dados is defined else {} %}
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ APP_NAME }}</title>
-
-    <!-- Bootstrap CSS (local – permite troca de temas) -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- CSS Customizado -->
-    <link rel="stylesheet" href="/static/css/custom.css">
-
-    <!-- Widget de Chat CSS -->
-    <link rel="stylesheet" href="/static/css/widget-chat.css">
-
-    {# Bloco que pode ser sobrescrito nas páginas filhas #}
-    {% block head %}{% endblock %}
-</head>
-
-{# Inserimos o data-attribute no body em vez de injetar JS - evita erros de parser/editor #}
-<body class="d-flex flex-column min-vh-100"
-      {% if request.session.get('usuario_logado') %}
-          data-usuario-id="{{ request.session.get('usuario_logado')['id'] | e }}"
-      {% endif %}>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">{{ APP_NAME }}</a>
-
-            <button class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Alternar navegação">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Navegação Principal -->
-                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == '/usuario' else '' }}"
-                           href="/usuario"><i class="bi bi-house-door"></i> Dashboard</a>
+                        <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
+                            href="/admin/categorias/listar"
+                            {{ 'aria-current=page' if '/admin/categorias/' in request.path else '' }}>Categorias</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if '/usuario/perfil/' in request.path else '' }}"
-                           href="/usuario/perfil/visualizar"><i class="bi bi-person"></i> Perfil</a>
-                    </li>
-
-                    {% if request.session.get('usuario_logado') and
-                          request.session.get('usuario_logado')['perfil'] == 'Administrador' %}
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/chamados/' in request.path else '' }}"
-                               href="/admin/chamados/listar"><i class="bi bi-headset"></i> Chamados</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/usuarios/' in request.path else '' }}"
-                               href="/admin/usuarios/listar"><i class="bi bi-people"></i> Usuários</a>
-                        </li>
-                        <!-- NOVO: Link para Categorias (apenas admin) -->
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
-                               href="/admin/categorias/listar"><i class="bi bi-folder"></i> Categorias</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/tema' in request.path else '' }}"
-                               href="/admin/tema"><i class="bi bi-palette"></i> Tema</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/auditoria' in request.path else '' }}"
-                               href="/admin/auditoria"><i class="bi bi-journal-text"></i> Auditoria</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/admin/backups/' in request.path else '' }}"
-                               href="/admin/backups/listar"><i class="bi bi-server"></i> Backup</a>
-                        </li>
-                    {% else %}
-                        <!-- NOVO: Link para Meus Artigos (apenas autores) -->
-                        {% if request.session.get('usuario_logado') and
-                              request.session.get('usuario_logado')['perfil'] == 'Autor' %}
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/artigos/meus' in request.path or '/artigos/cadastrar' in request.path or '/artigos/editar' in request.path else '' }}"
-                               href="/artigos/meus"><i class="bi bi-file-earmark-text"></i> Meus Artigos</a>
-                        </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link {{ 'active' if '/chamados/' in request.path else '' }}"
-                               href="/chamados/listar">Chamados</a>
-                        </li>
-                    {% endif %}
-                </ul>
-
-                <!-- Dropdown do Usuário -->
-                <ul class="navbar-nav">
-                    {% include 'components/navbar_user_dropdown.html' %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Container para Toasts (bottom-right) -->
-    <div id="toast-container"
-         class="toast-container position-fixed bottom-0 end-0 p-4 toast-offset">
-    </div>
-
-    <!-- Conteúdo Principal -->
-    <main class="container d-flex flex-column flex-fill my-4">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Modais genéricos -->
-    {% include 'components/modal_confirmacao.html' %}
-    {% include 'components/modal_alerta.html' %}
-
-    <!-- Chat Widget -->
-    {% include 'components/chat_widget.html' %}
-
-    <!-- Footer -->
-    <footer class="bg-light text-center text-muted py-3 mt-auto">
-        <div class="container">
-            <p class="mb-0">&copy; 2025 {{ APP_NAME }}. Todos os direitos reservados.</p>
-        </div>
-    </footer>
-
-    <!-- Dados de mensagens (hidden) -->
-    <script id="mensagens-data" type="application/json">
-        {{ obter_mensagens(request) | tojson }}
-    </script>
-
-    <!-- Configurações globais da aplicação -->
-    <script>
-        // Delay configurável para auto-hide dos toasts
-        window.TOAST_AUTO_HIDE_DELAY_MS = {{ TOAST_AUTO_HIDE_DELAY_MS }};
-    </script>
-
-    <!-- Bootstrap 5.3.8 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-
-    <!-- Scripts personalizados -->
-    <script src="/static/js/toasts.js"></script>
-    <script src="/static/js/modal-alerta.js"></script>
-    <script src="/static/js/validador-senha.js"></script>
-    <script src="/static/js/mascara-input.js"></script>
-    <script src="/static/js/widget-chat.js" defer></script>
-
-    <!-- Script de inicialização -->
-    <script>
-        // Nota: o ID do usuário agora está disponível em document.body.dataset.usuarioId
-        // (definido no atributo data-usuario-id do <body>) — evita injeção direta de Jinja no JS.
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Exemplo opcional de leitura do atributo (pode ser usado pelo chatWidget internamente):
-            // const usuarioId = document.body.dataset.usuarioId || null;
-            // console.log('usuarioId:', usuarioId);
-
-            if (typeof chatWidget !== 'undefined') {
-                chatWidget.init();
-            }
-        });
-    </script>
-
-    {# Bloco para inserir scripts adicionais nas páginas filhas #}
-    {% block scripts %}{% endblock %}
-</body>
-</html>
 ```
 
-> **Modificações importantes:**
-> - Adicionado link para "Categorias" no menu do Administrador
-> - Adicionado link para "Meus Artigos" no menu do Autor
+#### Passo 2: Adicionar link de Meus Artigos (para Autores e Admins)
+
+Ainda no mesmo arquivo, após o bloco do administrador e ANTES do `{% else %}`, adicione uma verificação para autores:
+
+```html
+                    {% endif %}
+                    {% if request.session.get('usuario_logado')['perfil'] in ['Administrador', 'Autor'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/artigos/meus' in request.path else '' }}"
+                            href="/artigos/meus"
+                            {{ 'aria-current=page' if '/artigos/meus' in request.path else '' }}>Meus Artigos</a>
+                    </li>
+```
+
+> **Resultado esperado:** O menu do administrador terá o link "Categorias", e tanto administradores quanto autores verão o link "Meus Artigos".
 
 ### 8.2 Atualizando o Template Base Pública
 
-O template `templates/base_publica.html` é usado para páginas públicas. Precisamos adicionar o link para "Artigos" na navegação.
+O template `templates/base_publica.html` é usado para páginas públicas. Você precisa adicionar o link para **Artigos** na navegação.
 
-Atualize o arquivo `templates/base_publica.html`:
+#### Passo único: Adicionar link de Artigos
+
+No arquivo `templates/base_publica.html`, localize a seção de navegação (`<ul class="navbar-nav me-auto">`).
+
+Após o link de **Início** e ANTES do link de **Sobre**, adicione o link para **Artigos**:
 
 ```html
-{% set erros = erros if erros is defined else {} %}
-{% set dados = dados if dados is defined else {} %}
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ APP_NAME }} :: {% block titulo %}{% endblock %}</title>
-
-    <!-- Bootstrap CSS (local - permite troca de temas) -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- CSS Customizado -->
-    <link rel="stylesheet" href="/static/css/custom.css">
-
-    <!-- Chat Widget CSS (apenas para usuários logados) -->
-    {% if request.session.get('usuario_logado') %}
-    <link rel="stylesheet" href="/static/css/widget-chat.css">
-    {% endif %}
-
-    {% block head %}{% endblock %}
-</head>
-
-<body class="d-flex flex-column min-vh-100">
-    <!-- Navbar Pública -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand d-flex align-middle" href="/index">
-                <img src="/static/img/logo.svg" alt="Logo" height="30" class="d-inline-block align-text-top me-2"
-                    onerror="this.style.display='none'">
-                {{ APP_NAME }}
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == '/' or request.path == '/index' else '' }}"
-                            href="/"><i class="bi bi-house-door"></i> Início</a>
-                    </li>
-                    <!-- NOVO: Link para Artigos -->
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/artigos' in request.path and '/meus' not in request.path else '' }}"
                             href="/artigos"><i class="bi bi-newspaper"></i> Artigos</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == '/sobre' else '' }}"
-                            href="/sobre"><i class="bi bi-info-circle"></i> Sobre</a>
-                    </li>
-                </ul>
-
-                <!-- Menu do Usuário (se logado) ou Botões de Login/Cadastro -->
-                <ul class="navbar-nav">
-                    {% if request.session.get('usuario_logado') %}
-                    {% include 'components/navbar_user_dropdown.html' %}
-                    {% else %}
-                    <!-- Botões de Login e Cadastro -->
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == '/login' else '' }}"
-                            href="/login">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.path == '/cadastrar' else '' }}"
-                            href="/cadastrar">Cadastrar</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Container para Toasts (bottom-right) -->
-    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-4 mb-5"></div>
-
-    <!-- Chat Widget (apenas para usuários logados) -->
-    {% if request.session.get('usuario_logado') %}
-    {% include 'components/chat_widget.html' %}
-    {% endif %}
-
-    <!-- Conteúdo Principal -->
-    <main class="container d-flex flex-column flex-fill my-4">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Modal de Confirmação (componente genérico) -->
-    {% include 'components/modal_confirmacao.html' %}
-
-    <!-- Modal de Alerta (componente genérico) -->
-    {% include 'components/modal_alerta.html' %}
-
-    <!-- Footer -->
-    <footer class="bg-light text-center text-muted py-3 mt-auto">
-        <div class="container">
-            <p class="mb-0">&copy; 2025 {{ APP_NAME }}. Todos os direitos reservados.</p>
-        </div>
-    </footer>
-
-    <!-- Dados de mensagens (hidden) -->
-    <script id="mensagens-data" type="application/json">
-        {{ obter_mensagens(request) | tojson }}
-    </script>
-
-    <!-- Configurações globais da aplicação -->
-    <script>
-        // Delay configurável para auto-hide dos toasts
-        window.TOAST_AUTO_HIDE_DELAY_MS = {{ TOAST_AUTO_HIDE_DELAY_MS }};
-    </script>
-
-    <!-- Bootstrap 5.3.8 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-
-    <!-- Script de Toasts -->
-    <script src="/static/js/toasts.js"></script>
-
-    <!-- Script de Modal de Alerta -->
-    <script src="/static/js/modal-alerta.js"></script>
-
-    <!-- Script de Validação de Senha -->
-    <script src="/static/js/validador-senha.js"></script>
-
-    <!-- Script de Máscaras de Input -->
-    <script src="/static/js/mascara-input.js"></script>
-
-    <!-- Script de Auxiliares de Exclusão -->
-    <script src="/static/js/auxiliares-exclusao.js"></script>
-
-    <!-- Chat Widget JS (apenas para usuários logados) -->
-    {% if request.session.get('usuario_logado') %}
-    <script src="/static/js/widget-chat.js" defer></script>
-    <script>
-        // Guardar ID do usuário logado no body para o chat
-        document.body.dataset.usuarioId = {{ request.session.get('usuario_logado')['id'] }};
-
-        // Inicializar chat quando DOM estiver pronto
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof chatWidget !== 'undefined') {
-                chatWidget.init();
-            }
-        });
-    </script>
-    {% endif %}
-
-    {% block scripts %}{% endblock %}
-</body>
-
-</html>
 ```
 
-> **Modificação importante:**
-> - Adicionado link para "Artigos" na navegação pública
+> **Resultado esperado:** O menu público terá os links: Início → **Artigos** → Sobre
 
 ### 8.3 Criando a Home Page do Blog
 
@@ -3393,7 +3083,7 @@ from util.logger_config import logger
 from repo import artigo_repo, categoria_repo
 
 router = APIRouter()
-templates_public = criar_templates("templates")
+templates_public = criar_templates()
 
 # Rate limiter para páginas públicas (proteção contra DDoS)
 public_limiter = DynamicRateLimiter(
@@ -3499,199 +3189,67 @@ async def sobre(request: Request):
 
 ### 9.2 Configurando o main.py
 
-O arquivo `main.py` é o ponto de entrada da aplicação. Ele precisa importar os novos repositórios e rotas.
+O arquivo `main.py` é o ponto de entrada da aplicação. Você precisa adicionar os imports e registrar os novos repositórios e rotas.
 
-Atualize o arquivo `main.py`:
+> **IMPORTANTE**: NÃO substitua o main.py inteiro! Adicione apenas as modificações conforme instruído abaixo.
+
+#### Passo 1: Adicionar imports dos repositórios
+
+No início do arquivo `main.py`, localize a seção de imports de repositórios e adicione:
 
 ```python
-# ------------------------------------------------------------
-# main.py – Aplicação FastAPI
-# ------------------------------------------------------------
-
-import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.exceptions import RequestValidationError
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from pathlib import Path
-
-# ------------------------------------------------------------
-# Configurações
-# ------------------------------------------------------------
-from util.config import APP_NAME, SECRET_KEY, HOST, PORT, RELOAD, VERSION
-from util.logger_config import logger
-from util.csrf_protection import MiddlewareProtecaoCSRF
-from util.exception_handlers import (
-    http_exception_handler,
-    validation_exception_handler,
-    generic_exception_handler,
-    form_validation_exception_handler,
-)
-from util.exceptions import ErroValidacaoFormulario
-from util.seed_data import inicializar_dados
-
-# ------------------------------------------------------------
-# Repositórios
-# ------------------------------------------------------------
-from repo import (
-    categoria_repo,      # NOVO: Repositório de categorias
-    artigo_repo,         # NOVO: Repositório de artigos
-    usuario_repo,
-    configuracao_repo,
-    chamado_repo,
-    chamado_interacao_repo,
-    indices_repo,
-    chat_sala_repo,
-    chat_participante_repo,
-    chat_mensagem_repo,
-)
-
-# ------------------------------------------------------------
-# Rotas
-# ------------------------------------------------------------
-from routes.auth_routes import router as auth_router
-from routes.chamados_routes import router as chamados_router
-from routes.admin_usuarios_routes import router as admin_usuarios_router
-from routes.admin_configuracoes_routes import router as admin_config_router
-from routes.admin_backups_routes import router as admin_backups_router
-from routes.admin_chamados_routes import router as admin_chamados_router
-from routes.usuario_routes import router as usuario_router
-from routes.chat_routes import router as chat_router
-from routes.public_routes import router as public_router
-from routes.examples_routes import router as examples_router
-from routes.admin_categorias_routes import router as admin_categorias_router  # NOVO
-from routes.artigos_routes import router as artigos_router                    # NOVO
-
-
-# ------------------------------------------------------------
-# Função de criação da aplicação
-# ------------------------------------------------------------
-def create_app() -> FastAPI:
-    """Cria e configura a instância principal da aplicação."""
-    app = FastAPI(title=APP_NAME, version=VERSION)
-
-    # ------------------------------------------------------------
-    # Middlewares
-    # ------------------------------------------------------------
-    app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-    app.add_middleware(MiddlewareProtecaoCSRF)
-    logger.info("✅ Middlewares registrados com sucesso")
-
-    # ------------------------------------------------------------
-    # Handlers de exceção
-    # ------------------------------------------------------------
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(ErroValidacaoFormulario, form_validation_exception_handler)
-    app.add_exception_handler(Exception, generic_exception_handler)
-    logger.info("✅ Exception handlers configurados")
-
-    # ------------------------------------------------------------
-    # Arquivos estáticos
-    # ------------------------------------------------------------
-    static_path = Path("static")
-    if static_path.exists():
-        app.mount("/static", StaticFiles(directory="static"), name="static")
-        logger.info("📂 Arquivos estáticos montados em /static")
-    else:
-        logger.warning(
-            "⚠️ Diretório 'static' não encontrado – rotas estáticas não foram montadas"
-        )
-
-    # ------------------------------------------------------------
-    # Banco de dados e seeds
-    # ------------------------------------------------------------
-    try:
-        logger.info("🛠️ Criando/verificando tabelas do banco de dados...")
-        usuario_repo.criar_tabela()
-        configuracao_repo.criar_tabela()
-        chamado_repo.criar_tabela()
-        chamado_interacao_repo.criar_tabela()
-        chat_sala_repo.criar_tabela()
-        chat_participante_repo.criar_tabela()
-        chat_mensagem_repo.criar_tabela()
-        indices_repo.criar_indices()
-        categoria_repo.criar_tabela()    # NOVO: Criar tabela de categorias
-        artigo_repo.criar_tabela()       # NOVO: Criar tabela de artigos
-        logger.info("✅ Tabelas e índices criados/verificados com sucesso")
-
-        inicializar_dados()
-        logger.info("🌱 Dados iniciais carregados com sucesso")
-    except Exception as e:
-        logger.error(f"❌ Erro ao preparar banco de dados: {e}", exc_info=True)
-        raise
-
-    # ------------------------------------------------------------
-    # Registro das rotas
-    # ------------------------------------------------------------
-    routers = [
-        auth_router,
-        chamados_router,
-        admin_usuarios_router,
-        admin_config_router,
-        admin_backups_router,
-        admin_chamados_router,
-        usuario_router,
-        chat_router,
-        public_router,
-        examples_router,
-        admin_categorias_router,  # NOVO: Rotas de administração de categorias
-        artigos_router,           # NOVO: Rotas de artigos
-    ]
-    for r in routers:
-        app.include_router(r)
-        logger.info(
-            f"🔗 Router incluído: {r.prefix if hasattr(r, 'prefix') else 'sem prefixo'}"
-        )
-
-    # ------------------------------------------------------------
-    # Health Check
-    # ------------------------------------------------------------
-    @app.get("/health")
-    async def health_check():
-        return {"status": "healthy"}
-
-    logger.info(f"🚀 {APP_NAME} inicializado com sucesso (v{VERSION})")
-    return app
-
-
-# ------------------------------------------------------------
-# Cria a aplicação (para o Uvicorn)
-# ------------------------------------------------------------
-app = create_app()
-
-# ------------------------------------------------------------
-# Execução direta (para `python main.py`)
-# ------------------------------------------------------------
-if __name__ == "__main__":
-    logger.info("=" * 70)
-    logger.info(f"🟢 Iniciando {APP_NAME} v{VERSION}")
-    logger.info(f"🌐 Acesse: http://{HOST}:{PORT}")
-    logger.info(f"🔁 Hot reload: {'Ativado' if RELOAD else 'Desativado'}")
-    logger.info(f"📘 Docs: http://{HOST}:{PORT}/docs")
-    logger.info("=" * 70)
-
-    try:
-        uvicorn.run(
-            "main:app",
-            host=HOST,
-            port=PORT,
-            reload=RELOAD,
-            log_level="info",
-        )
-    except KeyboardInterrupt:
-        logger.info("🛑 Servidor encerrado pelo usuário")
-    except Exception as e:
-        logger.error(f"❌ Erro ao iniciar servidor: {e}", exc_info=True)
-        raise
+from repo import categoria_repo, artigo_repo
 ```
 
-> **Modificações importantes destacadas com comentários `# NOVO`:**
-> - Importação dos repositórios `categoria_repo` e `artigo_repo`
-> - Importação das rotas `admin_categorias_router` e `artigos_router`
-> - Criação das tabelas de categorias e artigos no startup
-> - Registro dos novos routers na aplicação
+#### Passo 2: Adicionar imports das rotas
+
+Localize a seção de imports de rotas e adicione:
+
+```python
+from routes.admin_categorias_routes import router as admin_categorias_router
+from routes.artigos_routes import router as artigos_router
+```
+
+#### Passo 3: Adicionar tabelas na lista TABELAS
+
+No arquivo `main.py`, localize a lista `TABELAS` e adicione as novas tabelas:
+
+```python
+TABELAS = [
+    (usuario_repo, "usuario"),
+    (configuracao_repo, "configuracao"),
+    (chamado_repo, "chamado"),
+    (chamado_interacao_repo, "chamado_interacao"),
+    (chat_sala_repo, "chat_sala"),
+    (chat_participante_repo, "chat_participante"),
+    (chat_mensagem_repo, "chat_mensagem"),
+    (categoria_repo, "categoria"),  # NOVO
+    (artigo_repo, "artigo"),        # NOVO
+]
+```
+
+#### Passo 4: Adicionar routers na lista ROUTERS
+
+Localize a lista `ROUTERS` e adicione os novos routers **ANTES** de `public_router` e `examples_router`:
+
+```python
+ROUTERS = [
+    (auth_router, ["Autenticação"], "autenticação"),
+    (chamados_router, ["Chamados"], "chamados"),
+    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
+    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
+    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
+    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (usuario_router, ["Usuário"], "usuário"),
+    (chat_router, ["Chat"], "chat"),
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO
+    (artigos_router, ["Artigos"], "artigos"),  # NOVO
+    (public_router, ["Público"], "público"),  # Deve ficar por último
+    (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
+]
+```
+
+> **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
 
 ---
 
