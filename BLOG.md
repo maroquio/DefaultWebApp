@@ -44,7 +44,8 @@ Antes de começar, certifique-se de ter instalado:
 1. Acesse o repositório upstream: https://github.com/maroquio/DefaultWebApp
 2. Clique no botão **Fork** no canto superior direito
 3. Selecione sua conta como destino do fork
-4. Opcionalmente, renomeie o repositório para "SimpleBlog" ou outro nome de sua preferência
+4. **Renomeie o repositório para "BlogSimples"** no campo "Repository name"
+5. Clique em **Create fork**
 
 ---
 
@@ -54,10 +55,27 @@ Após criar o fork, clone-o para sua máquina:
 
 ```bash
 # Substitua SEU_USUARIO pelo seu usuário do GitHub
-git clone https://github.com/SEU_USUARIO/SimpleBlog.git
-cd SimpleBlog
+git clone https://github.com/SEU_USUARIO/BlogSimples.git
+cd BlogSimples
+```
 
-# Configure o upstream para receber atualizações futuras
+### 3.1. Configurando o Git
+
+Configure seu nome e email para os commits:
+
+```bash
+# Configure seu nome (usado nos commits)
+git config user.name "Seu Nome Completo"
+
+# Configure seu email (deve ser o mesmo do GitHub)
+git config user.email "seu.email@exemplo.com"
+```
+
+### 3.2. Configurando o upstream (opcional)
+
+Para receber atualizações futuras do repositório original:
+
+```bash
 git remote add upstream https://github.com/maroquio/DefaultWebApp.git
 ```
 
