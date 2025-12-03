@@ -163,6 +163,22 @@ class Perfil(EnumEntidade):
 - **Autor**: Pode criar, editar e publicar artigos
 - **Leitor**: Pode ler artigos publicados
 
+### 5.1. Atualizando o UsuarioLogado (Opcional)
+
+O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` que representa o usuário autenticado. Para adicionar métodos auxiliares para os novos perfis, localize a classe e adicione os seguintes métodos após os existentes (`is_admin()`, `is_cliente()`, `is_vendedor()`):
+
+```python
+    def is_autor(self) -> bool:
+        """Verifica se o usuário é autor."""
+        return self.perfil == Perfil.AUTOR.value
+
+    def is_leitor(self) -> bool:
+        """Verifica se o usuário é leitor."""
+        return self.perfil == Perfil.LEITOR.value
+```
+
+> **Nota:** Esses métodos são opcionais. Você também pode usar `usuario_logado.perfil == 'Autor'` diretamente no código.
+
 ---
 
 ## 6. Criando o CRUD de Categorias
@@ -1549,7 +1565,7 @@ class CriarArtigoDTO(BaseModel):
         )
     )
     _validar_status = field_validator("status")(validar_tipo("Status", StatusArtigo))
-    _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo())
+    _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo("Categoria"))
 
 
 class AlterarArtigoDTO(BaseModel):
@@ -1560,7 +1576,7 @@ class AlterarArtigoDTO(BaseModel):
     status: str
     categoria_id: int
 
-    _validar_id = field_validator("id")(validar_id_positivo())
+    _validar_id = field_validator("id")(validar_id_positivo("ID"))
     _validar_titulo = field_validator("titulo")(
         validar_string_obrigatoria(
             nome_campo="Título",
@@ -1579,7 +1595,7 @@ class AlterarArtigoDTO(BaseModel):
         )
     )
     _validar_status = field_validator("status")(validar_tipo("Status", StatusArtigo))
-    _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo())
+    _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo("Categoria"))
 ```
 
 ### 7.5. Rotas de Artigos
@@ -2270,7 +2286,7 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
 
                         <div class="col-12 mb-3">
                             <label for="conteudo" class="form-label">Conteúdo <span class="text-danger">*</span></label>
-                            <textarea name="conteudo" id="conteudo" required>{{ dados_formulario.conteudo if dados_formulario else '' }}</textarea>
+                            <textarea name="conteudo" id="conteudo" required>{{ dados.conteudo if dados is defined and dados.conteudo else '' }}</textarea>
                             <small class="form-text text-muted">
                                 Use Markdown para formatar seu texto. Mínimo de 50 caracteres.
                             </small>
@@ -2388,7 +2404,7 @@ Crie o arquivo `templates/artigos/editar.html`:
                                 label='Título do Artigo',
                                 type='text',
                                 required=true,
-                                value=dados_formulario.titulo if dados_formulario else artigo.titulo,
+                                value=dados.titulo if dados is defined and dados.titulo else artigo.titulo,
                                 placeholder='Digite um título atrativo para seu artigo...',
                                 help_text='O título deve ter entre 5 e 200 caracteres'
                             ) }}
@@ -2399,7 +2415,7 @@ Crie o arquivo `templates/artigos/editar.html`:
                             {% for cat in categorias %}
                                 {% set _ = categorias_dict.update({cat.id|string: cat.nome}) %}
                             {% endfor %}
-                            {% set categoria_valor = dados_formulario.categoria_id if dados_formulario else artigo.categoria_id %}
+                            {% set categoria_valor = dados.categoria_id if dados is defined and dados.categoria_id else artigo.categoria_id %}
                             {{ field(
                                 name='categoria_id',
                                 label='Categoria',
@@ -2416,7 +2432,7 @@ Crie o arquivo `templates/artigos/editar.html`:
                                 label='Resumo',
                                 type='textarea',
                                 required=false,
-                                value=dados_formulario.resumo if dados_formulario else artigo.resumo,
+                                value=dados.resumo if dados is defined and dados.resumo else artigo.resumo,
                                 placeholder='Um breve resumo do artigo que será exibido na listagem...',
                                 help_text='Opcional. Máximo de 500 caracteres.',
                                 rows=2
@@ -2425,14 +2441,14 @@ Crie o arquivo `templates/artigos/editar.html`:
 
                         <div class="col-12 mb-3">
                             <label for="conteudo" class="form-label">Conteúdo <span class="text-danger">*</span></label>
-                            <textarea name="conteudo" id="conteudo" required>{{ dados_formulario.conteudo if dados_formulario else artigo.conteudo }}</textarea>
+                            <textarea name="conteudo" id="conteudo" required>{{ dados.conteudo if dados is defined and dados.conteudo else artigo.conteudo }}</textarea>
                             <small class="form-text text-muted">
                                 Use Markdown para formatar seu texto. Mínimo de 50 caracteres.
                             </small>
                         </div>
 
                         <div class="col-md-6">
-                            {% set status_atual = dados_formulario.status_artigo if dados_formulario else artigo.status %}
+                            {% set status_atual = dados.status_artigo if dados is defined and dados.status_artigo else artigo.status %}
                             {{ field(
                                 name='status_artigo',
                                 label='Status',
@@ -2843,9 +2859,11 @@ Agora vamos modificar os templates base do boilerplate para incluir a navegaçã
 
 O template `templates/base_privada.html` já existe no boilerplate. Você precisa adicionar os links de navegação para **Categorias** (admin) e **Meus Artigos** (autores).
 
+> **IMPORTANTE**: O projeto utiliza o dataclass `UsuarioLogado` (injetado automaticamente pelo decorator `@requer_autenticacao`). Nos templates, use `usuario_logado.perfil` em vez de `request.session.get('usuario_logado')['perfil']`.
+
 #### Passo 1: Adicionar link de Categorias (apenas para Admin)
 
-No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if request.session.get('usuario_logado')['perfil'] == 'Administrador' %}`).
+No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}`).
 
 Após o link de **Backup**, adicione o link para **Categorias**:
 
@@ -2863,7 +2881,7 @@ Ainda no mesmo arquivo, após o bloco do administrador e ANTES do `{% else %}`, 
 
 ```html
                     {% endif %}
-                    {% if request.session.get('usuario_logado')['perfil'] in ['Administrador', 'Autor'] %}
+                    {% if usuario_logado and usuario_logado.perfil in ['Administrador', 'Autor'] %}
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if '/artigos/meus' in request.path else '' }}"
                             href="/artigos/meus"
@@ -3089,18 +3107,23 @@ Agora vamos atualizar as rotas públicas para exibir os artigos na home page e c
 
 ### 9.1 Atualizando as Rotas Públicas
 
-Atualize o arquivo `routes/public_routes.py` para carregar os artigos e categorias na página inicial:
+O arquivo `routes/public_routes.py` precisa ser atualizado para carregar os artigos e categorias na página inicial. Abaixo está o arquivo completo com as modificações necessárias:
+
+> **Modificações importantes em relação ao arquivo original:**
+> - Adicionado import de `obter_usuario_logado` do `util.auth_decorator`
+> - Adicionado import de `artigo_repo` e `categoria_repo`
+> - Rotas `/` e `/index` agora buscam artigos e categorias
 
 ```python
 from fastapi import APIRouter, Request, status
 from fastapi.responses import RedirectResponse
 
 from util.template_util import criar_templates
-from util.auth_decorator import obter_usuario_logado
+from util.auth_decorator import obter_usuario_logado  # NOVO
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.flash_messages import informar_erro
 from util.logger_config import logger
-from repo import artigo_repo, categoria_repo
+from repo import artigo_repo, categoria_repo  # NOVO
 
 router = APIRouter()
 templates_public = criar_templates()
@@ -3212,6 +3235,8 @@ async def sobre(request: Request):
 O arquivo `main.py` é o ponto de entrada da aplicação. Você precisa adicionar os imports e registrar os novos repositórios e rotas.
 
 > **IMPORTANTE**: NÃO substitua o main.py inteiro! Adicione apenas as modificações conforme instruído abaixo.
+
+> **NOTA**: O projeto atual já utiliza `sqlite3.Error` para tratamento de exceções. Se você receber erros relacionados ao `sqlite3`, verifique se o import está presente no início do arquivo: `import sqlite3`.
 
 #### Passo 1: Adicionar imports dos repositórios
 
