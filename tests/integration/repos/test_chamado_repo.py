@@ -13,45 +13,17 @@ from util.security import criar_hash_senha
 from util.perfis import Perfil
 
 
-@pytest.fixture
-def usuario_chamado():
-    """Cria um usuário para associar aos chamados."""
-    usuario = Usuario(
-        id=0,
-        nome="Usuario Chamado",
-        email="usuario_chamado@example.com",
-        senha=criar_hash_senha("Senha@123"),
-        perfil=Perfil.CLIENTE.value
-    )
-    usuario_id = usuario_repo.inserir(usuario)
-    return usuario_id
-
-
-@pytest.fixture
-def chamado_teste(usuario_chamado):
-    """Cria um chamado de teste."""
-    chamado = Chamado(
-        id=0,
-        titulo="Chamado de Teste",
-        status=StatusChamado.ABERTO,
-        prioridade=PrioridadeChamado.MEDIA,
-        usuario_id=usuario_chamado
-    )
-    chamado_id = chamado_repo.inserir(chamado)
-    return chamado_id
-
-
 class TestChamadoRepoInserir:
     """Testes para a função inserir."""
 
-    def test_inserir_chamado_retorna_id(self, usuario_chamado):
+    def test_inserir_chamado_retorna_id(self, usuario_repo_teste):
         """Deve inserir chamado e retornar ID."""
         chamado = Chamado(
             id=0,
             titulo="Novo Chamado",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
 
         chamado_id = chamado_repo.inserir(chamado)
@@ -59,14 +31,14 @@ class TestChamadoRepoInserir:
         assert chamado_id is not None
         assert chamado_id > 0
 
-    def test_inserir_chamado_com_prioridade_alta(self, usuario_chamado):
+    def test_inserir_chamado_com_prioridade_alta(self, usuario_repo_teste):
         """Deve inserir chamado com prioridade alta."""
         chamado = Chamado(
             id=0,
             titulo="Chamado Urgente",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.ALTA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
 
         chamado_id = chamado_repo.inserir(chamado)
@@ -75,14 +47,14 @@ class TestChamadoRepoInserir:
         chamado_salvo = chamado_repo.obter_por_id(chamado_id)
         assert chamado_salvo.prioridade == PrioridadeChamado.ALTA
 
-    def test_inserir_chamado_com_prioridade_urgente(self, usuario_chamado):
+    def test_inserir_chamado_com_prioridade_urgente(self, usuario_repo_teste):
         """Deve inserir chamado com prioridade urgente."""
         chamado = Chamado(
             id=0,
             titulo="Chamado Urgentissimo",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.URGENTE,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
 
         chamado_id = chamado_repo.inserir(chamado)
@@ -95,13 +67,13 @@ class TestChamadoRepoInserir:
 class TestChamadoRepoObterPorId:
     """Testes para a função obter_por_id."""
 
-    def test_obter_por_id_existente(self, chamado_teste):
+    def test_obter_por_id_existente(self, chamado_repo_teste):
         """Deve retornar chamado quando ID existe."""
-        resultado = chamado_repo.obter_por_id(chamado_teste)
+        resultado = chamado_repo.obter_por_id(chamado_repo_teste)
 
         assert resultado is not None
-        assert resultado.id == chamado_teste
-        assert resultado.titulo == "Chamado de Teste"
+        assert resultado.id == chamado_repo_teste
+        assert resultado.titulo == "Chamado Repo Teste"
         assert resultado.status == StatusChamado.ABERTO
         assert resultado.prioridade == PrioridadeChamado.MEDIA
 
@@ -115,25 +87,25 @@ class TestChamadoRepoObterPorId:
 class TestChamadoRepoObterTodos:
     """Testes para a função obter_todos."""
 
-    def test_obter_todos_retorna_lista(self, usuario_chamado, chamado_teste):
+    def test_obter_todos_retorna_lista(self, usuario_repo_teste, chamado_repo_teste):
         """Deve retornar lista de chamados."""
-        resultado = chamado_repo.obter_todos(usuario_chamado)
+        resultado = chamado_repo.obter_todos(usuario_repo_teste)
 
         assert isinstance(resultado, list)
         assert len(resultado) >= 1
 
-    def test_obter_todos_inclui_chamado_criado(self, usuario_chamado):
+    def test_obter_todos_inclui_chamado_criado(self, usuario_repo_teste):
         """Deve incluir chamados criados na lista."""
         chamado = Chamado(
             id=0,
             titulo="Chamado para Listar",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.BAIXA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
-        resultado = chamado_repo.obter_todos(usuario_chamado)
+        resultado = chamado_repo.obter_todos(usuario_repo_teste)
 
         ids = [c.id for c in resultado]
         assert chamado_id in ids
@@ -142,13 +114,13 @@ class TestChamadoRepoObterTodos:
 class TestChamadoRepoObterPorUsuario:
     """Testes para a função obter_por_usuario."""
 
-    def test_obter_por_usuario_existente(self, usuario_chamado, chamado_teste):
+    def test_obter_por_usuario_existente(self, usuario_repo_teste, chamado_repo_teste):
         """Deve retornar chamados do usuário."""
-        resultado = chamado_repo.obter_por_usuario(usuario_chamado)
+        resultado = chamado_repo.obter_por_usuario(usuario_repo_teste)
 
         assert isinstance(resultado, list)
         assert len(resultado) >= 1
-        assert all(c.usuario_id == usuario_chamado for c in resultado)
+        assert all(c.usuario_id == usuario_repo_teste for c in resultado)
 
     def test_obter_por_usuario_sem_chamados(self):
         """Deve retornar lista vazia para usuário sem chamados."""
@@ -167,7 +139,7 @@ class TestChamadoRepoObterPorUsuario:
         assert isinstance(resultado, list)
         assert len(resultado) == 0
 
-    def test_obter_por_usuario_multiplos_chamados(self, usuario_chamado):
+    def test_obter_por_usuario_multiplos_chamados(self, usuario_repo_teste):
         """Deve retornar todos os chamados do usuário."""
         # Criar múltiplos chamados
         for i in range(3):
@@ -176,11 +148,11 @@ class TestChamadoRepoObterPorUsuario:
                 titulo=f"Chamado {i}",
                 status=StatusChamado.ABERTO,
                 prioridade=PrioridadeChamado.MEDIA,
-                usuario_id=usuario_chamado
+                usuario_id=usuario_repo_teste
             )
             chamado_repo.inserir(chamado)
 
-        resultado = chamado_repo.obter_por_usuario(usuario_chamado)
+        resultado = chamado_repo.obter_por_usuario(usuario_repo_teste)
 
         assert len(resultado) >= 3
 
@@ -188,38 +160,38 @@ class TestChamadoRepoObterPorUsuario:
 class TestChamadoRepoAtualizarStatus:
     """Testes para a função atualizar_status."""
 
-    def test_atualizar_status_para_em_analise(self, chamado_teste):
+    def test_atualizar_status_para_em_analise(self, chamado_repo_teste):
         """Deve atualizar status para Em Análise."""
         resultado = chamado_repo.atualizar_status(
-            chamado_teste,
+            chamado_repo_teste,
             StatusChamado.EM_ANALISE.value
         )
 
         assert resultado is True
-        chamado = chamado_repo.obter_por_id(chamado_teste)
+        chamado = chamado_repo.obter_por_id(chamado_repo_teste)
         assert chamado.status == StatusChamado.EM_ANALISE
 
-    def test_atualizar_status_para_resolvido(self, chamado_teste):
+    def test_atualizar_status_para_resolvido(self, chamado_repo_teste):
         """Deve atualizar status para Resolvido."""
         resultado = chamado_repo.atualizar_status(
-            chamado_teste,
+            chamado_repo_teste,
             StatusChamado.RESOLVIDO.value
         )
 
         assert resultado is True
-        chamado = chamado_repo.obter_por_id(chamado_teste)
+        chamado = chamado_repo.obter_por_id(chamado_repo_teste)
         assert chamado.status == StatusChamado.RESOLVIDO
 
-    def test_atualizar_status_e_fechar(self, chamado_teste):
+    def test_atualizar_status_e_fechar(self, chamado_repo_teste):
         """Deve atualizar status e definir data de fechamento."""
         resultado = chamado_repo.atualizar_status(
-            chamado_teste,
+            chamado_repo_teste,
             StatusChamado.FECHADO.value,
             fechar=True
         )
 
         assert resultado is True
-        chamado = chamado_repo.obter_por_id(chamado_teste)
+        chamado = chamado_repo.obter_por_id(chamado_repo_teste)
         assert chamado.status == StatusChamado.FECHADO
         assert chamado.data_fechamento is not None
 
@@ -236,14 +208,14 @@ class TestChamadoRepoAtualizarStatus:
 class TestChamadoRepoExcluir:
     """Testes para a função excluir."""
 
-    def test_excluir_chamado_existente(self, usuario_chamado):
+    def test_excluir_chamado_existente(self, usuario_repo_teste):
         """Deve excluir chamado existente."""
         chamado = Chamado(
             id=0,
             titulo="Chamado para Excluir",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -263,7 +235,7 @@ class TestChamadoRepoExcluir:
 class TestChamadoRepoContadores:
     """Testes para funções de contagem."""
 
-    def test_contar_abertos_por_usuario(self, usuario_chamado):
+    def test_contar_abertos_por_usuario(self, usuario_repo_teste):
         """Deve contar chamados abertos do usuário."""
         # Criar chamados abertos
         for i in range(2):
@@ -272,7 +244,7 @@ class TestChamadoRepoContadores:
                 titulo=f"Chamado Aberto {i}",
                 status=StatusChamado.ABERTO,
                 prioridade=PrioridadeChamado.MEDIA,
-                usuario_id=usuario_chamado
+                usuario_id=usuario_repo_teste
             )
             chamado_repo.inserir(chamado)
 
@@ -282,11 +254,11 @@ class TestChamadoRepoContadores:
             titulo="Chamado Fechado",
             status=StatusChamado.FECHADO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_repo.inserir(chamado_fechado)
 
-        quantidade = chamado_repo.contar_abertos_por_usuario(usuario_chamado)
+        quantidade = chamado_repo.contar_abertos_por_usuario(usuario_repo_teste)
 
         assert isinstance(quantidade, int)
         assert quantidade >= 2
@@ -306,7 +278,7 @@ class TestChamadoRepoContadores:
 
         assert quantidade == 0
 
-    def test_contar_pendentes(self, usuario_chamado):
+    def test_contar_pendentes(self, usuario_repo_teste):
         """Deve contar total de chamados pendentes."""
         # Criar chamados pendentes (abertos ou em análise)
         chamado = Chamado(
@@ -314,7 +286,7 @@ class TestChamadoRepoContadores:
             titulo="Chamado Pendente",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_repo.inserir(chamado)
 
@@ -337,7 +309,7 @@ class TestChamadoRepoCriarTabela:
 class TestChamadoRepoEnums:
     """Testes para verificar conversão de enums."""
 
-    def test_chamado_com_todos_status(self, usuario_chamado):
+    def test_chamado_com_todos_status(self, usuario_repo_teste):
         """Deve suportar todos os status do enum."""
         for status in StatusChamado:
             chamado = Chamado(
@@ -345,14 +317,14 @@ class TestChamadoRepoEnums:
                 titulo=f"Chamado Status {status.value}",
                 status=status,
                 prioridade=PrioridadeChamado.MEDIA,
-                usuario_id=usuario_chamado
+                usuario_id=usuario_repo_teste
             )
             chamado_id = chamado_repo.inserir(chamado)
 
             chamado_salvo = chamado_repo.obter_por_id(chamado_id)
             assert chamado_salvo.status == status
 
-    def test_chamado_com_todas_prioridades(self, usuario_chamado):
+    def test_chamado_com_todas_prioridades(self, usuario_repo_teste):
         """Deve suportar todas as prioridades do enum."""
         for prioridade in PrioridadeChamado:
             chamado = Chamado(
@@ -360,7 +332,7 @@ class TestChamadoRepoEnums:
                 titulo=f"Chamado Prioridade {prioridade.value}",
                 status=StatusChamado.ABERTO,
                 prioridade=prioridade,
-                usuario_id=usuario_chamado
+                usuario_id=usuario_repo_teste
             )
             chamado_id = chamado_repo.inserir(chamado)
 
@@ -373,45 +345,15 @@ class TestChamadoRepoEnums:
 # ============================================================================
 
 
-@pytest.fixture
-def interacao_teste(chamado_teste, usuario_chamado):
-    """Cria uma interação de teste para um chamado."""
-    interacao = ChamadoInteracao(
-        id=0,
-        chamado_id=chamado_teste,
-        usuario_id=usuario_chamado,
-        mensagem="Mensagem de teste",
-        tipo=TipoInteracao.ABERTURA,
-        data_interacao=None,  # Será preenchido pelo banco
-        status_resultante=StatusChamado.ABERTO.value
-    )
-    interacao_id = chamado_interacao_repo.inserir(interacao)
-    return interacao_id
-
-
-@pytest.fixture
-def admin_usuario():
-    """Cria um usuário admin para testes de interação."""
-    usuario = Usuario(
-        id=0,
-        nome="Admin Interacao",
-        email="admin_interacao@example.com",
-        senha=criar_hash_senha("Senha@123"),
-        perfil=Perfil.ADMIN.value
-    )
-    usuario_id = usuario_repo.inserir(usuario)
-    return usuario_id
-
-
 class TestChamadoInteracaoRepoInserir:
     """Testes para a função inserir de chamado_interacao_repo."""
 
-    def test_inserir_interacao_retorna_id(self, chamado_teste, usuario_chamado):
+    def test_inserir_interacao_retorna_id(self, chamado_repo_teste, usuario_repo_teste):
         """Deve inserir interação e retornar ID."""
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=usuario_chamado,
+            chamado_id=chamado_repo_teste,
+            usuario_id=usuario_repo_teste,
             mensagem="Nova interação",
             tipo=TipoInteracao.ABERTURA,
             data_interacao=None,
@@ -423,12 +365,12 @@ class TestChamadoInteracaoRepoInserir:
         assert interacao_id is not None
         assert interacao_id > 0
 
-    def test_inserir_interacao_tipo_resposta_usuario(self, chamado_teste, usuario_chamado):
+    def test_inserir_interacao_tipo_resposta_usuario(self, chamado_repo_teste, usuario_repo_teste):
         """Deve inserir interação do tipo resposta do usuário."""
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=usuario_chamado,
+            chamado_id=chamado_repo_teste,
+            usuario_id=usuario_repo_teste,
             mensagem="Resposta do usuário",
             tipo=TipoInteracao.RESPOSTA_USUARIO,
             data_interacao=None,
@@ -441,12 +383,12 @@ class TestChamadoInteracaoRepoInserir:
         interacao_salva = chamado_interacao_repo.obter_por_id(interacao_id)
         assert interacao_salva.tipo == TipoInteracao.RESPOSTA_USUARIO
 
-    def test_inserir_interacao_tipo_resposta_admin(self, chamado_teste, admin_usuario):
+    def test_inserir_interacao_tipo_resposta_admin(self, chamado_repo_teste, admin_repo_teste):
         """Deve inserir interação do tipo resposta do administrador."""
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=admin_usuario,
+            chamado_id=chamado_repo_teste,
+            usuario_id=admin_repo_teste,
             mensagem="Resposta do administrador",
             tipo=TipoInteracao.RESPOSTA_ADMIN,
             data_interacao=None,
@@ -463,12 +405,12 @@ class TestChamadoInteracaoRepoInserir:
 class TestChamadoInteracaoRepoObterPorId:
     """Testes para a função obter_por_id de chamado_interacao_repo."""
 
-    def test_obter_por_id_existente(self, interacao_teste):
+    def test_obter_por_id_existente(self, interacao_repo_teste):
         """Deve retornar interação quando ID existe."""
-        resultado = chamado_interacao_repo.obter_por_id(interacao_teste)
+        resultado = chamado_interacao_repo.obter_por_id(interacao_repo_teste)
 
         assert resultado is not None
-        assert resultado.id == interacao_teste
+        assert resultado.id == interacao_repo_teste
         assert resultado.mensagem == "Mensagem de teste"
 
     def test_obter_por_id_inexistente(self):
@@ -481,14 +423,14 @@ class TestChamadoInteracaoRepoObterPorId:
 class TestChamadoInteracaoRepoObterPorChamado:
     """Testes para a função obter_por_chamado."""
 
-    def test_obter_por_chamado_com_interacoes(self, chamado_teste, usuario_chamado):
+    def test_obter_por_chamado_com_interacoes(self, chamado_repo_teste, usuario_repo_teste):
         """Deve retornar todas as interações do chamado."""
         # Criar múltiplas interações
         for i in range(3):
             interacao = ChamadoInteracao(
                 id=0,
-                chamado_id=chamado_teste,
-                usuario_id=usuario_chamado,
+                chamado_id=chamado_repo_teste,
+                usuario_id=usuario_repo_teste,
                 mensagem=f"Interação {i}",
                 tipo=TipoInteracao.RESPOSTA_USUARIO,
                 data_interacao=None,
@@ -496,12 +438,12 @@ class TestChamadoInteracaoRepoObterPorChamado:
             )
             chamado_interacao_repo.inserir(interacao)
 
-        resultado = chamado_interacao_repo.obter_por_chamado(chamado_teste)
+        resultado = chamado_interacao_repo.obter_por_chamado(chamado_repo_teste)
 
         assert isinstance(resultado, list)
         assert len(resultado) >= 3
 
-    def test_obter_por_chamado_sem_interacoes(self, usuario_chamado):
+    def test_obter_por_chamado_sem_interacoes(self, usuario_repo_teste):
         """Deve retornar lista vazia quando chamado não tem interações."""
         # Criar chamado sem interações
         chamado = Chamado(
@@ -509,7 +451,7 @@ class TestChamadoInteracaoRepoObterPorChamado:
             titulo="Chamado Sem Interações",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -522,14 +464,14 @@ class TestChamadoInteracaoRepoObterPorChamado:
 class TestChamadoInteracaoRepoContarPorChamado:
     """Testes para a função contar_por_chamado."""
 
-    def test_contar_por_chamado_com_interacoes(self, chamado_teste, usuario_chamado):
+    def test_contar_por_chamado_com_interacoes(self, chamado_repo_teste, usuario_repo_teste):
         """Deve contar corretamente as interações do chamado."""
         # Criar 3 interações
         for i in range(3):
             interacao = ChamadoInteracao(
                 id=0,
-                chamado_id=chamado_teste,
-                usuario_id=usuario_chamado,
+                chamado_id=chamado_repo_teste,
+                usuario_id=usuario_repo_teste,
                 mensagem=f"Contagem {i}",
                 tipo=TipoInteracao.RESPOSTA_USUARIO,
                 data_interacao=None,
@@ -537,12 +479,12 @@ class TestChamadoInteracaoRepoContarPorChamado:
             )
             chamado_interacao_repo.inserir(interacao)
 
-        quantidade = chamado_interacao_repo.contar_por_chamado(chamado_teste)
+        quantidade = chamado_interacao_repo.contar_por_chamado(chamado_repo_teste)
 
         assert isinstance(quantidade, int)
         assert quantidade >= 3
 
-    def test_contar_por_chamado_sem_interacoes(self, usuario_chamado):
+    def test_contar_por_chamado_sem_interacoes(self, usuario_repo_teste):
         """Deve retornar 0 quando chamado não tem interações."""
         # Criar chamado sem interações
         chamado = Chamado(
@@ -550,7 +492,7 @@ class TestChamadoInteracaoRepoContarPorChamado:
             titulo="Chamado Vazio",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -562,7 +504,7 @@ class TestChamadoInteracaoRepoContarPorChamado:
 class TestChamadoInteracaoRepoExcluirPorChamado:
     """Testes para a função excluir_por_chamado."""
 
-    def test_excluir_por_chamado_existente(self, usuario_chamado):
+    def test_excluir_por_chamado_existente(self, usuario_repo_teste):
         """Deve excluir todas as interações do chamado."""
         # Criar chamado e interações
         chamado = Chamado(
@@ -570,7 +512,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
             titulo="Chamado para Excluir Interações",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -578,7 +520,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
             interacao = ChamadoInteracao(
                 id=0,
                 chamado_id=chamado_id,
-                usuario_id=usuario_chamado,
+                usuario_id=usuario_repo_teste,
                 mensagem=f"Para excluir {i}",
                 tipo=TipoInteracao.RESPOSTA_USUARIO,
                 data_interacao=None,
@@ -592,7 +534,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
         quantidade = chamado_interacao_repo.contar_por_chamado(chamado_id)
         assert quantidade == 0
 
-    def test_excluir_por_chamado_sem_interacoes(self, usuario_chamado):
+    def test_excluir_por_chamado_sem_interacoes(self, usuario_repo_teste):
         """Deve retornar True mesmo quando chamado não tem interações."""
         # Criar chamado sem interações
         chamado = Chamado(
@@ -600,7 +542,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
             titulo="Chamado Vazio para Exclusão",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -612,13 +554,13 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
 class TestChamadoInteracaoRepoMarcarComoLidas:
     """Testes para a função marcar_como_lidas."""
 
-    def test_marcar_como_lidas_mensagens_outros(self, chamado_teste, usuario_chamado, admin_usuario):
+    def test_marcar_como_lidas_mensagens_outros(self, chamado_repo_teste, usuario_repo_teste, admin_repo_teste):
         """Deve marcar como lidas mensagens de outros usuários."""
         # Criar interação do admin
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=admin_usuario,
+            chamado_id=chamado_repo_teste,
+            usuario_id=admin_repo_teste,
             mensagem="Mensagem do admin",
             tipo=TipoInteracao.RESPOSTA_ADMIN,
             data_interacao=None,
@@ -627,17 +569,17 @@ class TestChamadoInteracaoRepoMarcarComoLidas:
         chamado_interacao_repo.inserir(interacao)
 
         # Usuário cliente visualiza e marca como lido
-        resultado = chamado_interacao_repo.marcar_como_lidas(chamado_teste, usuario_chamado)
+        resultado = chamado_interacao_repo.marcar_como_lidas(chamado_repo_teste, usuario_repo_teste)
 
         assert resultado is True
 
-    def test_marcar_como_lidas_nao_marca_proprias(self, chamado_teste, usuario_chamado):
+    def test_marcar_como_lidas_nao_marca_proprias(self, chamado_repo_teste, usuario_repo_teste):
         """Deve retornar True (não precisa marcar próprias mensagens)."""
         # Criar interação do próprio usuário
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=usuario_chamado,
+            chamado_id=chamado_repo_teste,
+            usuario_id=usuario_repo_teste,
             mensagem="Minha mensagem",
             tipo=TipoInteracao.RESPOSTA_USUARIO,
             data_interacao=None,
@@ -645,7 +587,7 @@ class TestChamadoInteracaoRepoMarcarComoLidas:
         )
         chamado_interacao_repo.inserir(interacao)
 
-        resultado = chamado_interacao_repo.marcar_como_lidas(chamado_teste, usuario_chamado)
+        resultado = chamado_interacao_repo.marcar_como_lidas(chamado_repo_teste, usuario_repo_teste)
 
         assert resultado is True
 
@@ -653,7 +595,7 @@ class TestChamadoInteracaoRepoMarcarComoLidas:
 class TestChamadoInteracaoRepoObterContadorNaoLidas:
     """Testes para a função obter_contador_nao_lidas."""
 
-    def test_obter_contador_nao_lidas_com_mensagens(self, usuario_chamado, admin_usuario):
+    def test_obter_contador_nao_lidas_com_mensagens(self, usuario_repo_teste, admin_repo_teste):
         """Deve retornar contagem de mensagens não lidas por chamado."""
         # Criar chamado
         chamado = Chamado(
@@ -661,7 +603,7 @@ class TestChamadoInteracaoRepoObterContadorNaoLidas:
             titulo="Chamado com Não Lidas",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -670,7 +612,7 @@ class TestChamadoInteracaoRepoObterContadorNaoLidas:
             interacao = ChamadoInteracao(
                 id=0,
                 chamado_id=chamado_id,
-                usuario_id=admin_usuario,
+                usuario_id=admin_repo_teste,
                 mensagem=f"Resposta admin {i}",
                 tipo=TipoInteracao.RESPOSTA_ADMIN,
                 data_interacao=None,
@@ -678,16 +620,16 @@ class TestChamadoInteracaoRepoObterContadorNaoLidas:
             )
             chamado_interacao_repo.inserir(interacao)
 
-        resultado = chamado_interacao_repo.obter_contador_nao_lidas(usuario_chamado)
+        resultado = chamado_interacao_repo.obter_contador_nao_lidas(usuario_repo_teste)
 
         assert isinstance(resultado, dict)
         # O chamado deve ter mensagens não lidas
         if chamado_id in resultado:
             assert resultado[chamado_id] >= 2
 
-    def test_obter_contador_nao_lidas_sem_mensagens(self, usuario_chamado):
+    def test_obter_contador_nao_lidas_sem_mensagens(self, usuario_repo_teste):
         """Deve retornar dicionário vazio quando não há mensagens não lidas."""
-        resultado = chamado_interacao_repo.obter_contador_nao_lidas(usuario_chamado)
+        resultado = chamado_interacao_repo.obter_contador_nao_lidas(usuario_repo_teste)
 
         assert isinstance(resultado, dict)
 
@@ -695,12 +637,12 @@ class TestChamadoInteracaoRepoObterContadorNaoLidas:
 class TestChamadoInteracaoRepoTemRespostaAdmin:
     """Testes para a função tem_resposta_admin."""
 
-    def test_tem_resposta_admin_quando_existe(self, chamado_teste, admin_usuario):
+    def test_tem_resposta_admin_quando_existe(self, chamado_repo_teste, admin_repo_teste):
         """Deve retornar True quando há resposta de admin."""
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=admin_usuario,
+            chamado_id=chamado_repo_teste,
+            usuario_id=admin_repo_teste,
             mensagem="Resposta administrativa",
             tipo=TipoInteracao.RESPOSTA_ADMIN,
             data_interacao=None,
@@ -708,16 +650,16 @@ class TestChamadoInteracaoRepoTemRespostaAdmin:
         )
         chamado_interacao_repo.inserir(interacao)
 
-        resultado = chamado_interacao_repo.tem_resposta_admin(chamado_teste)
+        resultado = chamado_interacao_repo.tem_resposta_admin(chamado_repo_teste)
 
         assert resultado is True
 
-    def test_tem_resposta_admin_quando_nao_existe(self, chamado_teste, usuario_chamado):
+    def test_tem_resposta_admin_quando_nao_existe(self, chamado_repo_teste, usuario_repo_teste):
         """Deve retornar False quando só há respostas de usuário."""
         interacao = ChamadoInteracao(
             id=0,
-            chamado_id=chamado_teste,
-            usuario_id=usuario_chamado,
+            chamado_id=chamado_repo_teste,
+            usuario_id=usuario_repo_teste,
             mensagem="Resposta do usuário",
             tipo=TipoInteracao.RESPOSTA_USUARIO,
             data_interacao=None,
@@ -725,18 +667,18 @@ class TestChamadoInteracaoRepoTemRespostaAdmin:
         )
         chamado_interacao_repo.inserir(interacao)
 
-        resultado = chamado_interacao_repo.tem_resposta_admin(chamado_teste)
+        resultado = chamado_interacao_repo.tem_resposta_admin(chamado_repo_teste)
 
         assert resultado is False
 
-    def test_tem_resposta_admin_chamado_vazio(self, usuario_chamado):
+    def test_tem_resposta_admin_chamado_vazio(self, usuario_repo_teste):
         """Deve retornar False quando chamado não tem interações."""
         chamado = Chamado(
             id=0,
             titulo="Chamado Sem Respostas",
             status=StatusChamado.ABERTO,
             prioridade=PrioridadeChamado.MEDIA,
-            usuario_id=usuario_chamado
+            usuario_id=usuario_repo_teste
         )
         chamado_id = chamado_repo.inserir(chamado)
 
@@ -758,13 +700,13 @@ class TestChamadoInteracaoRepoCriarTabela:
 class TestChamadoInteracaoRepoEnums:
     """Testes para verificar conversão de enums de interação."""
 
-    def test_interacao_com_todos_tipos(self, chamado_teste, usuario_chamado):
+    def test_interacao_com_todos_tipos(self, chamado_repo_teste, usuario_repo_teste):
         """Deve suportar todos os tipos de interação do enum."""
         for tipo in TipoInteracao:
             interacao = ChamadoInteracao(
                 id=0,
-                chamado_id=chamado_teste,
-                usuario_id=usuario_chamado,
+                chamado_id=chamado_repo_teste,
+                usuario_id=usuario_repo_teste,
                 mensagem=f"Interação tipo {tipo.value}",
                 tipo=tipo,
                 data_interacao=None,
