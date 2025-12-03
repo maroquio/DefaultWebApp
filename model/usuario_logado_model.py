@@ -18,13 +18,13 @@ class UsuarioLogado:
         """Verifica se o usuário é administrador."""
         return self.perfil == Perfil.ADMIN.value
 
-    def is_cliente(self) -> bool:
-        """Verifica se o usuário é cliente."""
-        return self.perfil == Perfil.CLIENTE.value
+    def is_autor(self) -> bool:
+        """Verifica se o usuário é autor."""
+        return self.perfil == Perfil.AUTOR.value
 
-    def is_vendedor(self) -> bool:
-        """Verifica se o usuário é vendedor."""
-        return self.perfil == Perfil.VENDEDOR.value
+    def is_leitor(self) -> bool:
+        """Verifica se o usuário é leitor."""
+        return self.perfil == Perfil.LEITOR.value
 
     def tem_perfil(self, *perfis: str) -> bool:
         """

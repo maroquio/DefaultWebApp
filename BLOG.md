@@ -19,12 +19,16 @@ Este tutorial guia você passo a passo na criação de um blog completo usando c
 4. [Configurando o Ambiente](#4-configurando-o-ambiente)
 5. [Configurando os Perfis de Usuário](#5-configurando-os-perfis-de-usuário)
 6. [Criando o CRUD de Categorias](#6-criando-o-crud-de-categorias)
-7. [Criando o CRUD de Artigos](#7-criando-o-crud-de-artigos)
-8. [Modificando os Templates Base](#8-modificando-os-templates-base)
-9. [Atualizando as Rotas Públicas](#9-atualizando-as-rotas-públicas)
-10. [Configurando o main.py](#10-configurando-o-mainpy)
-11. [Testando a Aplicação](#11-testando-a-aplicação)
-12. [Conclusão](#12-conclusão)
+7. [Registrando o CRUD de Categorias](#7-registrando-o-crud-de-categorias)
+8. [Adicionando Menu e Card de Categorias no Dashboard](#8-adicionando-menu-e-card-de-categorias-no-dashboard)
+9. [Testando o CRUD de Categorias](#9-testando-o-crud-de-categorias)
+10. [Criando o CRUD de Artigos](#10-criando-o-crud-de-artigos)
+11. [Templates de Artigos](#11-templates-de-artigos)
+12. [Templates Base e Home Page](#12-templates-base-e-home-page)
+13. [Rotas Públicas e Configuração do main.py](#13-rotas-públicas-e-configuração-do-mainpy)
+14. [Testando a Aplicação Completa](#14-testando-a-aplicação-completa)
+15. [Resumo dos Arquivos Criados](#15-resumo-dos-arquivos-criados)
+16. [Conclusão](#16-conclusão)
 
 ---
 
@@ -51,17 +55,20 @@ Antes de começar, certifique-se de ter instalado:
 
 ## 3. Clonando o Repositório
 
-Após criar o fork, clone-o para sua máquina:
+Após criar o fork, você deve cloná-lo para sua máquina. Para isso, abra o VS Code em uma pasta vazia de sua preferência e abra o terminal integrado (Ctrl + `). Em seguida, execute os comandos abaixo:
 
 ```bash
 # Substitua SEU_USUARIO pelo seu usuário do GitHub
 git clone https://github.com/SEU_USUARIO/BlogSimples.git
 cd BlogSimples
+code .
 ```
+
+Uma nova instância do VS Code será aberta na pasta do projeto clonado como raiz. Mantenha apenas esta instância aberta para evitar conflitos de ambiente, ou seja, feche outras janelas do VS Code que estejam abertas em outras pastas.
 
 ### 3.1. Configurando o Git
 
-Configure seu nome e email para os commits:
+No terminal do VS Code aberto na raiz do projeto, configure seu nome e email para os commits:
 
 ```bash
 # Configure seu nome (usado nos commits)
@@ -71,7 +78,7 @@ git config user.name "Seu Nome Completo"
 git config user.email "seu.email@exemplo.com"
 ```
 
-### 3.2. Configurando o upstream (opcional)
+### 3.2. Configurando o upstream
 
 Para receber atualizações futuras do repositório original:
 
@@ -102,7 +109,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4.3. Configurando variáveis de ambiente
+### 4.3. Extensões recomendadas do VS Code
+
+Para uma melhor experiência de desenvolvimento, instale as seguintes extensões no VS Code:
+
+| Extensão | Descrição |
+|----------|-----------|
+| **Python** | Suporte completo para Python (IntelliSense, debug, linting) |
+| **Jinja** | Syntax highlighting para templates Jinja2 |
+| **HTML CSS Support** | Autocomplete de classes CSS em arquivos HTML |
+| **IntelliSense for CSS class names in HTML** | Autocomplete de classes CSS baseado nos arquivos do projeto |
+| **SQLite3 Editor** | Visualizar e editar o banco de dados SQLite |
+| **vscode-icons** | Ícones para diferentes tipos de arquivos |
+| **Reload** | Botão para recarregar a janela do VS Code rapidamente |
+
+> **Dica:** Para instalar uma extensão, pressione **Ctrl+Shift+X**, pesquise pelo nome e clique em **Install**.
+
+### 4.4. Selecionando o interpretador Python
+
+Após criar o ambiente virtual, é importante configurar o VS Code para usar o interpretador Python correto:
+
+1. Pressione **Ctrl+Shift+P** para abrir a paleta de comandos
+2. Digite **Python: Select Interpreter** e pressione Enter
+3. Selecione o interpretador que está dentro da pasta `.venv`:
+   - Windows: `.venv\Scripts\python.exe`
+   - Linux/Mac: `.venv/bin/python`
+
+> **Importante:** Sempre que abrir o projeto, verifique se o interpretador correto está selecionado. Você pode ver o interpretador atual na barra de status do VS Code (canto inferior esquerdo).
+
+### 4.5. Configurando variáveis de ambiente
 
 Copie o arquivo de exemplo e configure:
 
@@ -110,9 +145,23 @@ Copie o arquivo de exemplo e configure:
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` conforme necessário.
+Edite o arquivo `.env` e atualize as seguintes variáveis:
 
-### 4.4. Testando a instalação
+1. **APP_NAME**: Altere para o nome do seu blog
+   ```
+   APP_NAME=Blog do João Silva
+   ```
+   > Substitua "João Silva" pelo seu nome completo.
+
+2. **SECRET_KEY**: Gere uma chave secreta única para sua aplicação
+   - Acesse: https://generate-secret.now.sh/64
+   - Copie a chave gerada e cole no arquivo `.env`:
+   ```
+   SECRET_KEY=sua_chave_gerada_aqui
+   ```
+   > **Importante:** Nunca compartilhe ou versione sua SECRET_KEY.
+
+### 4.6. Testando a instalação
 
 ```bash
 python main.py
@@ -124,11 +173,11 @@ Acesse http://localhost:8400 para verificar se está funcionando (porta padrão 
 
 ## 5. Configurando os Perfis de Usuário
 
-O sistema de blog utiliza dois novos perfis de usuário além dos existentes. **O arquivo `util/perfis.py` do projeto original contém os perfis ADMIN, CLIENTE e VENDEDOR. Você deve ADICIONAR os novos perfis ao enum existente**, mantendo os perfis originais:
+O sistema de blog utiliza dois perfis de usuário diferentes dos existentes. O arquivo `util/perfis.py` do projeto original contém os perfis ADMIN, CLIENTE e VENDEDOR. **Você deve SUBSTITUIR os perfis CLIENTE e VENDEDOR por AUTOR e LEITOR**:
 
 ### Arquivo: `util/perfis.py`
 
-Localize o enum `Perfil` e adicione os novos perfis `AUTOR` e `LEITOR`:
+Localize o enum `Perfil` e **substitua** os perfis `CLIENTE` e `VENDEDOR` por `AUTOR` e `LEITOR`. O arquivo deve ficar assim:
 
 ```python
 """
@@ -165,10 +214,8 @@ class Perfil(EnumEntidade):
 
     # PERFIS DO SEU SISTEMA #####################################
     ADMIN = "Administrador"
-    CLIENTE = "Cliente"
-    VENDEDOR = "Vendedor"
-    AUTOR = "Autor"      # ADICIONAR para o blog
-    LEITOR = "Leitor"    # ADICIONAR para o blog
+    AUTOR = "Autor"
+    LEITOR = "Leitor"
     # FIM DOS PERFIS ############################################
 
 ```
@@ -176,14 +223,12 @@ class Perfil(EnumEntidade):
 ### Explicação dos Perfis:
 
 - **Administrador**: Gerencia categorias e tem acesso administrativo completo
-- **Cliente**: Perfil padrão do sistema (mantido do projeto original)
-- **Vendedor**: Perfil do sistema (mantido do projeto original)
 - **Autor**: Pode criar, editar e publicar artigos
 - **Leitor**: Pode ler artigos publicados
 
-### 5.1. Atualizando o UsuarioLogado (Opcional)
+### 5.1. Atualizando o UsuarioLogado
 
-O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` que representa o usuário autenticado. Para adicionar métodos auxiliares para os novos perfis, localize a classe e adicione os seguintes métodos após os existentes (`is_admin()`, `is_cliente()`, `is_vendedor()`):
+O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` que representa o usuário autenticado. Como substituímos os perfis CLIENTE e VENDEDOR, você deve **substituir os métodos `is_cliente()` e `is_vendedor()` por `is_autor()` e `is_leitor()`**:
 
 ```python
     def is_autor(self) -> bool:
@@ -195,7 +240,7 @@ O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` qu
         return self.perfil == Perfil.LEITOR.value
 ```
 
-> **Nota:** Esses métodos são opcionais. Você também pode usar `usuario_logado.perfil == 'Autor'` diretamente no código.
+> **Nota:** O método `is_admin()` deve ser mantido. Remova apenas `is_cliente()` e `is_vendedor()`.
 
 ---
 
@@ -832,7 +877,7 @@ async def post_excluir(
 
 #### 6.6.1. Template de Listagem
 
-Crie o arquivo `templates/admin/categorias/listar.html`:
+Crie a pasta `templates/admin/categorias/` e dentro dela crie o arquivo `listar.html`:
 
 ```html
 {% extends "base_privada.html" %}
@@ -938,6 +983,8 @@ Crie o arquivo `templates/admin/categorias/listar.html`:
 </script>
 {% endblock %}
 ```
+
+**ATENÇÃO:** Não se preocupe caso veja algum erro de checagem de código no VS Code relacionado ao template acima e aos demais que forem criados. Isso ocorre porque algumas variáveis são dinâmicas e só estarão disponíveis em tempo de execução. Desde que o template funcione corretamente ao rodar a aplicação, você pode ignorar esses avisos.
 
 #### 6.6.2. Template de Cadastro
 
@@ -1077,9 +1124,170 @@ Crie o arquivo `templates/admin/categorias/editar.html`:
 
 ---
 
-## 7. Criando o CRUD de Artigos
+## 7. Registrando o CRUD de Categorias
 
-### 7.1. Model de Artigo
+Antes de testar o CRUD de Categorias, precisamos registrá-lo no `main.py` para que a aplicação reconheça as novas rotas e crie a tabela no banco de dados.
+
+### 7.1. Adicionar import do repositório
+
+No início do arquivo `main.py`, no final da linha 26, adicione `categoria_repo`. A linha vai ficar assim:
+
+```python
+from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo
+```
+
+### 7.2. Adicionar import das rotas
+
+Ainda no `main.py`, no final da seção de importação de rotas, aproximadamente depois da linha 38, adicione a linha a seguir:
+
+```python
+from routes.admin_categorias_routes import router as admin_categorias_router
+```
+
+### 7.3. Adicionar tabela na lista TABELAS
+
+No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `categoria` ao final da listagem:
+
+```python
+TABELAS = [
+    (usuario_repo, "usuario"),
+    (configuracao_repo, "configuracao"),
+    (chamado_repo, "chamado"),
+    (chamado_interacao_repo, "chamado_interacao"),
+    (chat_sala_repo, "chat_sala"),
+    (chat_participante_repo, "chat_participante"),
+    (chat_mensagem_repo, "chat_mensagem"),
+    (categoria_repo, "categoria"),  # NOVA TABELA
+]
+```
+
+### 7.4. Adicionar router na lista ROUTERS
+
+Localize a lista `ROUTERS` e adicione o novo router, logo depois da linha `(admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),`, que provavelmente está na linha 118. A linha a ser adicionada é:
+
+```python
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
+```
+
+O bloco `ROUTERS` ficará assim:
+
+```python
+ROUTERS = [
+    (auth_router, ["Autenticação"], "autenticação"),
+    (chamados_router, ["Chamados"], "chamados"),
+    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
+    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
+    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
+    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
+    (usuario_router, ["Usuário"], "usuário"),
+    (chat_router, ["Chat"], "chat"),
+    (public_router, ["Público"], "público"),  # Deve ficar por último
+    (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
+]
+```
+
+> **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
+
+---
+
+## 8. Adicionando Menu e Card de Categorias no Dashboard
+
+Agora vamos adicionar o acesso ao CRUD de Categorias no painel do administrador.
+
+### 8.1. Adicionando o link no menu de navegação
+
+No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}` da linha 52).
+
+Após o final do link de **Backup** na linha 82, de um ENTER e adicione o link para **Categorias**:
+
+```html
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
+                            href="/admin/categorias/listar"
+                            {{ 'aria-current=page' if '/admin/categorias/' in request.path else '' }}>Categorias</a>
+                    </li>
+```
+
+### 8.2. Adicionando o card no dashboard do administrador
+
+No arquivo `templates/dashboard.html`, localize a seção de cards do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}`).
+
+Adicione um novo card para **Categorias** junto aos outros cards administrativos:
+
+```html
+                <!-- Card Categorias -->
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-folder text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Categorias</h5>
+                            <p class="card-text text-muted">Gerencie as categorias do blog</p>
+                            <a href="/admin/categorias/listar" class="btn btn-primary">
+                                <i class="bi bi-folder"></i> Acessar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+```
+
+> **Resultado esperado:** O administrador verá o link "Categorias" no menu superior e um card de acesso rápido na página inicial (dashboard).
+
+---
+
+## 9. Testando o CRUD de Categorias
+
+Agora vamos testar se o CRUD de Categorias está funcionando corretamente.
+
+### 9.1. Iniciando a aplicação
+
+No VS Code, pressione **Ctrl+F5** para executar a aplicação sem depuração (ou execute `python main.py` no terminal).
+
+Você deverá ver algo como:
+
+```
+============================================================
+                    BLOG DO FULANO
+============================================================
+Modo de execução: Development
+============================================================
+
+INFO:     Tabela 'categoria' verificada/criada com sucesso.
+...
+INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
+```
+
+### 9.2. Acessando como Administrador
+
+1. Acesse http://localhost:8400 no navegador
+2. Clique em **Entrar** ou acesse http://localhost:8400/login
+3. Faça login com as credenciais do administrador padrão:
+   - **Email:** `padrao@administrador.com`
+   - **Senha:** `1234aA@#`
+
+### 9.3. Testando as funcionalidades
+
+Após o login, teste as seguintes funcionalidades:
+
+1. **Verificar o menu:** O link "Categorias" deve aparecer no menu superior
+2. **Verificar o dashboard:** O card "Categorias" deve aparecer na página inicial
+3. **Listar categorias:** Clique em "Categorias" - a lista deve estar vazia inicialmente
+4. **Cadastrar categoria:** Clique em "Nova Categoria" e cadastre algumas categorias de teste:
+   - Nome: "Tecnologia", Descrição: "Artigos sobre tecnologia e programação"
+   - Nome: "Esportes", Descrição: "Notícias e artigos sobre esportes"
+   - Nome: "Cultura", Descrição: "Arte, música, cinema e literatura"
+5. **Editar categoria:** Clique no ícone de edição e altere os dados
+6. **Excluir categoria:** Clique no ícone de exclusão e confirme
+
+> **Dica:** Se encontrar erros, verifique o terminal onde a aplicação está rodando para ver as mensagens de log.
+
+---
+
+## 10. Criando o CRUD de Artigos
+
+### 10.1. Model de Artigo
 
 Crie o arquivo `model/artigo_model.py`:
 
@@ -1119,7 +1327,7 @@ class Artigo:
     categoria_nome: Optional[str] = None
 ```
 
-### 7.2. Queries SQL de Artigo
+### 10.2. Queries SQL de Artigo
 
 Crie o arquivo `sql/artigo_sql.py`:
 
@@ -1291,7 +1499,7 @@ VERIFICAR_TITULO_EXISTE = """
 """
 ```
 
-### 7.3. Repositório de Artigo
+### 10.3. Repositório de Artigo
 
 Crie o arquivo `repo/artigo_repo.py`:
 
@@ -1543,7 +1751,7 @@ def titulo_existe(titulo: str, excluir_id: int = 0) -> bool:
         return False
 ```
 
-### 7.4. DTO de Artigo
+### 10.4. DTO de Artigo
 
 Crie o arquivo `dtos/artigo_dto.py`:
 
@@ -1616,7 +1824,7 @@ class AlterarArtigoDTO(BaseModel):
     _validar_id_categoria = field_validator("categoria_id")(validar_id_positivo("Categoria"))
 ```
 
-### 7.5. Rotas de Artigos
+### 10.5. Rotas de Artigos
 
 Crie o arquivo `routes/artigos_routes.py`:
 
@@ -2086,11 +2294,11 @@ async def ler_artigo(
 
 ---
 
-## 7. Templates de Artigos
+## 11. Templates de Artigos
 
 Agora vamos criar os templates HTML para o módulo de artigos. Os autores usarão esses templates para gerenciar seus artigos, enquanto os leitores usarão para navegar e ler o conteúdo.
 
-### 7.1 Template de Listagem (Meus Artigos)
+### 11.1 Template de Listagem (Meus Artigos)
 
 Crie o arquivo `templates/artigos/listar.html`:
 
@@ -2223,7 +2431,7 @@ Crie o arquivo `templates/artigos/listar.html`:
 {% endblock %}
 ```
 
-### 7.2 Template de Cadastro
+### 11.2 Template de Cadastro
 
 Crie o arquivo `templates/artigos/cadastrar.html`:
 
@@ -2374,7 +2582,7 @@ Crie o arquivo `templates/artigos/cadastrar.html`:
 {% endblock %}
 ```
 
-### 7.3 Template de Edição
+### 11.3 Template de Edição
 
 Crie o arquivo `templates/artigos/editar.html`:
 
@@ -2555,7 +2763,7 @@ Crie o arquivo `templates/artigos/editar.html`:
 {% endblock %}
 ```
 
-### 7.4 Template de Busca (Listagem Pública)
+### 11.4 Template de Busca (Listagem Pública)
 
 Crie o arquivo `templates/artigos/buscar.html`:
 
@@ -2693,7 +2901,7 @@ Crie o arquivo `templates/artigos/buscar.html`:
 {% endblock %}
 ```
 
-### 7.5 Template de Leitura
+### 11.5 Template de Leitura
 
 Crie o arquivo `templates/artigos/ler.html`:
 
@@ -2867,13 +3075,13 @@ Crie o arquivo `templates/artigos/ler.html`:
 
 ---
 
-## 8. Templates Base e Home Page
+## 12. Templates Base e Home Page
 
 Agora vamos modificar os templates base do boilerplate para incluir a navegação do blog e criar a página inicial.
 
 > **IMPORTANTE**: NÃO substitua os templates base inteiros! Adicione apenas os novos itens de menu conforme instruído abaixo.
 
-### 8.1 Atualizando o Template Base Privada
+### 12.1 Atualizando o Template Base Privada
 
 O template `templates/base_privada.html` já existe no boilerplate. Você precisa adicionar os links de navegação para **Categorias** (admin) e **Meus Artigos** (autores).
 
@@ -2909,7 +3117,7 @@ Ainda no mesmo arquivo, após o bloco do administrador e ANTES do `{% else %}`, 
 
 > **Resultado esperado:** O menu do administrador terá o link "Categorias", e tanto administradores quanto autores verão o link "Meus Artigos".
 
-### 8.2 Atualizando o Template Base Pública
+### 12.2 Atualizando o Template Base Pública
 
 O template `templates/base_publica.html` é usado para páginas públicas. Você precisa adicionar o link para **Artigos** na navegação.
 
@@ -2928,7 +3136,7 @@ Após o link de **Início** e ANTES do link de **Sobre**, adicione o link para *
 
 > **Resultado esperado:** O menu público terá os links: Início → **Artigos** → Sobre
 
-### 8.3 Criando a Home Page do Blog
+### 12.3 Criando a Home Page do Blog
 
 Crie ou substitua o arquivo `templates/index.html` com o template da home page do blog:
 
@@ -3119,11 +3327,11 @@ Crie ou substitua o arquivo `templates/index.html` com o template da home page d
 
 ---
 
-## 9. Rotas Públicas e Configuração do main.py
+## 13. Rotas Públicas e Configuração do main.py
 
 Agora vamos atualizar as rotas públicas para exibir os artigos na home page e configurar o `main.py` para integrar todos os módulos.
 
-### 9.1 Atualizando as Rotas Públicas
+### 13.1 Atualizando as Rotas Públicas
 
 O arquivo `routes/public_routes.py` precisa ser atualizado para carregar os artigos e categorias na página inicial. Abaixo está o arquivo completo com as modificações necessárias:
 
@@ -3248,7 +3456,7 @@ async def sobre(request: Request):
 > - As rotas `/` e `/index` agora buscam os últimos 6 artigos publicados
 > - Categorias são carregadas para exibir os filtros na home
 
-### 9.2 Configurando o main.py
+### 13.2 Configurando o main.py
 
 O arquivo `main.py` é o ponto de entrada da aplicação. Você precisa adicionar os imports e registrar os novos repositórios e rotas.
 
@@ -3316,11 +3524,11 @@ ROUTERS = [
 
 ---
 
-## 10. Testando a Aplicação
+## 14. Testando a Aplicação Completa
 
 Agora que todos os arquivos foram criados, vamos testar a aplicação completa.
 
-### 10.1 Iniciando a Aplicação
+### 14.1 Iniciando a Aplicação
 
 Execute a aplicação:
 
@@ -3332,7 +3540,7 @@ Você deverá ver algo como:
 
 ```
 ============================================================
-Iniciando SimpleBlog v1.0.0
+Iniciando BlogSimples v1.0.0
 ============================================================
 Servidor rodando em http://0.0.0.0:8400
 Hot reload: Ativado
@@ -3340,7 +3548,7 @@ Documentação API: http://0.0.0.0:8400/docs
 ============================================================
 ```
 
-### 10.2 Testando o Fluxo Completo
+### 14.2 Testando o Fluxo Completo
 
 #### Passo 1: Criar um Administrador
 
@@ -3415,7 +3623,7 @@ Espero que tenham gostado!
 4. Clique em um artigo - será solicitado login para ler
 5. Cadastre-se como leitor e faça login para ler o artigo completo
 
-### 10.3 Funcionalidades Implementadas
+### 14.3 Funcionalidades Implementadas
 
 #### Para Administradores:
 - Gerenciar categorias (CRUD completo)
@@ -3441,7 +3649,7 @@ Espero que tenham gostado!
 
 ---
 
-## 11. Resumo dos Arquivos Criados
+## 15. Resumo dos Arquivos Criados
 
 ### Models (Camada de Dados)
 - `model/categoria_model.py` - Dataclass Categoria
@@ -3483,9 +3691,9 @@ Espero que tenham gostado!
 
 ---
 
-## 12. Conclusão
+## 16. Conclusão
 
-Parabéns! Você concluiu a implementação do **SimpleBlog**, um sistema de blog completo construído com:
+Parabéns! Você concluiu a implementação do **BlogSimples**, um sistema de blog completo construído com:
 
 - **FastAPI** - Framework web moderno e rápido
 - **SQLite** - Banco de dados leve e embutido
@@ -3525,3 +3733,15 @@ Essa separação de responsabilidades facilita a manutenção e evolução do c�
 ---
 
 **Bons estudos e bom desenvolvimento!**
+
+TODO:
+adicionar import sqlite no main.py
+
+mudar linha 52 de base_privada.html
+{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}
+
+mudar linha 21 de dashboard e definir todas as divs como apenas col:
+<div class="row g-4 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
+
+mudar linha 41 de dashboard.html
+{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}

@@ -1,0 +1,63 @@
+{% extends "base_privada.html" %}
+{% from "macros/form_fields.html" import field with context %}
+
+{% block titulo %}Editar Categoria{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-folder-check"></i> Editar Categoria</h2>
+        </div>
+
+        <div class="card shadow-sm">
+            <form method="POST"
+                action="/admin/categorias/editar/{{ dados.id if dados is defined and dados.id else categoria.id }}">
+                {{ csrf_input() }}
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-12">
+                            {% include "components/alerta_erro.html" %}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            {{ field(
+                            name='nome',
+                            label='Nome da Categoria',
+                            type='text',
+                            required=true,
+                            placeholder='Ex: Tecnologia, Esportes, Política...',
+                            help_text='Nome único para identificar a categoria (3-50 caracteres)',
+                            value=dados.nome if dados is defined and dados.nome else categoria.nome
+                            ) }}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            {{ field(
+                            name='descricao',
+                            label='Descrição',
+                            type='textarea',
+                            required=false,
+                            placeholder='Descrição opcional da categoria...',
+                            help_text='Breve descrição sobre o que essa categoria abrange (máx 200 caracteres)',
+                            rows=3,
+                            value=dados.descricao if dados is defined and dados.descricao else categoria.descricao
+                            ) }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer p-4">
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Salvar Alterações
+                        </button>
+                        <a href="/admin/categorias/listar" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

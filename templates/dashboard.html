@@ -18,9 +18,9 @@
 </div>
 
 <!-- Cards de Ação Rápida -->
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
     <!-- Meu Perfil -->
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -38,9 +38,9 @@
     </div>
 
     <!-- Configurações (apenas para admin) -->
-    {% if usuario.perfil == 'Administrador' %}
+    {% if usuario_logado and usuario_logado.perfil == 'Administrador' %}
     <!-- Usuários -->
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -108,7 +108,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
@@ -129,9 +129,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Card Categorias -->
+    <div class="col mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-folder text-primary" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="card-title">Categorias</h5>
+                <p class="card-text text-muted">Gerencie as categorias do blog</p>
+                <a href="/admin/categorias/listar" class="btn btn-primary">
+                    <i class="bi bi-folder"></i> Acessar
+                </a>
+            </div>
+        </div>
+    </div>
     {% else %}
     <!-- Chamados para usuários comuns -->
-    <div class="col-md-4">
+    <div class="col">
         <div class="card h-100 shadow-sm shadow-hover">
             <div class="card-body text-center">
                 <div class="mb-3">

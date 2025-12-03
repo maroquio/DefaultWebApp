@@ -1,4 +1,5 @@
 import uvicorn
+import sqlite3
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
@@ -23,7 +24,7 @@ from util.exceptions import ErroValidacaoFormulario
 
 # Repositórios
 from repo import usuario_repo, configuracao_repo, chamado_repo, chamado_interacao_repo, indices_repo
-from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
+from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo
 
 # Rotas
 from routes.auth_routes import router as auth_router
@@ -36,6 +37,7 @@ from routes.usuario_routes import router as usuario_router
 from routes.chat_routes import router as chat_router
 from routes.public_routes import router as public_router
 from routes.examples_routes import router as examples_router
+from routes.admin_categorias_routes import router as admin_categorias_router
 
 # Seeds
 from util.seed_data import inicializar_dados
@@ -75,6 +77,7 @@ TABELAS = [
     (chat_sala_repo, "chat_sala"),
     (chat_participante_repo, "chat_participante"),
     (chat_mensagem_repo, "chat_mensagem"),
+    (categoria_repo, "categoria"),
 ]
 
 # Criar tabelas do banco de dados
@@ -113,6 +116,7 @@ ROUTERS = [
     (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
     (admin_backups_router, ["Admin - Backups"], "admin de backups"),
     (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
     (public_router, ["Público"], "público"),
