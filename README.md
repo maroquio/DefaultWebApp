@@ -241,7 +241,7 @@ Biblioteca completa em `macros/form_fields.html`:
 
 ### Máscaras de Input Automáticas
 
-Sistema completo de máscaras em `static/js/input-mask.js`:
+Sistema completo de máscaras em `static/js/mascara-input.js`:
 
 ```html
 <!-- CPF com máscara automática -->
@@ -333,11 +333,6 @@ DefaultWebApp/
 ├── data/                    # Dados seed em JSON
 │   └── usuarios_seed.json
 │
-├── docs/                    # Documentação
-│   ├── CRIAR_CRUD.md       # Tutorial CRUD detalhado
-│   ├── PERFIS.md           # Como adicionar perfis
-│   └── QUICK_START.md      # Início rápido
-│
 ├── dtos/                    # DTOs Pydantic para validação
 │   ├── validators.py       # 15+ validadores reutilizáveis
 │   ├── usuario_dto.py
@@ -389,9 +384,9 @@ DefaultWebApp/
 │   │   └── custom.css
 │   ├── js/
 │   │   ├── toasts.js
-│   │   ├── input-mask.js
-│   │   ├── chat-widget.js  # Widget do chat
-│   │   ├── image-cropper.js
+│   │   ├── mascara-input.js    # Máscaras de input
+│   │   ├── widget-chat.js      # Widget do chat
+│   │   ├── cortador-imagem.js  # Crop de imagens
 │   │   └── ...
 │   └── img/
 │       └── usuarios/        # Fotos de perfil
@@ -440,12 +435,10 @@ DefaultWebApp/
 │   ├── conftest.py         # Fixtures do pytest
 │   └── test_*.py           # 90%+ cobertura
 │
-├── logs/                    # Logs da aplicação
-├── backups/                 # Backups do banco de dados
+├── logs/                    # Logs da aplicação (criado automaticamente)
 │
 ├── .env.example             # Exemplo de variáveis de ambiente
-├── CLAUDE.md                # Documentação técnica completa
-├── BLOG.md                  # Tutorial passo a passo
+├── BLOG.md                  # Tutorial passo a passo para criar o projeto
 ├── main.py                  # Arquivo principal
 ├── requirements.txt
 └── README.md
@@ -486,31 +479,39 @@ Copie o arquivo `.env.example` para `.env` e configure:
 
 ```env
 # Banco de Dados
-DATABASE_PATH=database.db
+DATABASE_PATH=dados.db
 
 # Aplicação
-APP_NAME=DefaultWebApp
-SECRET_KEY=sua_chave_secreta_super_segura_aqui
+APP_NAME=SeuProjeto
+SECRET_KEY=sua_chave_secreta_super_segura_aqui  # gere em https://generate-secret.now.sh/64
 BASE_URL=http://localhost:8400
+TIMEZONE=America/Sao_Paulo
+RUNNING_MODE=Development
 
 # Servidor
-HOST=0.0.0.0
+HOST=127.0.0.1
 PORT=8400
 RELOAD=True
-RUNNING_MODE=Development
 
 # Logging
 LOG_LEVEL=INFO
 LOG_RETENTION_DAYS=30
 
 # E-mail (Resend.com)
-RESEND_API_KEY=seu_api_key_aqui
+RESEND_API_KEY=seu_api_key_aqui  # gere em https://resend.com/
 RESEND_FROM_EMAIL=noreply@seudominio.com
-RESEND_FROM_NAME=Sistema
+RESEND_FROM_NAME="Seu Projeto"
 
 # Fotos
 FOTO_PERFIL_TAMANHO_MAX=256
+FOTO_MAX_UPLOAD_BYTES=5242880
+
+# Senha
+PASSWORD_MIN_LENGTH=8
+PASSWORD_MAX_LENGTH=128
 ```
+
+Veja o arquivo `.env.example` para a lista completa de variáveis, incluindo rate limits configuráveis.
 
 ## Testes
 
@@ -557,11 +558,8 @@ pytest tests/test_chat_routes.py
 
 ## Documentação Adicional
 
-- **[CLAUDE.md](CLAUDE.md)** - Documentação técnica completa para desenvolvedores
-- **[BLOG.md](BLOG.md)** - Tutorial passo a passo para criar o projeto do zero
-- **[docs/CRIAR_CRUD.md](docs/CRIAR_CRUD.md)** - Tutorial detalhado para criar CRUDs
-- **[docs/PERFIS.md](docs/PERFIS.md)** - Como adicionar novos perfis de usuário
-- **[/exemplos](http://localhost:8400/exemplos)** - 9 exemplos práticos funcionais
+- **[BLOG.md](BLOG.md)** - Tutorial completo para criar o projeto do zero, passo a passo
+- **[/exemplos](http://localhost:8400/exemplos)** - 9 exemplos práticos funcionais na aplicação
 
 ## Licença
 
