@@ -255,7 +255,17 @@ Clique na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilida
 | `vendedor`           | `leitor`            |
 
 
-#### **ATENÇÃO:** a função `obter_identificador_cliente` não deve ser renomeada! Ela está nos arquivos `rate_limiter.py` e `rate_limit_decorator.py`. Caso ela seja renomeada para `obter_identificador_autor`, o sistema de rate limiting deixará de funcionar corretamente. Se ela tiver sido renomeada, reverta a alteração.
+### 5.4. Acertando Uma Substituição Incorreta
+
+Antes da substituição anterior, havia uma função chamada `obter_identificador_cliente` que foi renomeada para `obter_identificador_autor`. Você deve renomeá-la de volta para `obter_identificador_cliente` para manter a consistência com o restante do projeto. 
+
+Para fazer a correção, na ferramenta de busca do VS Code (Ctrl + Shift + F), ative a sensibilidade a maiúsculas e minúsculas e faça a seguinte substituição global no projeto (todas as ocorrências):
+
+| Buscar                       | Substituir por                |
+|------------------------------|-------------------------------|
+| `obter_identificador_autor`  | `obter_identificador_cliente` |
+
+Feito isso, o projeto estará pronto que você possa seguir em frente com o restante desse tutorial.
 
 ---
 
