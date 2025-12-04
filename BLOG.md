@@ -71,19 +71,19 @@ Uma nova instância do VS Code será aberta na pasta do projeto clonado como rai
 
 ### 3.1. Configurando o Git
 
-No terminal do VS Code aberto na raiz do projeto, configure seu nome e email para os commits:
+Em um terminal integrado do novo VS Code aberto na raiz do projeto, configure seu nome e e-mail para os commits:
 
 ```bash
 # Configure seu nome (usado nos commits)
 git config user.name "Seu Nome Completo"
 
-# Configure seu email (deve ser o mesmo do GitHub)
+# Configure seu e-mail (deve ser o mesmo do GitHub)
 git config user.email "seu.email@exemplo.com"
 ```
 
 ### 3.2. Configurando o upstream
 
-Para receber atualizações futuras do repositório original:
+Para receber atualizações futuras do repositório original, execute o seguinte no terminal integrado:
 
 ```bash
 git remote add upstream https://github.com/maroquio/DefaultWebApp.git
@@ -265,7 +265,22 @@ Para fazer a correção, na ferramenta de busca do VS Code (Ctrl + Shift + F), a
 |------------------------------|-------------------------------|
 | `obter_identificador_autor`  | `obter_identificador_cliente` |
 
-Feito isso, o projeto estará pronto que você possa seguir em frente com o restante desse tutorial.
+Feito isso, o projeto estará pronto para que você possa seguir em frente com o restante desse tutorial.
+
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   configuração dos perfis de usuário (Autor e Leitor)
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
 
 ---
 
@@ -1147,6 +1162,21 @@ Crie o arquivo `templates/admin/categorias/editar.html`:
 {% endblock %}
 ```
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   criação do CRUD de Categorias (model, sql, repo, dto, routes, templates)
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 7. Registrando o CRUD de Categorias
@@ -1214,6 +1244,21 @@ ROUTERS = [
 
 > **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   registro do CRUD de Categorias no main.py
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 8. Adicionando Menu e Card de Categorias no Dashboard
@@ -1262,6 +1307,21 @@ Adicione um novo card para **Categorias** junto aos outros cards administrativos
 
 > **Resultado esperado:** O administrador verá o link "Categorias" no menu superior e um card de acesso rápido na página inicial (dashboard).
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   adição do menu e card de Categorias no dashboard
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 9. Testando o CRUD de Categorias
@@ -1291,7 +1351,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 1. Acesse http://localhost:8400 no navegador
 2. Clique em **Entrar** ou acesse http://localhost:8400/login
 3. Faça login com as credenciais do administrador padrão:
-   - **Email:** `padrao@administrador.com`
+   - **E-mail:** `padrao@administrador.com`
    - **Senha:** `1234aA@#`
 
 ### 9.3. Testando as funcionalidades
@@ -2382,6 +2442,21 @@ async def ler_artigo(
     )
 ```
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   criação do CRUD de Artigos (model, sql, repo, dto, routes)
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 11. Templates de Artigos
@@ -3180,6 +3255,21 @@ Crie o arquivo `templates/artigos/ler.html`:
 
 > **Nota sobre Markdown:** Os templates de cadastro e edição usam o **EasyMDE** como editor visual de Markdown. O template de leitura usa o **Marked.js** para renderizar o Markdown em HTML e o **Highlight.js** para destacar blocos de código.
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   criação dos templates de Artigos
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 12. Registrando o CRUD de Artigos
@@ -3249,6 +3339,21 @@ ROUTERS = [
 
 > **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   registro do CRUD de Artigos no main.py
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 13. Adicionando Menu e Card de Artigos no Dashboard
@@ -3298,6 +3403,21 @@ No arquivo `templates/dashboard.html`, adicione uma seção para autores logo ap
 
 > **Resultado esperado:** O autor verá o link "Meus Artigos" no menu superior e um card de acesso rápido na página inicial (dashboard).
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   adição do menu e card de Artigos no dashboard
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 14. Testando o CRUD de Artigos
@@ -3328,7 +3448,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 1. Acesse http://localhost:8400 no navegador
 2. Clique em **Entrar** ou acesse http://localhost:8400/login
 3. Faça login com as credenciais do autor padrão:
-   - **Email:** `padrao@autor.com`
+   - **E-mail:** `padrao@autor.com`
    - **Senha:** `1234aA@#`
 
 ### 14.3. Testando as funcionalidades
@@ -3604,6 +3724,21 @@ Crie ou substitua o arquivo `templates/index.html` com o template da home page d
 {% endblock %}
 ```
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   criação dos templates base e home page do blog
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 16. Rotas Públicas e Configuração do main.py
@@ -3759,6 +3894,21 @@ Substitua por:
 
 > **Resultado esperado:** O menu público agora exibe: **Início** → **Sobre** → **Artigos**. O link "Artigos" direciona para a página de busca/listagem pública de artigos (`/artigos`).
 
+### Salvando seu progresso
+
+Após concluir as alterações desta seção, é importante salvar seu progresso no repositório:
+
+1. Abra o painel **Source Control** do VS Code (Ctrl + Shift + G)
+2. Revise as alterações realizadas
+3. Digite a seguinte mensagem de commit:
+   ```
+   configuração das rotas públicas e finalização do main.py
+   ```
+4. Clique no botão **Commit** (ícone ✓) para confirmar as alterações
+5. Clique no botão **Sync Changes** para sincronizar com o GitHub
+
+> **Dica:** Manter commits frequentes facilita o acompanhamento do progresso e permite reverter alterações caso necessário.
+
 ---
 
 ## 17. Testando a Aplicação Completa
@@ -3792,7 +3942,7 @@ Documentação API: http://0.0.0.0:8400/docs
 1. Acesse `http://127.0.0.1:8400/cadastrar`
 2. Crie uma conta com os dados:
    - Nome: Admin
-   - Email: admin@blog.com
+   - E-mail: admin@blog.com
    - Senha: (escolha uma senha segura)
 3. Após cadastrar, o sistema criará um usuário com perfil **Leitor** por padrão
 
@@ -3814,7 +3964,7 @@ Documentação API: http://0.0.0.0:8400/docs
 1. Acesse `http://127.0.0.1:8400/cadastrar`
 2. Crie uma conta com os dados:
    - Nome: Autor Teste
-   - Email: autor@blog.com
+   - E-mail: autor@blog.com
    - Senha: (escolha uma senha segura)
 3. Como Administrador, acesse a lista de usuários e altere o perfil para "Autor"
 
@@ -3954,7 +4104,7 @@ Parabéns! Você concluiu a implementação do **BlogSimples**, um sistema de bl
 - Tags para artigos
 - Paginação na listagem
 - Sistema de favoritos
-- Notificações por email
+- Notificações por e-mail
 - API REST para integração
 
 Este tutorial demonstrou a arquitetura em camadas utilizada no projeto:
