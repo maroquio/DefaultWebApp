@@ -3979,7 +3979,7 @@ Documentação API: http://0.0.0.0:8400/docs
    - Resumo: Um breve resumo do artigo
    - Conteúdo: Use Markdown para escrever o conteúdo
 
-```markdown
+````markdown
 # Introdução
 
 Este é meu primeiro artigo no blog!
@@ -3994,6 +3994,7 @@ Aqui vai o conteúdo da primeira seção.
 def hello():
     print("Hello, World!")
 ```
+````
 
 ## Conclusão
 
