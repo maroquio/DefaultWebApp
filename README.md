@@ -98,9 +98,9 @@ O sistema vem com usuários pré-cadastrados para facilitar os testes:
 
 | Perfil | E-mail | Senha | Descrição |
 |--------|--------|-------|-----------|
-| **Admininistrador** | administrador@email.com | 1234aA@# | Acesso administrativo completo |
-| **Cliente** | cliente@email.com | 1234aA@# | Usuário com perfil Cliente |
-| **Vendedor** | vendedor@email.com | 1234aA@# | Usuário com perfil Vendedor |
+| **Administrador** | padrao@administrador.com | 1234aA@# | Acesso administrativo completo |
+| **Autor** | padrao@autor.com | 1234aA@# | Usuário com perfil Autor |
+| **Leitor** | padrao@leitor.com | 1234aA@# | Usuário com perfil Leitor |
 
 > ⚠️ **Importante**: Altere essas senhas em ambiente de produção!
 
@@ -111,7 +111,7 @@ O sistema vem com usuários pré-cadastrados para facilitar os testes:
 - **Login/Logout** com sessões seguras
 - **Cadastro de usuários** com validação de senha forte
 - **Recuperação de senha** por email
-- **Perfis de usuário** (Admin, Cliente, Vendedor - extensível)
+- **Perfis de usuário** (Administrador, Autor, Leitor - extensível)
 - **Proteção de rotas** por perfil com decorator `@requer_autenticacao()`
 - **Gerenciamento de usuários** (CRUD completo para admins)
 

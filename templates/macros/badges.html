@@ -66,16 +66,16 @@
         Badge para perfil de usuário
 
         Args:
-            perfil: String com o perfil ('Administrador', 'Vendedor', 'Cliente')
+            perfil: String com o perfil ('Administrador', 'Autor', 'Leitor')
 
         Cores:
             - Administrador: danger (vermelho)
-            - Vendedor: warning (amarelo)
-            - Cliente: info (ciano)
+            - Autor: warning (amarelo)
+            - Leitor: info (ciano)
     #}
     {% if perfil == 'Administrador' %}
         {% set cor = 'danger' %}
-    {% elif perfil == 'Vendedor' %}
+    {% elif perfil == 'Autor' %}
         {% set cor = 'warning text-dark' %}
     {% else %}
         {% set cor = 'info' %}
