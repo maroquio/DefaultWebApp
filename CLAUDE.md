@@ -71,7 +71,7 @@ Routes (HTTP) → DTOs (Validation) → Repositories → SQL → Database
 - **ALWAYS use `UsuarioLogado` dataclass** for type hints of `usuario_logado` parameter (see below)
 
 **Database Connection:**
-- Always use `with get_connection() as conn:` context manager from `util/db_util.py`
+- Always use `with obter_conexao() as conn:` context manager from `util/db_util.py`
 - Connection automatically commits on success, rolls back on exception, and closes
 - `conn.row_factory = sqlite3.Row` is set for dict-like access to results
 - Use `cursor.lastrowid` to get inserted ID, `cursor.rowcount` to check affected rows
