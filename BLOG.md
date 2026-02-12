@@ -357,6 +357,7 @@ from typing import Optional
 from model.categoria_model import Categoria
 from sql.categoria_sql import *
 from util.db_util import obter_conexao
+from util.logger_config import logger
 
 
 def _row_to_categoria(row) -> Categoria:
@@ -403,7 +404,7 @@ def inserir(categoria: Categoria) -> Optional[Categoria]:
                 return categoria
             return None
     except Exception as e:
-        print(f"Erro ao inserir categoria: {e}")
+        logger.error(f"Erro ao inserir categoria: {e}")
         return None
 
 
@@ -426,7 +427,7 @@ def alterar(categoria: Categoria) -> bool:
             )
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao alterar categoria: {e}")
+        logger.error(f"Erro ao alterar categoria: {e}")
         return False
 
 
@@ -446,7 +447,7 @@ def excluir(id: int) -> bool:
             cursor.execute(EXCLUIR, (id,))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao excluir categoria: {e}")
+        logger.error(f"Erro ao excluir categoria: {e}")
         return False
 
 
@@ -470,7 +471,7 @@ def obter_por_id(id: int) -> Optional[Categoria]:
                 return _row_to_categoria(row)
             return None
     except Exception as e:
-        print(f"Erro ao obter categoria por ID: {e}")
+        logger.error(f"Erro ao obter categoria por ID: {e}")
         return None
 
 
@@ -489,7 +490,7 @@ def obter_todos() -> list[Categoria]:
 
             return [_row_to_categoria(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter todas as categorias: {e}")
+        logger.error(f"Erro ao obter todas as categorias: {e}")
         return []
 
 
@@ -514,7 +515,7 @@ def obter_por_nome(nome: str) -> Optional[Categoria]:
                 return _row_to_categoria(row)
             return None
     except Exception as e:
-        print(f"Erro ao obter categoria por nome: {e}")
+        logger.error(f"Erro ao obter categoria por nome: {e}")
         return None
 ```
 
@@ -1312,11 +1313,22 @@ Crie o arquivo `model/artigo_model.py`:
 ```python
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
+from util.enum_base import EnumEntidade
 
-class StatusArtigo(Enum):
+
+class StatusArtigo(EnumEntidade):
+    """
+    Enum para status de artigos.
+
+    Herda de EnumEntidade que fornece métodos úteis:
+        - valores(): Lista todos os valores
+        - existe(valor): Verifica se valor existe
+        - from_valor(valor): Converte string para enum
+        - validar(valor): Valida e retorna ou levanta ValueError
+    """
+
     RASCUNHO = "Rascunho"
     FINALIZADO = "Finalizado"
     PUBLICADO = "Publicado"
@@ -1328,7 +1340,7 @@ class Artigo:
     # Campos obrigatórios (com defaults para permitir criação)
     titulo: str = ""
     conteudo: str = ""
-    status: str = "Rascunho"
+    status: StatusArtigo = StatusArtigo.RASCUNHO
     usuario_id: int = 0
     categoria_id: int = 0
     # Campos opcionais
@@ -1523,21 +1535,31 @@ Crie o arquivo `repo/artigo_repo.py`:
 
 ```python
 from typing import Optional
-from model.artigo_model import Artigo
+from model.artigo_model import Artigo, StatusArtigo
 from sql.artigo_sql import *
 from util.db_util import obter_conexao
+from util.logger_config import logger
 
 
 def _row_to_artigo(row) -> Artigo:
     """
     Converte uma linha do banco de dados em objeto Artigo.
     """
+    try:
+        status = StatusArtigo(row["status"])
+    except ValueError:
+        logger.error(
+            f"Valor inválido para StatusArtigo: '{row['status']}'. "
+            f"Usando padrão: {StatusArtigo.RASCUNHO.value}"
+        )
+        status = StatusArtigo.RASCUNHO
+
     return Artigo(
         id=row["id"],
         titulo=row["titulo"],
         resumo=row["resumo"] if "resumo" in row.keys() else None,
         conteudo=row["conteudo"],
-        status=row["status"],
+        status=status,
         usuario_id=row["usuario_id"],
         categoria_id=row["categoria_id"],
         qtde_visualizacoes=row["qtde_visualizacoes"] if "qtde_visualizacoes" in row.keys() else 0,
@@ -1559,7 +1581,7 @@ def criar_tabela() -> bool:
             cursor.execute(CRIAR_TABELA)
             return True
     except Exception as e:
-        print(f"Erro ao criar tabela artigo: {e}")
+        logger.error(f"Erro ao criar tabela artigo: {e}")
         return False
 
 
@@ -1572,13 +1594,13 @@ def inserir(artigo: Artigo) -> Optional[int]:
                 artigo.titulo,
                 artigo.resumo,
                 artigo.conteudo,
-                artigo.status,
+                artigo.status.value if isinstance(artigo.status, StatusArtigo) else artigo.status,
                 artigo.usuario_id,
                 artigo.categoria_id
             ))
             return cursor.lastrowid
     except Exception as e:
-        print(f"Erro ao inserir artigo: {e}")
+        logger.error(f"Erro ao inserir artigo: {e}")
         return None
 
 
@@ -1591,13 +1613,13 @@ def alterar(artigo: Artigo) -> bool:
                 artigo.titulo,
                 artigo.resumo,
                 artigo.conteudo,
-                artigo.status,
+                artigo.status.value if isinstance(artigo.status, StatusArtigo) else artigo.status,
                 artigo.categoria_id,
                 artigo.id
             ))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao alterar artigo: {e}")
+        logger.error(f"Erro ao alterar artigo: {e}")
         return False
 
 
@@ -1609,7 +1631,7 @@ def alterar_status(id: int, status: str) -> bool:
             cursor.execute(ALTERAR_STATUS, (status, status, status, id))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao alterar status do artigo: {e}")
+        logger.error(f"Erro ao alterar status do artigo: {e}")
         return False
 
 
@@ -1621,7 +1643,7 @@ def excluir(id: int) -> bool:
             cursor.execute(EXCLUIR, (id,))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao excluir artigo: {e}")
+        logger.error(f"Erro ao excluir artigo: {e}")
         return False
 
 
@@ -1636,7 +1658,7 @@ def obter_por_id(id: int) -> Optional[Artigo]:
                 return _row_to_artigo(row)
             return None
     except Exception as e:
-        print(f"Erro ao obter artigo por ID: {e}")
+        logger.error(f"Erro ao obter artigo por ID: {e}")
         return None
 
 
@@ -1649,7 +1671,7 @@ def obter_todos() -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter todos os artigos: {e}")
+        logger.error(f"Erro ao obter todos os artigos: {e}")
         return []
 
 
@@ -1662,7 +1684,7 @@ def obter_por_usuario(usuario_id: int) -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter artigos por usuário: {e}")
+        logger.error(f"Erro ao obter artigos por usuário: {e}")
         return []
 
 
@@ -1675,7 +1697,7 @@ def obter_publicados() -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter artigos publicados: {e}")
+        logger.error(f"Erro ao obter artigos publicados: {e}")
         return []
 
 
@@ -1688,7 +1710,7 @@ def obter_ultimos_publicados(limite: int = 6) -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter últimos artigos publicados: {e}")
+        logger.error(f"Erro ao obter últimos artigos publicados: {e}")
         return []
 
 
@@ -1701,7 +1723,7 @@ def buscar_por_titulo(termo: str) -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao buscar artigos por título: {e}")
+        logger.error(f"Erro ao buscar artigos por título: {e}")
         return []
 
 
@@ -1714,7 +1736,7 @@ def obter_por_categoria(categoria_id: int) -> list[Artigo]:
             rows = cursor.fetchall()
             return [_row_to_artigo(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter artigos por categoria: {e}")
+        logger.error(f"Erro ao obter artigos por categoria: {e}")
         return []
 
 
@@ -1726,7 +1748,7 @@ def incrementar_visualizacoes(id: int) -> bool:
             cursor.execute(INCREMENTAR_VISUALIZACOES, (id,))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao incrementar visualizações: {e}")
+        logger.error(f"Erro ao incrementar visualizações: {e}")
         return False
 
 
@@ -1739,7 +1761,7 @@ def obter_quantidade() -> int:
             row = cursor.fetchone()
             return row["quantidade"] if row else 0
     except Exception as e:
-        print(f"Erro ao obter quantidade de artigos: {e}")
+        logger.error(f"Erro ao obter quantidade de artigos: {e}")
         return 0
 
 
@@ -1752,7 +1774,7 @@ def obter_quantidade_publicados() -> int:
             row = cursor.fetchone()
             return row["quantidade"] if row else 0
     except Exception as e:
-        print(f"Erro ao obter quantidade de artigos publicados: {e}")
+        logger.error(f"Erro ao obter quantidade de artigos publicados: {e}")
         return 0
 
 
@@ -1765,7 +1787,7 @@ def titulo_existe(titulo: str, excluir_id: int = 0) -> bool:
             row = cursor.fetchone()
             return row is not None
     except Exception as e:
-        print(f"Erro ao verificar título: {e}")
+        logger.error(f"Erro ao verificar título: {e}")
         return False
 ```
 
