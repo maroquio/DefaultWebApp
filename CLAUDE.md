@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 python main.py
 ```
 
-The application will start on the configured HOST and PORT (default: http://0.0.0.0:8400)
+The application will start on the configured HOST and PORT (default: http://localhost:8400)
 
 ### Running Tests
 ```bash
@@ -526,7 +526,7 @@ Follow this exact sequence (detailed guide in `docs/CRIAR_CRUD.md`):
 - `DATABASE_PATH`: SQLite database file path (default: database.db)
 - `APP_NAME`: Application name shown in UI and logs
 - `SECRET_KEY`: Session secret (MUST change in production, min 32 chars)
-- `HOST`, `PORT`: Server configuration (default: 0.0.0.0:8400)
+- `HOST`, `PORT`: Server configuration (default: localhost:8400)
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`: Email service (Resend.com)
 - `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
 - `LOG_RETENTION_DAYS`: Number of days to keep log files (default: 30)
