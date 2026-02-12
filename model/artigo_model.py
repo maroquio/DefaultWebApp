@@ -1,10 +1,21 @@
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
+from util.enum_base import EnumEntidade
 
-class StatusArtigo(Enum):
+
+class StatusArtigo(EnumEntidade):
+    """
+    Enum para status de artigos.
+
+    Herda de EnumEntidade que fornece métodos úteis:
+        - valores(): Lista todos os valores
+        - existe(valor): Verifica se valor existe
+        - from_valor(valor): Converte string para enum
+        - validar(valor): Valida e retorna ou levanta ValueError
+    """
+
     RASCUNHO = "Rascunho"
     FINALIZADO = "Finalizado"
     PUBLICADO = "Publicado"
@@ -16,7 +27,7 @@ class Artigo:
     # Campos obrigatórios (com defaults para permitir criação)
     titulo: str = ""
     conteudo: str = ""
-    status: str = "Rascunho"
+    status: StatusArtigo = StatusArtigo.RASCUNHO
     usuario_id: int = 0
     categoria_id: int = 0
     # Campos opcionais

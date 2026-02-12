@@ -2,6 +2,7 @@ from typing import Optional
 from model.categoria_model import Categoria
 from sql.categoria_sql import *
 from util.db_util import obter_conexao
+from util.logger_config import logger
 
 
 def _row_to_categoria(row) -> Categoria:
@@ -48,7 +49,7 @@ def inserir(categoria: Categoria) -> Optional[Categoria]:
                 return categoria
             return None
     except Exception as e:
-        print(f"Erro ao inserir categoria: {e}")
+        logger.error(f"Erro ao inserir categoria: {e}")
         return None
 
 
@@ -68,7 +69,7 @@ def alterar(categoria: Categoria) -> bool:
             cursor.execute(ALTERAR, (categoria.nome, categoria.descricao, categoria.id))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao alterar categoria: {e}")
+        logger.error(f"Erro ao alterar categoria: {e}")
         return False
 
 
@@ -88,7 +89,7 @@ def excluir(id: int) -> bool:
             cursor.execute(EXCLUIR, (id,))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Erro ao excluir categoria: {e}")
+        logger.error(f"Erro ao excluir categoria: {e}")
         return False
 
 
@@ -112,7 +113,7 @@ def obter_por_id(id: int) -> Optional[Categoria]:
                 return _row_to_categoria(row)
             return None
     except Exception as e:
-        print(f"Erro ao obter categoria por ID: {e}")
+        logger.error(f"Erro ao obter categoria por ID: {e}")
         return None
 
 
@@ -131,7 +132,7 @@ def obter_todos() -> list[Categoria]:
 
             return [_row_to_categoria(row) for row in rows]
     except Exception as e:
-        print(f"Erro ao obter todas as categorias: {e}")
+        logger.error(f"Erro ao obter todas as categorias: {e}")
         return []
 
 
@@ -156,5 +157,5 @@ def obter_por_nome(nome: str) -> Optional[Categoria]:
                 return _row_to_categoria(row)
             return None
     except Exception as e:
-        print(f"Erro ao obter categoria por nome: {e}")
+        logger.error(f"Erro ao obter categoria por nome: {e}")
         return None
