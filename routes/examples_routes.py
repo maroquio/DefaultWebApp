@@ -4,6 +4,7 @@ from util.template_util import criar_templates
 from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
 from util.flash_messages import informar_erro
 from util.logger_config import logger
+from util.paginacao_util import paginar
 
 router = APIRouter(prefix="/exemplos")
 templates_public = criar_templates()
@@ -195,7 +196,7 @@ async def property_detail_demo(request: Request):
 
 
 @router.get("/lista-tabela")
-async def table_list_demo(request: Request):
+async def table_list_demo(request: Request, pagina: int = 1):
     """
     Página de demonstração de tabela com listagem de dados
     """
@@ -254,7 +255,10 @@ async def table_list_demo(request: Request):
         },
     ]
 
+    # Aplicar paginação (3 itens por página para facilitar a demonstração)
+    paginacao = paginar(produtos, pagina=pagina, por_pagina=3)
+
     return templates_public.TemplateResponse(
         "exemplos/lista_tabela.html",
-        {"request": request, "produtos": produtos}
+        {"request": request, "produtos": paginacao.items, "paginacao": paginacao}
     )

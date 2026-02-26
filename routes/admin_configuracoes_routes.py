@@ -20,7 +20,10 @@ from dtos.configuracao_dto import SalvarConfiguracaoLoteDTO
 from model.usuario_logado_model import UsuarioLogado
 
 # Repositories
-from repo import configuracao_repo
+from repo import configuracao_repo, auditoria_repo
+
+# Pagination
+from util.paginacao_util import Paginacao
 
 # Utilities
 from util.auth_decorator import requer_autenticacao
@@ -436,5 +439,54 @@ async def post_filtrar_auditoria(
             "total_linhas": total_linhas,
             "mensagem_erro": mensagem_erro,
             "usuario_logado": usuario_logado,
+        }
+    )
+
+
+@router.get("/auditoria/registros")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def get_auditoria_registros(
+    request: Request,
+    pagina: int = 1,
+    acao: str = "",
+    entidade: str = "",
+    data_inicio: str = "",
+    data_fim: str = "",
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """
+    Exibe a trilha de auditoria estruturada com filtros.
+
+    Diferente do log de arquivo (que exibe texto puro),
+    esta página exibe registros estruturados de ações de negócio:
+    quem fez o quê, quando, em qual entidade.
+    """
+    assert usuario_logado is not None
+
+    por_pagina = 20
+    registros, total = auditoria_repo.obter_com_filtros(
+        acao=acao or None,
+        entidade=entidade or None,
+        data_inicio=data_inicio or None,
+        data_fim=data_fim or None,
+        pagina=pagina,
+        por_pagina=por_pagina,
+    )
+
+    # Criar objeto Paginacao manualmente para o template
+    from util.paginacao_util import Paginacao
+    paginacao = Paginacao(items=registros, total=total, pagina_atual=pagina, por_pagina=por_pagina)
+
+    return templates.TemplateResponse(
+        "admin/auditoria_registros.html",
+        {
+            "request": request,
+            "usuario_logado": usuario_logado,
+            "paginacao": paginacao,
+            "registros": registros,
+            "filtro_acao": acao,
+            "filtro_entidade": entidade,
+            "filtro_data_inicio": data_inicio,
+            "filtro_data_fim": data_fim,
         }
     )

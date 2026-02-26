@@ -145,3 +145,38 @@ Link (<a>) se onclick vazio, Button (<button>) se onclick presente
         #}
         {{ btn_text(url, texto, 'arrow-left', variant, size) }}
         {% endmacro %}
+
+        {% macro botao_exportar_csv(url, texto='Exportar CSV', size='md', extra_classes='') %}
+        {#
+        Botão de exportação para CSV.
+
+        Args:
+        url: URL do endpoint de exportação (ex: '/admin/usuarios/exportar-csv')
+        texto: Texto do botão (padrão: 'Exportar CSV')
+        size: Tamanho do botão ('sm', 'md', 'lg')
+        extra_classes: Classes CSS adicionais
+
+        Exemplo de uso:
+        {{ botao_exportar_csv('/admin/usuarios/exportar-csv') }}
+        {{ botao_exportar_csv('/produtos/exportar-csv', texto='Baixar CSV', size='sm') }}
+        #}
+        {{ btn_text(url, texto, 'filetype-csv', 'success', size, extra_classes=extra_classes) }}
+        {% endmacro %}
+
+        {% macro botao_exportar_excel(url, texto='Exportar Excel', size='md', extra_classes='') %}
+        {#
+        Botão de exportação para Excel (.xlsx).
+
+        Requer openpyxl instalado no servidor (pip install openpyxl).
+
+        Args:
+        url: URL do endpoint de exportação (ex: '/admin/usuarios/exportar-excel')
+        texto: Texto do botão (padrão: 'Exportar Excel')
+        size: Tamanho do botão ('sm', 'md', 'lg')
+        extra_classes: Classes CSS adicionais
+
+        Exemplo de uso:
+        {{ botao_exportar_excel('/admin/usuarios/exportar-excel') }}
+        #}
+        {{ btn_text(url, texto, 'file-earmark-excel', 'success', size, extra_classes=extra_classes) }}
+        {% endmacro %}

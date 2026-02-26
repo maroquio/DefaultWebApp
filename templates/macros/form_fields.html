@@ -331,3 +331,119 @@ decimal_suffix=''
 {% endif %}
 
 {% endmacro %}
+
+
+{% macro input_file(
+name,
+label,
+accept='',
+required=false,
+multiple=false,
+help_text='',
+preview=false,
+preview_tipo='imagem',
+max_size_mb=0,
+class_extra='',
+wrapper_class='mb-3'
+) %}
+{#
+Campo de upload de arquivo com preview opcional.
+
+Args:
+    name: Nome do campo (atributo name do input)
+    label: Rótulo exibido
+    accept: Tipos aceitos para o seletor de arquivo (ex: 'image/*', '.pdf,.docx')
+    required: Campo obrigatório
+    multiple: Permitir múltiplos arquivos
+    help_text: Texto de ajuda abaixo do campo
+    preview: Exibir preview do arquivo selecionado
+    preview_tipo: Tipo de preview ('imagem' ou 'documento')
+    max_size_mb: Tamanho máximo exibido no texto de ajuda (0 = não exibir)
+    class_extra: Classes CSS adicionais no input
+    wrapper_class: Classe CSS do wrapper externo
+
+Uso:
+    {% from 'macros/form_fields.html' import input_file %}
+
+    {# Upload de imagem com preview #}
+    {{ input_file('foto', 'Foto do Produto', accept='image/*', preview=true) }}
+
+    {# Upload de documento sem preview #}
+    {{ input_file('contrato', 'Contrato PDF', accept='.pdf', required=true) }}
+
+VALIDAÇÃO: A validação real do arquivo (tamanho, tipo MIME) deve ser feita
+no servidor via util/upload_util.py. Este campo fornece apenas UX.
+#}
+{% set field_id = name %}
+{% set field_error = erros[name] if erros is defined and name in erros else none %}
+{% set has_error = field_error is not none %}
+
+<div class="{{ wrapper_class }}">
+    <label for="{{ field_id }}" class="form-label">
+        {{ label }}{% if required %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}
+    </label>
+
+    <input
+        type="file"
+        class="form-control {{ class_extra }} {% if has_error %}is-invalid{% endif %}"
+        id="{{ field_id }}"
+        name="{{ name }}"
+        {% if accept %}accept="{{ accept }}"{% endif %}
+        {% if multiple %}multiple{% endif %}
+        {% if required %}required{% endif %}
+        {% if preview %}onchange="previewArquivo_{{ field_id }}(this)"{% endif %}>
+
+    {% if has_error %}
+    <div class="invalid-feedback">{{ field_error }}</div>
+    {% endif %}
+
+    {% if help_text or max_size_mb > 0 %}
+    <div class="form-text">
+        {% if help_text %}{{ help_text }}{% endif %}
+        {% if max_size_mb > 0 %}
+        {% if help_text %} — {% endif %}Tamanho máximo: {{ max_size_mb }}MB
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if preview %}
+    {# Área de preview #}
+    <div id="preview_{{ field_id }}" class="mt-2" style="display: none;">
+        {% if preview_tipo == 'imagem' %}
+        <img id="preview_img_{{ field_id }}"
+             src=""
+             alt="Preview da imagem"
+             class="img-thumbnail"
+             style="max-height: 200px; max-width: 100%;">
+        {% else %}
+        <div class="alert alert-success py-2 mb-0">
+            <i class="bi bi-file-check"></i>
+            <span id="preview_nome_{{ field_id }}"></span>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function previewArquivo_{{ field_id }}(input) {
+        const previewContainer = document.getElementById('preview_{{ field_id }}');
+        if (!input.files || !input.files[0]) {
+            previewContainer.style.display = 'none';
+            return;
+        }
+        const arquivo = input.files[0];
+        previewContainer.style.display = 'block';
+
+        {% if preview_tipo == 'imagem' %}
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview_img_{{ field_id }}').src = e.target.result;
+        };
+        reader.readAsDataURL(arquivo);
+        {% else %}
+        document.getElementById('preview_nome_{{ field_id }}').textContent = arquivo.name;
+        {% endif %}
+    }
+    </script>
+    {% endif %}
+</div>
+{% endmacro %}

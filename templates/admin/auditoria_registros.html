@@ -1,0 +1,196 @@
+{% extends "base_privada.html" %}
+{% from 'macros/form_fields.html' import field with context %}
+{% from 'macros/paginacao.html' import paginacao_completa %}
+
+{% block titulo %}Trilha de Auditoria{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-shield-check"></i> Trilha de Auditoria</h2>
+                <p class="text-muted mb-0">Registro estruturado de ações de negócio realizadas no sistema</p>
+            </div>
+            <a href="/admin/auditoria" class="btn btn-outline-secondary">
+                <i class="bi bi-file-text"></i> Ver Log de Arquivo
+            </a>
+        </div>
+
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle"></i>
+            <strong>Diferença entre Log e Auditoria:</strong>
+            O <a href="/admin/auditoria">log de arquivo</a> registra eventos técnicos (erros, informações do servidor).
+            Esta página registra <strong>ações de negócio</strong> (quem criou, atualizou ou excluiu o quê).
+            Use o decorator <code>@auditar()</code> de <code>util/auditoria_decorator.py</code> nas suas routes para registrar automaticamente.
+        </div>
+
+        <!-- Filtros -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h6>
+            </div>
+            <div class="card-body">
+                <form method="get" action="/admin/auditoria/registros">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Ação</label>
+                            <select name="acao" class="form-select">
+                                <option value="">Todas as ações</option>
+                                <option value="criar" {% if filtro_acao == 'criar' %}selected{% endif %}>Criar</option>
+                                <option value="atualizar" {% if filtro_acao == 'atualizar' %}selected{% endif %}>Atualizar</option>
+                                <option value="excluir" {% if filtro_acao == 'excluir' %}selected{% endif %}>Excluir</option>
+                                <option value="login" {% if filtro_acao == 'login' %}selected{% endif %}>Login</option>
+                                <option value="logout" {% if filtro_acao == 'logout' %}selected{% endif %}>Logout</option>
+                                <option value="exportar" {% if filtro_acao == 'exportar' %}selected{% endif %}>Exportar</option>
+                                <option value="restaurar" {% if filtro_acao == 'restaurar' %}selected{% endif %}>Restaurar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Entidade</label>
+                            <input type="text" name="entidade" class="form-control"
+                                   placeholder="ex: usuario, produto" value="{{ filtro_entidade }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data Início</label>
+                            <input type="date" name="data_inicio" class="form-control" value="{{ filtro_data_inicio }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data Fim</label>
+                            <input type="date" name="data_fim" class="form-control" value="{{ filtro_data_fim }}">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                    {% if filtro_acao or filtro_entidade or filtro_data_inicio or filtro_data_fim %}
+                    <div class="mt-2">
+                        <a href="/admin/auditoria/registros" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Limpar filtros
+                        </a>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabela de Registros -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Registros</h5>
+                    <span class="badge bg-light text-primary">{{ paginacao.total }} registro(s)</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if registros %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Usuário</th>
+                                <th>Ação</th>
+                                <th>Entidade</th>
+                                <th>ID</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reg in registros %}
+                            {% set acao_cores = {
+                                'criar': 'success',
+                                'atualizar': 'primary',
+                                'excluir': 'danger',
+                                'login': 'info',
+                                'logout': 'secondary',
+                                'exportar': 'warning',
+                                'restaurar': 'warning',
+                            } %}
+                            {% set cor = acao_cores.get(reg.acao, 'secondary') %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if reg.data %}{{ reg.data | formatar_data_hora }}{% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if reg.usuario_nome %}
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-person"></i> {{ reg.usuario_nome }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted small">Sistema</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ cor }}">
+                                        <i class="bi bi-{% if reg.acao == 'criar' %}plus{% elif reg.acao == 'excluir' %}trash{% elif reg.acao == 'atualizar' %}pencil{% elif reg.acao == 'login' %}box-arrow-in-right{% elif reg.acao == 'exportar' %}download{% else %}gear{% endif %}"></i>
+                                        {{ reg.acao | title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <code class="text-primary">{{ reg.entidade }}</code>
+                                </td>
+                                <td>
+                                    {% if reg.entidade_id %}
+                                    <span class="badge bg-light text-dark border">#{{ reg.entidade_id }}</span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted font-monospace">
+                                        {{ reg.ip or '—' }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                <div class="p-3 border-top">
+                    {% set url_extra = '&acao=' ~ filtro_acao ~ '&entidade=' ~ filtro_entidade ~ '&data_inicio=' ~ filtro_data_inicio ~ '&data_fim=' ~ filtro_data_fim %}
+                    {{ paginacao_completa(paginacao, '/admin/auditoria/registros', url_extra=url_extra, texto_singular='registro', texto_plural='registros') }}
+                </div>
+
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-shield-slash fs-1 d-block mb-2"></i>
+                    {% if filtro_acao or filtro_entidade or filtro_data_inicio or filtro_data_fim %}
+                    Nenhum registro encontrado com os filtros aplicados.
+                    {% else %}
+                    Nenhuma ação registrada ainda.
+                    Use o decorator <code>@auditar()</code> nas suas routes para começar a registrar.
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Guia de Uso -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-code-square"></i> Como usar o decorator @auditar()</h6>
+            </div>
+            <div class="card-body">
+                <pre class="bg-dark text-light p-3 rounded small mb-0"><code>from util.auditoria_decorator import auditar
+from model.auditoria_model import AcaoAuditoria
+
+@router.post("/produto/excluir/{produto_id}")
+@requer_autenticacao()
+@auditar(acao=AcaoAuditoria.EXCLUIR, entidade="produto", id_param="produto_id")
+async def excluir_produto(request: Request, produto_id: int, ...):
+    # A auditoria é registrada automaticamente após execução
+    produto_repo.excluir(produto_id)
+    return RedirectResponse("/produtos", status_code=303)</code></pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

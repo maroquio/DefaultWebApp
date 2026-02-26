@@ -1,3 +1,15 @@
+<!-- Ícone de Notificações com Badge -->
+<li class="nav-item me-1">
+    <a class="nav-link position-relative" href="/notificacoes" title="Notificações" id="nav-notificacoes">
+        <i class="bi bi-bell fs-5"></i>
+        <span id="badge-notificacoes"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="display: none; font-size: 0.6rem;">
+            0
+        </span>
+    </a>
+</li>
+
 <!-- Dropdown do Usuário - Componente Reutilizável -->
 <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
@@ -16,6 +28,12 @@
         <li><a class="dropdown-item" href="/usuario/perfil/visualizar">
             <i class="bi bi-person"></i> Meu Perfil
         </a></li>
+        <li><a class="dropdown-item" href="/notificacoes">
+            <i class="bi bi-bell"></i> Notificações
+            <span id="badge-notificacoes-menu"
+                  class="badge bg-danger ms-1"
+                  style="display: none;">0</span>
+        </a></li>
 
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="/logout">
@@ -23,3 +41,47 @@
         </a></li>
     </ul>
 </li>
+
+<!-- Polling de Notificações (atualiza badge a cada 30s) -->
+<script>
+(function () {
+    const INTERVALO_MS = 30000; // 30 segundos
+
+    function atualizarBadge(total) {
+        const badge = document.getElementById('badge-notificacoes');
+        const badgeMenu = document.getElementById('badge-notificacoes-menu');
+        if (!badge) return;
+
+        if (total > 0) {
+            const texto = total > 99 ? '99+' : String(total);
+            badge.textContent = texto;
+            badge.style.display = '';
+            if (badgeMenu) {
+                badgeMenu.textContent = texto;
+                badgeMenu.style.display = '';
+            }
+        } else {
+            badge.style.display = 'none';
+            if (badgeMenu) badgeMenu.style.display = 'none';
+        }
+    }
+
+    async function verificarNotificacoes() {
+        try {
+            const resp = await fetch('/notificacoes/nao-lidas', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                atualizarBadge(data.total || 0);
+            }
+        } catch (e) {
+            // Silencioso em erros de rede
+        }
+    }
+
+    // Verificar ao carregar e depois a cada 30s
+    verificarNotificacoes();
+    setInterval(verificarNotificacoes, INTERVALO_MS);
+})();
+</script>

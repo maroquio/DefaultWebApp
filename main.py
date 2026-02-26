@@ -29,6 +29,8 @@ from repo import (
     chamado_repo,
     chamado_interacao_repo,
     indices_repo,
+    notificacao_repo,
+    auditoria_repo,
 )
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
 
@@ -41,6 +43,7 @@ from routes.admin_backups_routes import router as admin_backups_router
 from routes.admin_chamados_routes import router as admin_chamados_router
 from routes.usuario_routes import router as usuario_router
 from routes.chat_routes import router as chat_router
+from routes.notificacao_routes import router as notificacao_router
 from routes.public_routes import router as public_router
 from routes.examples_routes import router as examples_router
 
@@ -82,6 +85,8 @@ TABELAS = [
     (chat_sala_repo, "chat_sala"),
     (chat_participante_repo, "chat_participante"),
     (chat_mensagem_repo, "chat_mensagem"),
+    (notificacao_repo, "notificacao"),
+    (auditoria_repo, "auditoria"),
 ]
 
 # Criar tabelas do banco de dados
@@ -123,6 +128,7 @@ ROUTERS = [
     (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
+    (notificacao_router, ["Notificações"], "notificações"),
     (public_router, ["Público"], "público"),
     (examples_router, ["Exemplos"], "exemplos"),
 ]

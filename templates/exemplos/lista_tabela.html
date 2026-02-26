@@ -1,4 +1,5 @@
 {% extends "base_publica.html" %}
+{% from 'macros/paginacao.html' import paginacao_completa %}
 
 {% block titulo %}Exemplo de Tabela{% endblock %}
 
@@ -100,21 +101,10 @@
                         </table>
                     </div>
 
-                    <!-- Informações adicionais -->
-                    <div class="row mt-4">
-                        <div class="col-12 col-md-6">
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle"></i>
-                                Total de produtos: <strong>{{ produtos|length }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="alert alert-success mb-0">
-                                <i class="bi bi-check-circle"></i>
-                                Produtos ativos: <strong>{{ produtos|selectattr('ativo')|list|length }}</strong>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Paginação -->
+                    {% if paginacao is defined %}
+                    {{ paginacao_completa(paginacao, '/exemplos/lista-tabela', texto_singular='produto', texto_plural='produtos') }}
+                    {% endif %}
                     {% else %}
                     <div class="alert alert-info text-center mb-0">
                         <i class="bi bi-info-circle"></i> Nenhum produto cadastrado.
@@ -157,6 +147,7 @@
                                 <li>Ícones do Bootstrap Icons</li>
                                 <li>Layout responsivo (mobile-friendly)</li>
                                 <li>Modal de confirmação para exclusão</li>
+                                <li><strong>Paginação genérica</strong> via macro <code>paginacao_completa()</code></li>
                             </ul>
                         </div>
                     </div>

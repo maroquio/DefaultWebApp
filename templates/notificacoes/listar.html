@@ -1,0 +1,114 @@
+{% extends 'base_privada.html' %}
+{% from 'macros/empty_states.html' import empty_state %}
+{% from 'macros/paginacao.html' import paginacao_completa %}
+
+{% block titulo %}Notificações{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-xl-7 mx-auto">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-bell"></i> Minhas Notificações</h2>
+                <p class="text-muted mb-0">Acompanhe alertas e avisos importantes</p>
+            </div>
+            <div class="d-flex gap-2">
+                {% if notificacoes %}
+                <form method="post" action="/notificacoes/marcar-todas">
+                    {{ csrf_input(request) }}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-check2-all"></i> Marcar todas como lidas
+                    </button>
+                </form>
+                <form method="post" action="/notificacoes/excluir-lidas">
+                    {{ csrf_input(request) }}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Excluir lidas
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if notificacoes %}
+        <div class="list-group shadow-sm mb-3">
+            {% for notif in notificacoes %}
+            {# Mapear tipo para classes Bootstrap #}
+            {% set tipo_classes = {
+                'info': ('info', 'bi-info-circle'),
+                'sucesso': ('success', 'bi-check-circle'),
+                'aviso': ('warning', 'bi-exclamation-triangle'),
+                'erro': ('danger', 'bi-x-circle'),
+            } %}
+            {% set cor, icone = tipo_classes.get(notif.tipo, ('secondary', 'bi-bell')) %}
+
+            <div class="list-group-item list-group-item-action {% if not notif.lida %}border-start border-{{ cor }} border-3 bg-{{ cor }}-subtle{% endif %}">
+                <div class="d-flex align-items-start gap-3">
+                    <!-- Ícone do tipo -->
+                    <div class="mt-1">
+                        <i class="bi {{ icone }} text-{{ cor }} fs-5"></i>
+                    </div>
+
+                    <!-- Conteúdo -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 {% if not notif.lida %}fw-bold{% endif %}">
+                                {{ notif.titulo }}
+                                {% if not notif.lida %}
+                                <span class="badge bg-{{ cor }} ms-1" style="font-size: 0.6rem;">NOVA</span>
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">
+                                {% if notif.data_criacao %}
+                                {{ notif.data_criacao | formatar_data_hora }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <p class="mb-2 text-muted small">{{ notif.mensagem }}</p>
+
+                        <!-- Ações -->
+                        <div class="d-flex gap-2">
+                            {% if not notif.lida %}
+                            <form method="post" action="/notificacoes/{{ notif.id }}/lida">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn btn-{{ cor }} btn-sm">
+                                    <i class="bi bi-check2"></i>
+                                    {% if notif.url_acao %}Ver detalhes{% else %}Marcar como lida{% endif %}
+                                </button>
+                            </form>
+                            {% elif notif.url_acao %}
+                            <a href="{{ notif.url_acao }}" class="btn btn-outline-{{ cor }} btn-sm">
+                                <i class="bi bi-arrow-right"></i> Ver detalhes
+                            </a>
+                            {% endif %}
+
+                            <form method="post" action="/notificacoes/{{ notif.id }}/excluir">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginação -->
+        {{ paginacao_completa(paginacao, '/notificacoes', texto_singular='notificação', texto_plural='notificações') }}
+
+        {% else %}
+        {{ empty_state(
+            'bell-slash',
+            'Nenhuma notificação',
+            'Você não tem notificações no momento. Elas aparecerão aqui quando houver novidades.',
+            '',
+            ''
+        ) }}
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
