@@ -38,10 +38,10 @@ def _row_to_usuario(row: sqlite3.Row) -> Usuario:
         email=row["email"],
         senha=row["senha"],
         perfil=row["perfil"],
-        token_redefinicao=row["token_redefinicao"] if "token_redefinicao" in row.keys() else None,
-        data_token=row["data_token"] if "data_token" in row.keys() else None,
-        data_cadastro=row["data_cadastro"] if "data_cadastro" in row.keys() else None,
-        data_atualizacao=row["data_atualizacao"] if "data_atualizacao" in row.keys() else None
+        token_redefinicao=row["token_redefinicao"],
+        data_token=row["data_token"],
+        data_cadastro=row["data_cadastro"],
+        data_atualizacao=row["data_atualizacao"]
     )
 
 

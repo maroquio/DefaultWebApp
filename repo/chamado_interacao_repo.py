@@ -148,7 +148,7 @@ def excluir_por_chamado(chamado_id: int) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(EXCLUIR_POR_CHAMADO, (chamado_id,))
-        return cursor.rowcount >= 0  # Pode ser 0 se não havia interações
+        return cursor.rowcount > 0
 
 
 def marcar_como_lidas(chamado_id: int, usuario_logado_id: int) -> bool:

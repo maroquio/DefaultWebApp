@@ -148,7 +148,7 @@ def marcar_como_lidas(sala_id: str, usuario_id: int) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(MARCAR_COMO_LIDAS, (agora(), sala_id, usuario_id))
-        return cursor.rowcount >= 0  # Retorna True mesmo se nenhuma mensagem foi marcada
+        return cursor.rowcount > 0
 
 
 def obter_ultima_mensagem_sala(sala_id: str) -> Optional[ChatMensagem]:

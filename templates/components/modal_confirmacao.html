@@ -113,10 +113,10 @@ function abrirModalConfirmacao(config) {
 
     // Configura os detalhes (se fornecidos)
     if (config.detalhes) {
-        detalhes.innerHTML = config.detalhes;
+        detalhes.textContent = config.detalhes;
         detalhes.style.display = 'block';
     } else {
-        detalhes.innerHTML = '';
+        detalhes.textContent = '';
         detalhes.style.display = 'none';
     }
 

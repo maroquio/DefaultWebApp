@@ -147,6 +147,9 @@ def obter_com_filtros(
         filtros.append("AND date(a.data) <= ?")
         params.append(data_fim)
 
+    # Os `filtros` contêm APENAS fragmentos SQL literais (ex: "AND col = ?").
+    # Valores reais do usuário são passados separadamente em `params` via placeholders ?.
+    # NUNCA usar .format() com input do usuário diretamente — isso causaria SQL injection.
     filtros_str = " ".join(filtros)
     sql_count = CONTAR_COM_FILTROS.format(filtros=filtros_str)
     sql_dados = OBTER_COM_FILTROS.format(filtros=filtros_str)

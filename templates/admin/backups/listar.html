@@ -1,0 +1,158 @@
+{% extends "base_privada.html" %}
+
+{% block titulo %}Backup do Banco de Dados{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-database"></i> Backup do Banco de Dados</h2>
+            <form method="POST" action="/admin/backups/criar" class="d-inline">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Criar Novo Backup
+                </button>
+            </form>
+        </div>
+
+        <!-- Informações sobre backups -->
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle"></i>
+            <strong>Sobre os Backups:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Os backups são cópias completas do banco de dados SQLite</li>
+                <li><strong>Backups Manuais:</strong> Criados por você ao clicar em "Criar Novo Backup" (badge azul <span class="badge bg-primary"><i class="bi bi-person-check"></i> Manual</span>)</li>
+                <li><strong>Backups Automáticos:</strong> Criados automaticamente pelo sistema antes de restaurar outro backup (badge amarelo <span class="badge bg-warning text-dark"><i class="bi bi-shield-check"></i> Automático</span>)</li>
+                <li><strong>IMPORTANTE:</strong> Ao restaurar um backup, um backup automático de segurança do estado atual é sempre criado antes da restauração</li>
+                <li>Você pode baixar os arquivos de backup para armazenamento externo</li>
+                <li>É recomendado manter backups manuais regulares do sistema</li>
+            </ul>
+        </div>
+
+        <!-- Tabela de backups -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {% if backups %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Arquivo</th>
+                                <th scope="col" class="text-center">Tipo</th>
+                                <th scope="col" class="text-center">Data/Hora</th>
+                                <th scope="col" class="text-center">Tamanho</th>
+                                <th scope="col" class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups %}
+                            <tr>
+                                <td>
+                                    <code>{{ backup.nome_arquivo }}</code>
+                                </td>
+                                <td class="text-center">
+                                    {% if backup.tipo == "automático" %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-shield-check"></i> Automático
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-person-check"></i> Manual
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {{ backup.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ backup.tamanho_formatado }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="/admin/backups/download/{{ backup.nome_arquivo }}"
+                                           class="btn btn-outline-primary"
+                                           title="Baixar backup"
+                                           aria-label="Baixar backup {{ backup.nome_arquivo }}">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-outline-warning"
+                                                title="Restaurar backup"
+                                                aria-label="Restaurar backup {{ backup.nome_arquivo }}"
+                                                onclick="confirmarRestauracao({{ backup.nome_arquivo|tojson }}, {{ backup.data_criacao.strftime('%d/%m/%Y %H:%M:%S')|tojson }})">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                title="Excluir backup"
+                                                aria-label="Excluir backup {{ backup.nome_arquivo }}"
+                                                onclick="confirmarExclusao({{ backup.nome_arquivo|tojson }}, {{ backup.data_criacao.strftime('%d/%m/%Y %H:%M:%S')|tojson }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-3">Nenhum backup encontrado. Crie o primeiro backup!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação Reutilizável -->
+{% include 'components/modal_confirmacao.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    /**
+     * Confirma restauração de backup usando modal versátil
+     */
+    function confirmarRestauracao(nomeArquivo, dataHora) {
+        abrirModalConfirmacao({
+            url: '/admin/backups/restaurar/' + encodeURIComponent(nomeArquivo),
+            tipo: 'warning',
+            titulo: 'Confirmar Restauração',
+            icone: 'bi-arrow-clockwise',
+            mensagem: 'ATENÇÃO: Esta operação irá sobrescrever o banco de dados atual!',
+            detalhes: `
+                <p class="text-center mb-0">
+                    <code>${nomeArquivo}</code><br>
+                    <small class="text-muted">Criado em: ${dataHora}</small>
+                </p>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-shield-check"></i>
+                    <strong>Segurança Automática:</strong><br>
+                    Um backup do estado atual será criado automaticamente antes da restauração.
+                </div>
+            `,
+            btnTexto: 'Restaurar Backup',
+            btnIcone: 'bi-arrow-clockwise'
+        });
+    }
+
+    /**
+     * Confirma exclusão de backup usando modal versátil
+     */
+    function confirmarExclusao(nomeArquivo, dataHora) {
+        abrirModalConfirmacao({
+            url: '/admin/backups/excluir/' + encodeURIComponent(nomeArquivo),
+            mensagem: 'Você tem certeza que deseja excluir o backup:',
+            detalhes: `
+                <p class="text-center mb-0">
+                    <code>${nomeArquivo}</code><br>
+                    <small class="text-muted">Criado em: ${dataHora}</small>
+                </p>
+            `
+        });
+    }
+</script>
+{% endblock %}

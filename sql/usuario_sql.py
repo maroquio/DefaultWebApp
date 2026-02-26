@@ -65,7 +65,8 @@ ORDER BY nome
 BUSCAR_POR_TERMO = """
 SELECT id, nome, email, senha, perfil,
        token_redefinicao, data_token,
-       data_cadastro[timestamp], data_atualizacao[timestamp]
+       data_cadastro AS "data_cadastro [timestamp]",
+       data_atualizacao AS "data_atualizacao [timestamp]"
 FROM usuario
 WHERE (LOWER(nome) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?))
 LIMIT ?

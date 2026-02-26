@@ -535,7 +535,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
         assert quantidade == 0
 
     def test_excluir_por_chamado_sem_interacoes(self, usuario_repo_teste):
-        """Deve retornar True mesmo quando chamado não tem interações."""
+        """Deve retornar False quando chamado não tem interações (nenhuma linha afetada)."""
         # Criar chamado sem interações
         chamado = Chamado(
             id=0,
@@ -548,7 +548,7 @@ class TestChamadoInteracaoRepoExcluirPorChamado:
 
         resultado = chamado_interacao_repo.excluir_por_chamado(chamado_id)
 
-        assert resultado is True
+        assert resultado is False
 
 
 class TestChamadoInteracaoRepoMarcarComoLidas:
