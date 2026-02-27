@@ -1,0 +1,122 @@
+{% extends 'base_privada.html' %}
+{% from 'macros/badges.html' import badge_status_pagamento %}
+{% from 'macros/empty_states.html' import empty_state %}
+
+{% block titulo %}Gerenciar Pagamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-credit-card"></i> Gerenciar Pagamentos</h2>
+        </div>
+
+        <!-- Painel de resumo por status -->
+        {% if totais %}
+        <div class="row g-3 mb-4">
+            {% set cores_status = {
+                'Pendente': 'warning',
+                'Em Processamento': 'primary',
+                'Aprovado': 'success',
+                'Recusado': 'danger',
+                'Cancelado': 'secondary',
+                'Reembolsado': 'info'
+            } %}
+            {% for st, total in totais.items() %}
+            <div class="col-6 col-sm-4 col-lg-2">
+                <a href="/admin/pagamentos?status_filtro={{ st }}"
+                   class="text-decoration-none">
+                    <div class="card border-{{ cores_status.get(st, 'secondary') }} h-100">
+                        <div class="card-body text-center p-3">
+                            <div class="fs-4 fw-bold text-{{ cores_status.get(st, 'secondary') }}">
+                                {{ total }}
+                            </div>
+                            <div class="small text-muted">{{ st }}</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Filtro por status -->
+        <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+            <span class="text-muted small">Filtrar por status:</span>
+            <a href="/admin/pagamentos"
+               class="btn btn-sm {{ 'btn-dark' if not status_filtro else 'btn-outline-secondary' }}">
+                Todos
+            </a>
+            {% for st in status_opcoes %}
+            <a href="/admin/pagamentos?status_filtro={{ st }}"
+               class="btn btn-sm {{ 'btn-dark' if status_filtro == st else 'btn-outline-secondary' }}">
+                {{ st }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                {% if pagamentos %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Usuário</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pagamento in pagamentos %}
+                            <tr>
+                                <td class="text-muted small">{{ pagamento.id }}</td>
+                                <td>{{ pagamento.usuario_nome or '—' }}</td>
+                                <td>
+                                    {{ pagamento.descricao }}
+                                    {% if pagamento.payment_id %}
+                                    <br><small class="text-muted font-monospace">{{ pagamento.payment_id }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-success">
+                                    R$ {{ "%.2f"|format(pagamento.valor)|replace('.', ',') }}
+                                </td>
+                                <td>{{ badge_status_pagamento(pagamento.status) }}</td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ pagamento.data_criacao|formatar_data_hora if pagamento.data_criacao else '—' }}
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <a href="/admin/pagamentos/{{ pagamento.id }}"
+                                       class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted small">
+                    Exibindo {{ pagamentos|length }} pagamento(s)
+                    {% if status_filtro %} com status "{{ status_filtro }}"{% endif %}
+                </div>
+                {% else %}
+                <div class="p-4">
+                    {{ empty_state(
+                        'Nenhum pagamento encontrado',
+                        'Não há pagamentos' ~ (' com status "' ~ status_filtro ~ '"' if status_filtro else '') ~ '.',
+                        icon='credit-card'
+                    ) }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

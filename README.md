@@ -33,6 +33,7 @@ Se voce esta comecando, estes termos aparecem ao longo do documento:
 - **Mascaras de input** — CPF, CNPJ, telefone, valores monetarios, datas, placas de veiculo
 - **Sistema de fotos** — Upload, crop e redimensionamento automatico
 - **27 temas visuais** — Temas Bootswatch para customizacao instantanea
+- **Pagamentos com Mercado Pago** — Checkout Pro com webhook IPN, sandbox e producao
 - **Sistema de backups** — Backup e restauracao do banco de dados via interface admin
 - **Auditoria de logs** — Visualizacao de logs do sistema com filtros
 - **Configuracoes dinamicas** — Gerenciamento de configuracoes via banco de dados
@@ -175,6 +176,153 @@ Sistema de chat entre usuarios usando Server-Sent Events (SSE):
 | GET | `/chat/usuarios/buscar` | Busca usuarios para chat |
 | GET | `/chat/mensagens/nao-lidas/total` | Conta mensagens nao lidas |
 
+### Pagamentos com Mercado Pago
+
+Modulo completo de pagamentos usando o **Checkout Pro** do Mercado Pago. O usuario e redirecionado para a pagina segura do MP, realiza o pagamento com qualquer metodo disponivel (cartao, Pix, boleto) e retorna para a aplicacao. Todo o fluxo e gerenciado por redirecionamentos e webhooks — a aplicacao nunca manipula dados do cartao.
+
+**Fluxo de pagamento:**
+
+```
+Usuario clica "Pagar"
+    → backend cria Preferencia no Mercado Pago
+    → usuario e redirecionado para o checkout do MP
+    → usuario realiza o pagamento
+    → MP redireciona de volta para a aplicacao
+    → MP envia webhook atualizando o status no banco
+    → notificacao in-app e criada para o usuario
+```
+
+**Status do pagamento:**
+
+| Status | Significado |
+|--------|-------------|
+| **Pendente** | Preferencia criada, aguardando pagamento |
+| **Em Processamento** | Pagamento iniciado, aguardando confirmacao |
+| **Aprovado** | Pagamento confirmado pelo Mercado Pago |
+| **Recusado** | Pagamento nao aprovado (limite, cartao invalido, etc.) |
+| **Cancelado** | Pagamento cancelado |
+| **Reembolsado** | Pagamento estornado |
+
+**Rotas de usuario** (prefixo `/pagamentos`):
+
+| Metodo | Rota | Descricao |
+|--------|------|-----------|
+| GET | `/pagamentos/listar` | Lista pagamentos do usuario |
+| GET/POST | `/pagamentos/criar` | Formulario e criacao de pagamento |
+| GET | `/pagamentos/sucesso` | Pagamento aprovado (retorno do MP) |
+| GET | `/pagamentos/pendente` | Pagamento pendente (retorno do MP) |
+| GET | `/pagamentos/falha` | Pagamento recusado (retorno do MP) |
+| POST | `/pagamentos/webhook` | Recebe IPN do Mercado Pago (sem CSRF) |
+| GET | `/pagamentos/{id}/detalhes` | Detalhes de um pagamento |
+
+**Rotas administrativas** (prefixo `/admin/pagamentos`):
+
+| Metodo | Rota | Descricao |
+|--------|------|-----------|
+| GET | `/admin/pagamentos` | Lista todos os pagamentos com filtro por status |
+| GET | `/admin/pagamentos/{id}` | Detalhes completos + dados da API do MP |
+
+#### Configuracao do Modulo de Pagamento
+
+**Passo 1 — Crie uma conta no Mercado Pago**
+
+Acesse [mercadopago.com.br](https://www.mercadopago.com.br) e crie uma conta gratuita (pode ser conta pessoal ou empresarial).
+
+**Passo 2 — Obtenha as credenciais de sandbox**
+
+1. Acesse o [Painel de Desenvolvedores](https://www.mercadopago.com.br/developers/panel)
+2. Crie uma aplicacao (botao "Criar aplicacao")
+3. Selecione **Checkout Pro** como produto
+4. Va em **Credenciais de teste** (nao use producao durante o desenvolvimento)
+5. Copie o **Access Token** e a **Public Key** que iniciam com `TEST-`
+
+**Passo 3 — Configure o `.env`**
+
+Abra o arquivo `.env` e preencha as credenciais:
+
+```env
+MERCADOPAGO_ACCESS_TOKEN=TEST-0000000000000000-000000-00000000000000000000000000000000-000000000
+MERCADOPAGO_PUBLIC_KEY=TEST-00000000-0000-0000-0000-000000000000
+BASE_URL=http://localhost:8400
+```
+
+> **Importante:** `BASE_URL` precisa estar correto pois e usado para montar as URLs de retorno (sucesso/pendente/falha) e o endpoint do webhook que sao enviados ao Mercado Pago.
+
+**Passo 4 — Inicie a aplicacao**
+
+```bash
+python main.py
+```
+
+A tabela `pagamento` e criada automaticamente no banco de dados.
+
+**Passo 5 — Teste um pagamento**
+
+1. Acesse `http://localhost:8400` e faca login
+2. Va em `/pagamentos/criar`, preencha a descricao e o valor
+3. Clique em "Ir para Pagamento" — voce sera redirecionado para a pagina do Mercado Pago
+4. Use um dos **cartoes de teste** abaixo para simular diferentes resultados
+
+#### Cartoes de Teste (Sandbox)
+
+O Mercado Pago fornece cartoes de teste para simular resultados sem usar dinheiro real:
+
+| Bandeira | Numero | CVV | Vencimento | Resultado |
+|----------|--------|-----|------------|-----------|
+| Mastercard | `5031 4332 1540 6351` | `123` | `11/25` | **Aprovado** |
+| Visa | `4235 6477 2802 5682` | `123` | `11/25` | **Aprovado** |
+| Amex | `3753 651535 56885` | `1234` | `11/25` | **Aprovado** |
+| Mastercard | `5031 7557 3453 0604` | `123` | `11/25` | **Recusado** |
+
+Para o nome do titular, qualquer nome funciona no sandbox.
+
+> Lista completa de cartoes em [developers.mercadopago.com/pt/docs/your-integrations/test/cards](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards)
+
+#### Testando o Webhook (IPN)
+
+O Mercado Pago envia uma notificacao POST para `/pagamentos/webhook` a cada mudanca de status. Para testar localmente:
+
+**Opcao 1 — ngrok** (recomendado):
+
+```bash
+# Instale o ngrok em https://ngrok.com/download
+ngrok http 8400
+```
+
+Copie a URL gerada (ex: `https://abc123.ngrok.io`) e atualize o `.env`:
+
+```env
+BASE_URL=https://abc123.ngrok.io
+```
+
+Reinicie a aplicacao — os proximos pagamentos criados ja usarao a URL publica do ngrok, e o Mercado Pago conseguira enviar os webhooks.
+
+**Opcao 2 — Testador de webhooks do Mercado Pago:**
+
+No painel de desenvolvedores, acesse **Webhooks** e use o simulador para enviar notificacoes de teste manualmente.
+
+**Opcao 3 — Curl (para testes rapidos):**
+
+```bash
+curl -X POST http://localhost:8400/pagamentos/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"type": "payment", "data": {"id": "SEU_PAYMENT_ID"}}'
+```
+
+#### Deploy em Producao
+
+Ao colocar o sistema em producao, substitua as credenciais de teste pelas de **producao** no painel do Mercado Pago:
+
+```env
+# .env em producao
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-...    # sem o prefixo TEST-
+MERCADOPAGO_PUBLIC_KEY=APP_USR-...     # sem o prefixo TEST-
+BASE_URL=https://seudominio.com.br
+RUNNING_MODE=Production
+```
+
+> Em modo producao (`RUNNING_MODE=Production`), a aplicacao usa automaticamente o `init_point` do Mercado Pago (pagina real). Em modo desenvolvimento, usa o `sandbox_init_point` (ambiente de testes).
+
 ### Area Administrativa
 
 **Gerenciamento de Usuarios** (`/admin/usuarios/`) — Listagem, cadastro, edicao e exclusao de usuarios.
@@ -257,6 +405,7 @@ DefaultWebApp/
 │   ├── chamado_dto.py
 │   ├── chamado_interacao_dto.py
 │   ├── chat_dto.py
+│   ├── pagamento_dto.py
 │   └── configuracao_dto.py
 │
 ├── model/                       # Modelos de entidades (dataclasses)
@@ -267,6 +416,7 @@ DefaultWebApp/
 │   ├── chat_sala_model.py
 │   ├── chat_participante_model.py
 │   ├── chat_mensagem_model.py
+│   ├── pagamento_model.py
 │   └── configuracao_model.py
 │
 ├── repo/                        # Repositorios de acesso a dados
@@ -276,6 +426,7 @@ DefaultWebApp/
 │   ├── chat_sala_repo.py
 │   ├── chat_participante_repo.py
 │   ├── chat_mensagem_repo.py
+│   ├── pagamento_repo.py
 │   ├── configuracao_repo.py
 │   └── indices_repo.py         # Gerenciamento de indices do banco
 │
@@ -288,6 +439,8 @@ DefaultWebApp/
 │   ├── admin_chamados_routes.py     # Gerenciamento de chamados (admin)
 │   ├── admin_configuracoes_routes.py # Configuracoes, temas e auditoria
 │   ├── admin_backups_routes.py      # Backup e restauracao (admin)
+│   ├── pagamento_routes.py          # Pagamentos do usuario (MP Checkout Pro)
+│   ├── admin_pagamentos_routes.py   # Gerenciamento de pagamentos (admin)
 │   ├── public_routes.py             # Paginas publicas
 │   └── examples_routes.py          # Exemplos praticos
 │
@@ -298,6 +451,7 @@ DefaultWebApp/
 │   ├── chat_sala_sql.py
 │   ├── chat_participante_sql.py
 │   ├── chat_mensagem_sql.py
+│   ├── pagamento_sql.py
 │   ├── configuracao_sql.py
 │   └── indices_sql.py          # Definicoes de indices
 │
@@ -332,11 +486,13 @@ DefaultWebApp/
 │   ├── auth/                   # Login, cadastro, recuperacao
 │   ├── perfil/                 # Perfil do usuario
 │   ├── chamados/               # Paginas de chamados
+│   ├── pagamentos/             # Paginas de pagamento (listar, criar, sucesso, etc.)
 │   ├── admin/                  # Area administrativa
 │   │   ├── usuarios/
 │   │   ├── chamados/
 │   │   ├── configuracoes/
 │   │   ├── backups/
+│   │   ├── pagamentos/
 │   │   ├── tema.html
 │   │   └── auditoria.html
 │   ├── components/             # Componentes reutilizaveis
@@ -365,6 +521,7 @@ DefaultWebApp/
 │   ├── chat_manager.py         # Gerenciador SSE do chat
 │   ├── rate_limiter.py         # Rate limiting dinamico
 │   ├── rate_limit_decorator.py # Decorator de rate limit
+│   ├── mercadopago_util.py     # Integracao com Mercado Pago (SDK wrapper)
 │   ├── config.py               # Carregamento de configuracoes
 │   ├── config_cache.py         # Cache de configuracoes (thread-safe)
 │   ├── migrar_config.py        # Migracao de .env para banco
@@ -427,6 +584,7 @@ DefaultWebApp/
 - **Docker** — Containerizacao para deploy
 - **Jenkins** — Pipeline CI/CD
 - **Resend** — Envio de emails transacionais
+- **Mercado Pago** — Gateway de pagamentos (Checkout Pro)
 
 ### Desenvolvimento
 - **Python-dotenv** — Gerenciamento de variaveis de ambiente
@@ -473,6 +631,11 @@ PASSWORD_MAX_LENGTH=128
 
 # Interface
 TOAST_AUTO_HIDE_DELAY_MS=5000
+
+# Mercado Pago (Pagamentos)
+# Obtenha em: https://www.mercadopago.com.br/developers/panel
+MERCADOPAGO_ACCESS_TOKEN=TEST-xxxx   # use credenciais TEST- para sandbox
+MERCADOPAGO_PUBLIC_KEY=TEST-xxxx
 ```
 
 O arquivo `.env.example` tambem inclui configuracoes de **rate limiting** para cada grupo de rotas (autenticacao, chat, chamados, upload, paginas publicas, etc.). Todas essas configuracoes podem ser ajustadas posteriormente via `/admin/configuracoes` sem reiniciar o servidor.
@@ -630,6 +793,9 @@ Verifique se a pasta `static/img/usuarios/` existe e tem permissao de escrita. O
 - [Bootswatch - Temas](https://bootswatch.com/)
 - [Cropper.js](https://fengyuanchen.github.io/cropperjs/)
 - [Resend - Servico de Email](https://resend.com/docs)
+- [Mercado Pago - Documentacao para Desenvolvedores](https://www.mercadopago.com.br/developers/pt)
+- [Mercado Pago - Checkout Pro](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro/landing)
+- [Mercado Pago - Cartoes de Teste](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards)
 
 ## Licenca
 

@@ -1,0 +1,141 @@
+{% extends 'base_privada.html' %}
+{% from 'macros/badges.html' import badge_status_pagamento %}
+
+{% block titulo %}Pagamento #{{ pagamento.id }} — Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-receipt"></i> Pagamento #{{ pagamento.id }}</h2>
+            <a href="/admin/pagamentos" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <!-- Dados do pagamento -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Dados do Pagamento</span>
+                {{ badge_status_pagamento(pagamento.status) }}
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Usuário</label>
+                        <p class="mb-0">{{ pagamento.usuario_nome or '—' }}
+                            <small class="text-muted">(ID: {{ pagamento.usuario_id }})</small>
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Descrição</label>
+                        <p class="fw-semibold mb-0">{{ pagamento.descricao }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Valor</label>
+                        <p class="fw-bold text-success fs-5 mb-0">
+                            R$ {{ "%.2f"|format(pagamento.valor)|replace('.', ',') }}
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Status</label>
+                        <p class="mb-0">{{ badge_status_pagamento(pagamento.status) }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Data de Criação</label>
+                        <p class="mb-0">
+                            {{ pagamento.data_criacao|formatar_data_hora if pagamento.data_criacao else '—' }}
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Última Atualização</label>
+                        <p class="mb-0">
+                            {{ pagamento.data_atualizacao|formatar_data_hora if pagamento.data_atualizacao else '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados do Mercado Pago -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <span class="fw-semibold">
+                    <i class="bi bi-credit-card-2-front"></i> Dados do Mercado Pago
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="text-muted small">Preference ID</label>
+                        <p class="font-monospace small mb-0">
+                            {{ pagamento.preference_id or '—' }}
+                        </p>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small">Payment ID</label>
+                        <p class="font-monospace small mb-0">
+                            {{ pagamento.payment_id or '—' }}
+                        </p>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small">External Reference</label>
+                        <p class="font-monospace small mb-0">
+                            {{ pagamento.external_reference or pagamento.id }}
+                        </p>
+                    </div>
+                    {% if pagamento.url_checkout %}
+                    <div class="col-12">
+                        <label class="text-muted small">URL de Checkout</label>
+                        <p class="mb-0">
+                            <a href="{{ pagamento.url_checkout }}" target="_blank"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir Checkout
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados da API do Mercado Pago (se disponível) -->
+        {% if dados_mp %}
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <span class="fw-semibold">
+                    <i class="bi bi-cloud-download"></i> Dados da API do Mercado Pago (tempo real)
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Status (MP)</label>
+                        <p class="mb-0">
+                            <span class="badge bg-secondary">{{ dados_mp.get('status', '—') }}</span>
+                            <small class="text-muted ms-1">{{ dados_mp.get('status_detail', '') }}</small>
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Valor Pago</label>
+                        <p class="mb-0">
+                            R$ {{ "%.2f"|format(dados_mp.get('transaction_amount', 0))|replace('.', ',') }}
+                        </p>
+                    </div>
+                    {% if dados_mp.get('payer') %}
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Email do Pagador</label>
+                        <p class="mb-0">{{ dados_mp.get('payer', {}).get('email', '—') }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Data de Aprovação</label>
+                        <p class="mb-0">{{ dados_mp.get('date_approved', '—') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

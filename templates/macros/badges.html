@@ -114,6 +114,40 @@
     </span>
 {% endmacro %}
 
+{% macro badge_status_pagamento(status) %}
+    {#
+        Badge para status de pagamento
+
+        Args:
+            status: String ou Enum com o status do pagamento
+
+        Cores:
+            - Pendente: warning (amarelo)
+            - Em Processamento: primary (azul)
+            - Aprovado: success (verde)
+            - Recusado: danger (vermelho)
+            - Cancelado: secondary (cinza)
+            - Reembolsado: info (ciano)
+    #}
+    {% set status_str = status.value if status.value is defined else status %}
+    {% if status_str == 'Aprovado' %}
+        {% set cor = 'success' %}
+    {% elif status_str == 'Pendente' %}
+        {% set cor = 'warning text-dark' %}
+    {% elif status_str == 'Em Processamento' %}
+        {% set cor = 'primary' %}
+    {% elif status_str == 'Recusado' %}
+        {% set cor = 'danger' %}
+    {% elif status_str == 'Reembolsado' %}
+        {% set cor = 'info' %}
+    {% elif status_str == 'Cancelado' %}
+        {% set cor = 'secondary' %}
+    {% else %}
+        {% set cor = 'secondary' %}
+    {% endif %}
+    <span class="badge bg-{{ cor }}">{{ status_str }}</span>
+{% endmacro %}
+
 {% macro badge_booleano(valor, texto_true='Sim', texto_false='Não', cor_true='success', cor_false='secondary') %}
     {#
         Badge para valores booleanos

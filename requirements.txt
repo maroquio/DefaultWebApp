@@ -45,3 +45,6 @@ tzdata==2025.2
 
 # Exportação de Dados (Excel)
 openpyxl>=3.1.0
+
+# Pagamentos (Mercado Pago)
+mercadopago>=2.2.0

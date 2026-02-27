@@ -1,0 +1,88 @@
+{% extends 'base_privada.html' %}
+{% from 'macros/badges.html' import badge_status_pagamento %}
+
+{% block titulo %}Detalhes do Pagamento #{{ pagamento.id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-receipt"></i> Pagamento #{{ pagamento.id }}</h2>
+            <a href="/pagamentos/listar" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Informações do Pagamento</span>
+                {{ badge_status_pagamento(pagamento.status) }}
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Descrição</label>
+                        <p class="fw-semibold mb-0">{{ pagamento.descricao }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Valor</label>
+                        <p class="fw-bold text-success fs-5 mb-0">
+                            R$ {{ "%.2f"|format(pagamento.valor)|replace('.', ',') }}
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Data de Criação</label>
+                        <p class="mb-0">
+                            {{ pagamento.data_criacao|formatar_data_hora if pagamento.data_criacao else '—' }}
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small">Última Atualização</label>
+                        <p class="mb-0">
+                            {{ pagamento.data_atualizacao|formatar_data_hora if pagamento.data_atualizacao else '—' }}
+                        </p>
+                    </div>
+
+                    {% if pagamento.preference_id %}
+                    <div class="col-12">
+                        <label class="text-muted small">ID da Preferência (Mercado Pago)</label>
+                        <p class="font-monospace small mb-0">{{ pagamento.preference_id }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if pagamento.payment_id %}
+                    <div class="col-sm-6">
+                        <label class="text-muted small">ID do Pagamento (Mercado Pago)</label>
+                        <p class="font-monospace small mb-0">{{ pagamento.payment_id }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if pagamento.status.value in ['Pendente', 'Em Processamento'] and pagamento.url_checkout %}
+            <div class="card-footer">
+                <a href="{{ pagamento.url_checkout }}" class="btn btn-warning">
+                    <i class="bi bi-credit-card"></i> Continuar Pagamento
+                </a>
+                <span class="text-muted small ms-2">
+                    Clique para acessar o checkout do Mercado Pago
+                </span>
+            </div>
+            {% elif pagamento.status.value == 'Aprovado' %}
+            <div class="card-footer bg-success bg-opacity-10">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span class="text-success fw-semibold">Pagamento aprovado com sucesso!</span>
+            </div>
+            {% elif pagamento.status.value == 'Recusado' %}
+            <div class="card-footer bg-danger bg-opacity-10">
+                <i class="bi bi-x-circle-fill text-danger"></i>
+                <span class="text-danger fw-semibold">Pagamento não aprovado.</span>
+                <a href="/pagamentos/criar" class="btn btn-sm btn-outline-danger ms-2">
+                    Tentar novamente
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

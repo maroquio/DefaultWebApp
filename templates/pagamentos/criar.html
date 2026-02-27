@@ -1,0 +1,74 @@
+{% extends 'base_privada.html' %}
+{% from 'macros/form_fields.html' import field with context %}
+
+{% block titulo %}Novo Pagamento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-credit-card"></i> Novo Pagamento</h2>
+            <a href="/pagamentos/listar" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <!-- Informações sobre o Checkout Pro -->
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-shield-check"></i>
+            <strong>Pagamento seguro via Mercado Pago</strong>
+            <p class="mb-0 mt-1 small">
+                Após clicar em "Ir para Pagamento", você será redirecionado para a página segura
+                do Mercado Pago, onde poderá escolher sua forma de pagamento preferida.
+            </p>
+        </div>
+
+        <div class="card shadow-sm">
+            <form method="post" action="/pagamentos/criar">
+                {{ csrf_input(request)|safe }}
+                <div class="card-body p-4">
+                    {% include 'components/alerta_erro.html' %}
+
+                    <div class="mb-4">
+                        {{ field(
+                            name='descricao',
+                            label='Descrição',
+                            type='text',
+                            required=true,
+                            placeholder='Ex: Plano Premium, Produto X, Serviço Y',
+                            help_text='Descreva o item ou serviço sendo pago (5-255 caracteres)',
+                            attributes={'maxlength': 255, 'autofocus': 'true'}
+                        ) }}
+                    </div>
+
+                    <div class="mb-2">
+                        {{ field(
+                            name='valor',
+                            label='Valor (R$)',
+                            type='text',
+                            required=true,
+                            placeholder='0,00',
+                            help_text='Valor em reais. Exemplo: 29,90 ou 150.00',
+                            attributes={'data-mask': ''}
+                        ) }}
+                    </div>
+                </div>
+
+                <div class="card-footer p-4">
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-arrow-right-circle"></i> Ir para Pagamento
+                        </button>
+                        <a href="/pagamentos/listar" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-lock"></i> Seus dados estão protegidos com criptografia SSL.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

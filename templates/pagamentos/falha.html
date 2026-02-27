@@ -1,0 +1,57 @@
+{% extends 'base_privada.html' %}
+
+{% block titulo %}Pagamento Não Aprovado{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-6 text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-x-circle-fill text-danger" style="font-size: 5rem;"></i>
+        </div>
+
+        <h1 class="text-danger mb-3">Pagamento Não Aprovado</h1>
+
+        {% if pagamento %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <p class="text-muted mb-1">Descrição</p>
+                <p class="fw-semibold fs-5">{{ pagamento.descricao }}</p>
+                <p class="text-muted mb-1">Valor</p>
+                <p class="fw-bold fs-4">
+                    R$ {{ "%.2f"|format(pagamento.valor)|replace('.', ',') }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="alert alert-danger text-start mb-4">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Possíveis motivos:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Dados do cartão incorretos</li>
+                <li>Saldo insuficiente</li>
+                <li>Cartão bloqueado para compras online</li>
+                <li>Limite de crédito excedido</li>
+            </ul>
+        </div>
+
+        <p class="text-muted mb-4">
+            Você pode tentar novamente com outro método de pagamento.
+        </p>
+
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/pagamentos/criar" class="btn btn-success btn-lg">
+                <i class="bi bi-arrow-repeat"></i> Tentar Novamente
+            </a>
+            {% if pagamento %}
+            <a href="/pagamentos/{{ pagamento.id }}/detalhes" class="btn btn-outline-secondary">
+                <i class="bi bi-receipt"></i> Ver Detalhes
+            </a>
+            {% endif %}
+            <a href="/pagamentos/listar" class="btn btn-outline-primary">
+                <i class="bi bi-list"></i> Meus Pagamentos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
