@@ -4,13 +4,13 @@ Macro de Paginação Bootstrap 5
 Uso:
     {% from 'macros/paginacao.html' import paginacao_nav, info_paginacao %}
 
-    {# Barra de navegação completa (próximo, anterior, números) #}
+    -- Barra de navegação completa (próximo, anterior, números):
     {{ paginacao_nav(paginacao, url_base) }}
 
-    {# Informação textual: "Mostrando 1-10 de 47 registros" #}
+    -- Informação textual: "Mostrando 1-10 de 47 registros":
     {{ info_paginacao(paginacao) }}
 
-    {# Combinado: info + navegação lado a lado #}
+    -- Combinado: info + navegação lado a lado:
     {{ paginacao_completa(paginacao, url_base) }}
 
 Parâmetros:
