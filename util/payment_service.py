@@ -42,6 +42,10 @@ class PaymentService:
             from util.payment_adapters.stripe_adapter import StripeAdapter
             return StripeAdapter()
 
+        if chave == "paypal":
+            from util.payment_adapters.paypal_adapter import PayPalAdapter
+            return PayPalAdapter()
+
         # Padrão: Mercado Pago
         from util.payment_adapters.mercadopago_adapter import MercadoPagoAdapter
         return MercadoPagoAdapter()
@@ -63,6 +67,10 @@ class PaymentService:
         if chave == "stripe":
             from util.payment_adapters.stripe_adapter import StripeAdapter
             return StripeAdapter()
+
+        if chave == "paypal":
+            from util.payment_adapters.paypal_adapter import PayPalAdapter
+            return PayPalAdapter()
 
         from util.payment_adapters.mercadopago_adapter import MercadoPagoAdapter
         return MercadoPagoAdapter()

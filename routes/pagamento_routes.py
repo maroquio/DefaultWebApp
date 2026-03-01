@@ -350,6 +350,71 @@ async def falha(
     )
 
 
+@router.get("/paypal/capturar")
+@requer_autenticacao()
+async def paypal_capturar(
+    request: Request,
+    pagamento_id: int,
+    token: str,  # PayPal order_id recebido na return_url
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """
+    Captura a Order PayPal após o usuário aprovar no site do PayPal.
+
+    PayPal redireciona para esta URL com:
+        ?pagamento_id=X&token=ORDER_ID
+
+    O `token` é o order_id do PayPal. Precisamos capturá-lo para confirmar
+    o pagamento — sem este passo o dinheiro não é transferido.
+    """
+    assert usuario_logado is not None
+    from util.payment_adapters.paypal_adapter import PayPalAdapter
+
+    pagamento = pagamento_repo.obter_por_id(pagamento_id)
+    if not pagamento:
+        informar_erro(request, "Pagamento não encontrado.")
+        return RedirectResponse("/pagamentos/listar", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Atualizar o order_id como preference_id caso ainda não esteja salvo
+    if not pagamento.preference_id:
+        pagamento_repo.atualizar_checkout(
+            id=pagamento_id,
+            preference_id=token,
+            url_checkout=pagamento.url_checkout or "",
+        )
+
+    adapter = PayPalAdapter()
+    resultado = adapter.capturar_ordem(token)
+
+    if resultado and resultado.get("status") in ("COMPLETED", "APPROVED"):
+        capture_id = resultado.get("capture_id") or token
+        pagamento_repo.atualizar_status(
+            id=pagamento_id,
+            status=StatusPagamento.APROVADO,
+            payment_id=capture_id,
+        )
+        criar_notificacao(
+            usuario_id=pagamento.usuario_id,
+            titulo="Pagamento aprovado!",
+            mensagem=f"Seu pagamento de R$ {pagamento.valor:.2f} ({pagamento.descricao}) foi aprovado via PayPal.",
+            tipo=TipoNotificacao.SUCESSO,
+            url_acao=f"/pagamentos/{pagamento.id}/detalhes",
+        )
+        logger.info(f"PayPal: pagamento #{pagamento_id} capturado com sucesso (capture_id={capture_id})")
+        return RedirectResponse(
+            f"/pagamentos/sucesso?pagamento_id={pagamento_id}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    else:
+        pagamento_repo.atualizar_status(id=pagamento_id, status=StatusPagamento.RECUSADO)
+        informar_erro(request, "Pagamento não foi concluído no PayPal.")
+        logger.warning(f"PayPal: captura falhou para pagamento #{pagamento_id}: {resultado}")
+        return RedirectResponse(
+            f"/pagamentos/falha?pagamento_id={pagamento_id}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+
 @router.post("/webhook/mercadopago")
 async def webhook_mercadopago(request: Request):
     """
@@ -466,6 +531,28 @@ def _processar_resultado_webhook(resultado: dict, provider: str) -> dict:
         )
 
     return {"status": "ok"}
+
+
+@router.post("/webhook/paypal")
+async def webhook_paypal(request: Request):
+    """
+    Endpoint de webhook do PayPal.
+
+    Isento de CSRF — requisição externa do PayPal.
+    A assinatura é verificada via API do PayPal se PAYPAL_WEBHOOK_ID estiver configurado.
+    """
+    from util.payment_adapters.paypal_adapter import PayPalAdapter
+
+    payload = await request.body()
+    logger.debug(f"Webhook PayPal recebido, tamanho={len(payload)} bytes")
+
+    adapter = PayPalAdapter()
+    resultado = adapter.processar_webhook(payload, dict(request.headers))
+
+    if not resultado:
+        return {"status": "ignored"}
+
+    return _processar_resultado_webhook(resultado, "paypal")
 
 
 @router.get("/{id}/detalhes")

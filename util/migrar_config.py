@@ -251,6 +251,21 @@ CONFIGS_PARA_MIGRAR = {
         "Secret para validar assinatura dos webhooks do Stripe",
         "Pagamentos"
     ),
+    "paypal_client_id": (
+        "PAYPAL_CLIENT_ID",
+        "Client ID do app PayPal Developer",
+        "Pagamentos"
+    ),
+    "paypal_client_secret": (
+        "PAYPAL_CLIENT_SECRET",
+        "Client Secret do app PayPal Developer",
+        "Pagamentos"
+    ),
+    "paypal_webhook_id": (
+        "PAYPAL_WEBHOOK_ID",
+        "ID do webhook cadastrado no PayPal (para verificação de assinatura)",
+        "Pagamentos"
+    ),
 }
 
 

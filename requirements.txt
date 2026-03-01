@@ -49,3 +49,4 @@ openpyxl>=3.1.0
 # Pagamentos
 mercadopago>=2.2.0
 stripe>=7.0.0
+# PayPal usa requests (já incluso) via Orders API v2 — sem SDK adicional necessário

@@ -29,6 +29,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/",                            # Endpoints de API podem usar outros métodos de auth
     "/pagamentos/webhook/mercadopago",  # Webhook IPN do Mercado Pago (requisição externa)
     "/pagamentos/webhook/stripe",       # Webhook do Stripe (validação via assinatura)
+    "/pagamentos/webhook/paypal",       # Webhook do PayPal (validação via API)
 }
 
 

@@ -656,6 +656,9 @@
                                     <option value="stripe" {% if provider_config.valor == 'stripe' %}selected{% endif %}>
                                         Stripe
                                     </option>
+                                    <option value="paypal" {% if provider_config.valor == 'paypal' %}selected{% endif %}>
+                                        PayPal
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -685,6 +688,38 @@
                                     id="{{ config.chave }}" name="{{ config.chave }}"
                                     value="{{ config.valor }}"
                                     placeholder="{% if config.chave == 'mercadopago_access_token' %}TEST-xxxx ou APP_USR-xxxx{% else %}TEST-xxxx ou APP_USR-xxxx{% endif %}">
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Credenciais PayPal -->
+                <div id="secao-paypal">
+                    <h5 class="mb-3 mt-4"><i class="bi bi-paypal"></i> PayPal</h5>
+                    {% for config in configs_pagamentos %}
+                        {% if config.chave in ['paypal_client_id', 'paypal_client_secret', 'paypal_webhook_id'] %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {% if config.chave == 'paypal_client_id' %}Client ID
+                                    {% elif config.chave == 'paypal_client_secret' %}Client Secret
+                                    {% else %}Webhook ID (opcional){% endif %}
+                                </h6>
+                                <p class="small text-muted mb-3">
+                                    {% if config.chave == 'paypal_client_id' %}
+                                    Client ID do app criado no PayPal Developer Dashboard.
+                                    {% elif config.chave == 'paypal_client_secret' %}
+                                    Client Secret do app PayPal. Mantenha em segredo.
+                                    {% else %}
+                                    ID do webhook cadastrado no painel PayPal (para verificar assinatura). Deixe vazio para pular verificação.
+                                    {% endif %}
+                                </p>
+                                <input type="text"
+                                    class="form-control font-monospace"
+                                    id="{{ config.chave }}" name="{{ config.chave }}"
+                                    value="{{ config.valor }}"
+                                    placeholder="{% if config.chave == 'paypal_client_id' %}AXxxx...{% elif config.chave == 'paypal_client_secret' %}EHxxx...{% else %}WH-xxxx-xxxx{% endif %}">
                             </div>
                         </div>
                         {% endif %}
@@ -736,11 +771,14 @@
                 const secaoMP = document.getElementById('secao-mercadopago');
                 const secaoStripe = document.getElementById('secao-stripe');
 
+                const secaoPayPal = document.getElementById('secao-paypal');
+
                 function atualizarSecoes() {
                     if (!select) return;
                     const provider = select.value;
                     if (secaoMP) secaoMP.style.display = provider === 'mercadopago' ? '' : 'none';
                     if (secaoStripe) secaoStripe.style.display = provider === 'stripe' ? '' : 'none';
+                    if (secaoPayPal) secaoPayPal.style.display = provider === 'paypal' ? '' : 'none';
                 }
 
                 if (select) {
