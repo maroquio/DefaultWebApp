@@ -28,9 +28,28 @@
                 <a href="/" class="btn btn-primary btn-lg">
                     <i class="bi bi-house-door"></i> Ir para Página Inicial
                 </a>
+                {% if error_details %}
+                <button type="button" id="btn-copiar-erro" class="btn btn-outline-warning btn-lg ms-2" onclick="copiarDetalhesErro()">
+                    <span id="btn-erro-default"><i class="bi bi-clipboard"></i> Copiar Detalhes</span>
+                    <span id="btn-erro-copiado" class="d-none"><i class="bi bi-clipboard-check"></i> Copiado!</span>
+                    <span id="btn-erro-falha" class="d-none"><i class="bi bi-x-circle"></i> Falha ao copiar</span>
+                </button>
+                {% endif %}
             </div>
 
             {% if error_details %}
+            <textarea id="error-details-text" class="d-none" readonly>Tipo: {{ error_details.type }}
+{% if error_details.message %}Mensagem: {{ error_details.message }}
+{% endif %}{% if error_details.detail %}Detalhe: {{ error_details.detail }}
+{% endif %}Endpoint: {{ error_details.method }} {{ error_details.path }}
+{% if error_details.ip %}IP: {{ error_details.ip }}
+{% endif %}{% if error_details.errors %}Erros de Validação:
+{{ error_details.errors | tojson(indent=2) }}
+{% endif %}{% if error_details.body %}Body:
+{{ error_details.body }}
+{% endif %}{% if error_details.traceback %}Traceback:
+{{ error_details.traceback }}{% endif %}</textarea>
+
             <div class="error-technical-details mt-5">
                 <div class="alert alert-warning text-start" role="alert">
                     <h5 class="alert-heading">
@@ -70,6 +89,33 @@
                     {% endif %}
                 </div>
             </div>
+
+            <script>
+                function copiarDetalhesErro() {
+                    const texto = document.getElementById("error-details-text").value;
+                    const btn = document.getElementById("btn-copiar-erro");
+                    const spanDefault = document.getElementById("btn-erro-default");
+                    const spanCopiado = document.getElementById("btn-erro-copiado");
+                    const spanFalha = document.getElementById("btn-erro-falha");
+
+                    function mostrarEstado(spanAtivo, classeAtiva) {
+                        spanDefault.classList.add("d-none");
+                        spanCopiado.classList.add("d-none");
+                        spanFalha.classList.add("d-none");
+                        spanAtivo.classList.remove("d-none");
+                        btn.classList.replace("btn-outline-warning", classeAtiva);
+                        setTimeout(() => {
+                            spanAtivo.classList.add("d-none");
+                            spanDefault.classList.remove("d-none");
+                            btn.classList.replace(classeAtiva, "btn-outline-warning");
+                        }, 2000);
+                    }
+
+                    navigator.clipboard.writeText(texto)
+                        .then(() => mostrarEstado(spanCopiado, "btn-success"))
+                        .catch(() => mostrarEstado(spanFalha, "btn-danger"));
+                }
+            </script>
             {% endif %}
         </div>
     </div>
