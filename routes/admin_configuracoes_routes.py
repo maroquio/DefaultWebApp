@@ -112,6 +112,7 @@ async def get_listar_configuracoes(request: Request, usuario_logado: Optional[Us
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_salvar_lote_configuracoes(
     request: Request,
+    categoria: str = Form(...),
     usuario_logado: Optional[UsuarioLogado] = None
 ):
     """
