@@ -115,9 +115,10 @@ except sqlite3.Error as e:
 
 # Migrar configurações do .env para o banco de dados
 try:
-    from util.migrar_config import migrar_configs_para_banco
+    from util.migrar_config import migrar_configs_para_banco, garantir_configs_pagamento
 
     migrar_configs_para_banco()
+    garantir_configs_pagamento()
 except sqlite3.Error as e:
     logger.error(f"Erro ao migrar configurações para banco: {e}", exc_info=True)
 

@@ -342,3 +342,60 @@ def migrar_configs_para_banco():
     from util.config_cache import config
     config.limpar()
     logger.debug("Cache de configurações limpo após migração")
+
+
+# Chaves de pagamento e seus padrões (valor usado quando env var está ausente/vazio)
+CONFIGS_PAGAMENTO_GARANTIDAS = {
+    "payment_provider":         ("PAYMENT_PROVIDER",        "mercadopago", "Provedor de pagamento ativo (mercadopago, stripe ou paypal)", "Pagamentos"),
+    "mercadopago_access_token": ("MERCADOPAGO_ACCESS_TOKEN", "",            "Token de acesso do Mercado Pago",                            "Pagamentos"),
+    "mercadopago_public_key":   ("MERCADOPAGO_PUBLIC_KEY",   "",            "Chave pública do Mercado Pago",                              "Pagamentos"),
+    "stripe_secret_key":        ("STRIPE_SECRET_KEY",        "",            "Chave secreta do Stripe",                                    "Pagamentos"),
+    "stripe_public_key":        ("STRIPE_PUBLIC_KEY",        "",            "Chave pública do Stripe",                                    "Pagamentos"),
+    "stripe_webhook_secret":    ("STRIPE_WEBHOOK_SECRET",    "",            "Secret para validar assinatura dos webhooks do Stripe",       "Pagamentos"),
+    "paypal_client_id":         ("PAYPAL_CLIENT_ID",         "",            "Client ID do app PayPal Developer",                          "Pagamentos"),
+    "paypal_client_secret":     ("PAYPAL_CLIENT_SECRET",     "",            "Client Secret do app PayPal Developer",                      "Pagamentos"),
+    "paypal_webhook_id":        ("PAYPAL_WEBHOOK_ID",        "",            "ID do webhook cadastrado no PayPal",                         "Pagamentos"),
+}
+
+
+def garantir_configs_pagamento():
+    """
+    Garante que todas as chaves de pagamento existam no banco.
+
+    Diferente de migrar_configs_para_banco(), esta função insere a chave mesmo
+    quando o valor do .env está vazio, usando o valor padrão definido em
+    CONFIGS_PAGAMENTO_GARANTIDAS. Isso assegura que o formulário de configurações
+    de pagamento sempre seja renderizado na interface administrativa.
+
+    Não sobrescreve valores já existentes no banco.
+    """
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    inseridas = 0
+
+    for chave, (var_env, valor_padrao, descricao, categoria) in CONFIGS_PAGAMENTO_GARANTIDAS.items():
+        if configuracao_repo.obter_por_chave(chave):
+            continue  # já existe, não sobrescrever
+
+        valor = os.getenv(var_env, valor_padrao) or valor_padrao
+        descricao_completa = f"[{categoria}] {descricao}"
+
+        try:
+            configuracao_repo.inserir_ou_atualizar(
+                chave=chave,
+                valor=valor,
+                descricao=descricao_completa
+            )
+            inseridas += 1
+            logger.info(f"✓ Config de pagamento garantida: '{chave}' ({categoria})")
+        except sqlite3.Error as e:
+            logger.error(f"✗ Erro ao garantir config '{chave}': {e}")
+
+    if inseridas:
+        from util.config_cache import config
+        config.limpar()
+        logger.debug("Cache limpo após garantia de configs de pagamento")
+
+    logger.info(f"Configs de pagamento verificadas: {inseridas} novas inseridas")
