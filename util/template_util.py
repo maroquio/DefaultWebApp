@@ -161,6 +161,42 @@ def csrf_input(request: Optional[Request] = None) -> str:
     return f'<input type="hidden" name="{CSRF_FORM_FIELD}" value="{token}">'
 
 
+def _gerar_css_toast_inline() -> str:
+    """
+    Gera as propriedades CSS de posicionamento do toast container.
+
+    Callable (chamado a cada render de template) para refletir o valor
+    atual do config_cache sem depender de cache de arquivo CSS estático.
+
+    Returns:
+        String com as propriedades CSS (sem a regra envolvente)
+    """
+    posicao = config.obter("toast_posicao", "inferior_direito")
+    margem_v = config.obter_int("toast_margem_vertical", 20)
+    margem_h = config.obter_int("toast_margem_horizontal", 20)
+
+    posicoes_validas = {
+        "superior_direito", "superior_esquerdo",
+        "inferior_direito", "inferior_esquerdo",
+    }
+    if posicao not in posicoes_validas:
+        posicao = "inferior_direito"
+
+    eh_inferior = posicao.startswith("inferior")
+    eh_direito = posicao.endswith("direito")
+    vert_prop = "bottom" if eh_inferior else "top"
+    vert_oposto = "top" if eh_inferior else "bottom"
+    horiz_prop = "right" if eh_direito else "left"
+    horiz_oposto = "left" if eh_direito else "right"
+
+    return (
+        f"    {vert_prop}: {margem_v}px;\n"
+        f"    {vert_oposto}: auto;\n"
+        f"    {horiz_prop}: {margem_h}px;\n"
+        f"    {horiz_oposto}: auto;"
+    )
+
+
 def criar_templates() -> Jinja2Templates:
     """
     Cria instância de Jinja2Templates com configurações customizadas.
@@ -192,6 +228,10 @@ def criar_templates() -> Jinja2Templates:
         'toast_auto_hide_delay_ms',
         TOAST_AUTO_HIDE_DELAY_MS
     )
+
+    # Callable para posicionamento do toast: executado a cada render para sempre
+    # refletir o config atual sem depender de cache de arquivo CSS estático
+    env.globals['toast_container_css'] = _gerar_css_toast_inline
 
     # CSRF Protection: Adicionar função global para gerar input CSRF
     # IMPORTANTE: Esta função precisa receber 'request' do contexto

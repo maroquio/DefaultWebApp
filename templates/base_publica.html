@@ -14,6 +14,13 @@
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
 
+    <!-- Posicionamento do toast: renderizado inline para evitar cache de CSS estático -->
+    <style>
+    #toast-container {
+{{ toast_container_css() }}
+    }
+    </style>
+
     <!-- Chat Widget CSS (apenas para usuários logados) -->
     {% if request.session.get('usuario_logado') %}
     <link rel="stylesheet" href="/static/css/widget-chat.css">
