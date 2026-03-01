@@ -363,8 +363,105 @@
                     Configurações que afetam a aparência e comportamento da interface do usuário.
                 </div>
 
+                {# Extrair valores das configs de posição do toast #}
+                {% set _posicao_cfgs = configs_por_categoria.get('Interface', []) | selectattr('chave', 'equalto', 'toast_posicao') | list %}
+                {% set _posicao_val = _posicao_cfgs[0].valor if _posicao_cfgs else 'inferior_direito' %}
+                {% set _margem_v_cfgs = configs_por_categoria.get('Interface', []) | selectattr('chave', 'equalto', 'toast_margem_vertical') | list %}
+                {% set _margem_v_val = _margem_v_cfgs[0].valor if _margem_v_cfgs else '20' %}
+                {% set _margem_h_cfgs = configs_por_categoria.get('Interface', []) | selectattr('chave', 'equalto', 'toast_margem_horizontal') | list %}
+                {% set _margem_h_val = _margem_h_cfgs[0].valor if _margem_h_cfgs else '20' %}
+
+                <!-- Card: Posição das notificações toast -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">
+                            Posição das Notificações Toast
+                        </h6>
+                        <p class="small text-muted mb-3">
+                            Define onde as notificações aparecem na tela. A configuração é gravada
+                            diretamente no arquivo CSS e aplicada imediatamente.
+                        </p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="toast_posicao" class="form-label">Posição</label>
+                                <select class="form-select {% if erros.get('toast_posicao') %}is-invalid{% endif %}"
+                                        id="toast_posicao" name="toast_posicao" required>
+                                    <option value="superior_direito" {% if _posicao_val == 'superior_direito' %}selected{% endif %}>Superior direito</option>
+                                    <option value="superior_esquerdo" {% if _posicao_val == 'superior_esquerdo' %}selected{% endif %}>Superior esquerdo</option>
+                                    <option value="inferior_direito" {% if _posicao_val == 'inferior_direito' %}selected{% endif %}>Inferior direito</option>
+                                    <option value="inferior_esquerdo" {% if _posicao_val == 'inferior_esquerdo' %}selected{% endif %}>Inferior esquerdo</option>
+                                </select>
+                                {% if erros.get('toast_posicao') %}
+                                <div class="invalid-feedback d-block">{{ erros['toast_posicao'] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="toast_margem_vertical" class="form-label">Margem vertical (px)</label>
+                                <input type="number"
+                                       class="form-control {% if erros.get('toast_margem_vertical') %}is-invalid{% endif %}"
+                                       id="toast_margem_vertical" name="toast_margem_vertical"
+                                       value="{{ _margem_v_val }}" min="0" max="200" step="5" required>
+                                <div class="form-text">Distância da borda superior ou inferior</div>
+                                {% if erros.get('toast_margem_vertical') %}
+                                <div class="invalid-feedback d-block">{{ erros['toast_margem_vertical'] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="toast_margem_horizontal" class="form-label">Margem direita/esquerda (px)</label>
+                                <input type="number"
+                                       class="form-control {% if erros.get('toast_margem_horizontal') %}is-invalid{% endif %}"
+                                       id="toast_margem_horizontal" name="toast_margem_horizontal"
+                                       value="{{ _margem_h_val }}" min="0" max="200" step="5" required>
+                                <div class="form-text">Distância da borda direita ou esquerda</div>
+                                {% if erros.get('toast_margem_horizontal') %}
+                                <div class="invalid-feedback d-block">{{ erros['toast_margem_horizontal'] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <label class="form-label small text-muted">Pré-visualização</label>
+                        <div id="toast-pos-preview" class="border rounded bg-body-secondary position-relative"
+                             style="height: 180px; overflow: hidden;">
+                            <div id="toast-preview-indicator"
+                                 class="position-absolute bg-primary text-white rounded px-2 py-1"
+                                 style="font-size: 0.75rem; pointer-events: none; transition: all 0.15s ease; white-space: nowrap;">
+                                <i class="bi bi-bell-fill me-1"></i>Notificação
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                (function() {
+                    const posSelect  = document.getElementById('toast_posicao');
+                    const margemV    = document.getElementById('toast_margem_vertical');
+                    const margemH    = document.getElementById('toast_margem_horizontal');
+                    const indicator  = document.getElementById('toast-preview-indicator');
+                    const preview    = document.getElementById('toast-pos-preview');
+
+                    function updatePreview() {
+                        const posicao   = posSelect.value;
+                        const v = Math.min(parseInt(margemV.value) || 0, preview.offsetHeight - 36);
+                        const h = Math.min(parseInt(margemH.value) || 0, preview.offsetWidth - 110);
+                        const ehInferior = posicao.startsWith('inferior');
+                        const ehDireito  = posicao.endsWith('direito');
+
+                        indicator.style.top    = ehInferior ? 'auto'   : v + 'px';
+                        indicator.style.bottom = ehInferior ? v + 'px' : 'auto';
+                        indicator.style.right  = ehDireito  ? h + 'px' : 'auto';
+                        indicator.style.left   = ehDireito  ? 'auto'   : h + 'px';
+                    }
+
+                    posSelect.addEventListener('change', updatePreview);
+                    margemV.addEventListener('input', updatePreview);
+                    margemH.addEventListener('input', updatePreview);
+                    updatePreview();
+                })();
+                </script>
+
                 {% for config in configs_por_categoria.get('Interface', []) %}
-                    {% if config.chave != 'tema' %}
+                    {% if config.chave not in ['tema', 'toast_posicao', 'toast_margem_vertical', 'toast_margem_horizontal'] %}
                     <div class="card mb-3">
                         <div class="card-body">
                             <h6 class="card-subtitle mb-3 text-muted">

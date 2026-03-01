@@ -251,6 +251,26 @@ class SalvarConfiguracaoLoteDTO(BaseModel):
                     elif num > RATE_LIMIT_MAX_MINUTOS:
                         erros[chave] = f"Máximo permitido é {RATE_LIMIT_MAX_MINUTOS} minutos (24 horas)"
 
+                # Toast posição
+                elif chave == "toast_posicao":
+                    posicoes_validas = {
+                        "superior_direito", "superior_esquerdo",
+                        "inferior_direito", "inferior_esquerdo",
+                    }
+                    if valor not in posicoes_validas:
+                        erros[chave] = (
+                            "Posição inválida. Use: superior_direito, superior_esquerdo, "
+                            "inferior_direito ou inferior_esquerdo"
+                        )
+
+                # Toast margens
+                elif chave in ("toast_margem_vertical", "toast_margem_horizontal"):
+                    num = int(valor)
+                    if num < 0:
+                        erros[chave] = "Margem não pode ser negativa"
+                    elif num > 200:
+                        erros[chave] = "Margem máxima é 200px"
+
                 # Toast delay
                 elif chave == "toast_auto_hide_delay_ms":
                     num = int(valor)

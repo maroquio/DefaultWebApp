@@ -156,6 +156,10 @@ async def post_salvar_lote_configuracoes(
         # Limpar cache de configurações
         config.limpar()
 
+        # Regenerar CSS de toast se configurações de posição foram alteradas
+        from util.toast_css_util import aplicar_css_toast
+        aplicar_css_toast()
+
         # Log de auditoria
         logger.info(
             f"Atualização em lote de configurações por admin {usuario_logado.id} - "

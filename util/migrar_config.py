@@ -358,6 +358,58 @@ CONFIGS_PAGAMENTO_GARANTIDAS = {
 }
 
 
+CONFIGS_TOAST_GARANTIDAS = {
+    "toast_posicao": (
+        "inferior_direito",
+        "Posição das notificações toast na tela",
+        "Interface",
+    ),
+    "toast_margem_vertical": (
+        "20",
+        "Distância em pixels da borda superior ou inferior da tela",
+        "Interface",
+    ),
+    "toast_margem_horizontal": (
+        "20",
+        "Distância em pixels da borda direita ou esquerda da tela",
+        "Interface",
+    ),
+}
+
+
+def garantir_configs_toast():
+    """
+    Garante que as chaves de posicionamento de toast existam no banco.
+
+    Insere os valores padrão caso as chaves ainda não existam.
+    Não sobrescreve valores já configurados pelo admin.
+    """
+    inseridas = 0
+
+    for chave, (valor_padrao, descricao, categoria) in CONFIGS_TOAST_GARANTIDAS.items():
+        if configuracao_repo.obter_por_chave(chave):
+            continue
+
+        descricao_completa = f"[{categoria}] {descricao}"
+
+        try:
+            configuracao_repo.inserir_ou_atualizar(
+                chave=chave,
+                valor=valor_padrao,
+                descricao=descricao_completa,
+            )
+            inseridas += 1
+            logger.info(f"✓ Config de toast garantida: '{chave}' ({categoria})")
+        except sqlite3.Error as e:
+            logger.error(f"✗ Erro ao garantir config '{chave}': {e}")
+
+    if inseridas:
+        from util.config_cache import config
+        config.limpar()
+
+    logger.info(f"Configs de toast verificadas: {inseridas} novas inseridas")
+
+
 def garantir_configs_pagamento():
     """
     Garante que todas as chaves de pagamento existam no banco.

@@ -136,3 +136,12 @@
         border-bottom-left-radius: 0;
     }
 }
+
+/* === TOAST-CONFIG:START === */
+#toast-container {
+    bottom: 20px;
+    top: auto;
+    right: 20px;
+    left: auto;
+}
+/* === TOAST-CONFIG:END === */
