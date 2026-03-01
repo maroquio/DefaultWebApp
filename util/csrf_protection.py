@@ -26,8 +26,9 @@ CSRF_PROTECTED_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # Rotas que NÃO requerem CSRF (API endpoints, health check, etc.)
 CSRF_EXEMPT_PATHS = {
     "/health",
-    "/api/",            # Endpoints de API podem usar outros métodos de auth
-    "/pagamentos/webhook",  # Webhook IPN do Mercado Pago (requisição externa)
+    "/api/",                            # Endpoints de API podem usar outros métodos de auth
+    "/pagamentos/webhook/mercadopago",  # Webhook IPN do Mercado Pago (requisição externa)
+    "/pagamentos/webhook/stripe",       # Webhook do Stripe (validação via assinatura)
 }
 
 

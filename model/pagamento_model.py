@@ -35,6 +35,7 @@ class Pagamento:
     payment_id: Optional[str] = None          # ID do pagamento confirmado no MP
     external_reference: Optional[str] = None  # Referência externa gerada pela app
     url_checkout: Optional[str] = None        # URL init_point para redirecionamento
+    provider: str = "mercadopago"              # Provedor usado na criação do pagamento
     data_criacao: Optional[datetime] = None
     data_atualizacao: Optional[datetime] = None
     # Campo via JOIN para exibição

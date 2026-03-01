@@ -219,6 +219,38 @@ CONFIGS_PARA_MIGRAR = {
         "Período em minutos para páginas de exemplo",
         "Páginas Públicas"
     ),
+
+    # === Pagamentos ===
+    "payment_provider": (
+        "PAYMENT_PROVIDER",
+        "Provedor de pagamento ativo (mercadopago ou stripe)",
+        "Pagamentos"
+    ),
+    "mercadopago_access_token": (
+        "MERCADOPAGO_ACCESS_TOKEN",
+        "Token de acesso do Mercado Pago",
+        "Pagamentos"
+    ),
+    "mercadopago_public_key": (
+        "MERCADOPAGO_PUBLIC_KEY",
+        "Chave pública do Mercado Pago",
+        "Pagamentos"
+    ),
+    "stripe_secret_key": (
+        "STRIPE_SECRET_KEY",
+        "Chave secreta do Stripe",
+        "Pagamentos"
+    ),
+    "stripe_public_key": (
+        "STRIPE_PUBLIC_KEY",
+        "Chave pública do Stripe",
+        "Pagamentos"
+    ),
+    "stripe_webhook_secret": (
+        "STRIPE_WEBHOOK_SECRET",
+        "Secret para validar assinatura dos webhooks do Stripe",
+        "Pagamentos"
+    ),
 }
 
 

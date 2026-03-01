@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS pagamento (
     payment_id TEXT,
     external_reference TEXT,
     url_checkout TEXT,
+    provider TEXT NOT NULL DEFAULT 'mercadopago',
     data_criacao TIMESTAMP,
     data_atualizacao TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
@@ -19,9 +20,9 @@ INSERIR = """
 INSERT INTO pagamento (
     usuario_id, descricao, valor, status,
     preference_id, payment_id, external_reference, url_checkout,
-    data_criacao, data_atualizacao
+    provider, data_criacao, data_atualizacao
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 OBTER_TODOS = """
@@ -60,17 +61,27 @@ INNER JOIN usuario u ON p.usuario_id = u.id
 WHERE p.external_reference = ?
 """
 
+OBTER_POR_PROVIDER_REFERENCE = """
+SELECT p.*, u.nome as usuario_nome
+FROM pagamento p
+INNER JOIN usuario u ON p.usuario_id = u.id
+WHERE p.provider = ? AND p.preference_id = ?
+"""
+
 ATUALIZAR_STATUS = """
 UPDATE pagamento
 SET status = ?, payment_id = ?, data_atualizacao = ?
 WHERE id = ?
 """
 
-ATUALIZAR_PREFERENCE = """
+ATUALIZAR_CHECKOUT = """
 UPDATE pagamento
 SET preference_id = ?, url_checkout = ?, data_atualizacao = ?
 WHERE id = ?
 """
+
+# Mantido por compatibilidade com chamadas existentes
+ATUALIZAR_PREFERENCE = ATUALIZAR_CHECKOUT
 
 EXCLUIR = "DELETE FROM pagamento WHERE id = ?"
 
@@ -78,4 +89,8 @@ CONTAR_POR_STATUS = """
 SELECT status, COUNT(*) as total
 FROM pagamento
 GROUP BY status
+"""
+
+ADICIONAR_COLUNA_PROVIDER = """
+ALTER TABLE pagamento ADD COLUMN provider TEXT NOT NULL DEFAULT 'mercadopago'
 """

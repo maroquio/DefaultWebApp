@@ -13,13 +13,13 @@
             </a>
         </div>
 
-        <!-- Informações sobre o Checkout Pro -->
+        <!-- Informações sobre o Checkout -->
         <div class="alert alert-info mb-4">
             <i class="bi bi-shield-check"></i>
-            <strong>Pagamento seguro via Mercado Pago</strong>
+            <strong>Pagamento seguro via {{ provider_nome or 'gateway de pagamento' }}</strong>
             <p class="mb-0 mt-1 small">
                 Após clicar em "Ir para Pagamento", você será redirecionado para a página segura
-                do Mercado Pago, onde poderá escolher sua forma de pagamento preferida.
+                do {{ provider_nome or 'gateway de pagamento' }}, onde poderá escolher sua forma de pagamento preferida.
             </p>
         </div>
 

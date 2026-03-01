@@ -134,9 +134,14 @@ RATE_LIMIT_PUBLIC_MINUTOS = int(os.getenv("RATE_LIMIT_PUBLIC_MINUTOS", "1"))
 RATE_LIMIT_EXAMPLES_MAX = int(os.getenv("RATE_LIMIT_EXAMPLES_MAX", "100"))
 RATE_LIMIT_EXAMPLES_MINUTOS = int(os.getenv("RATE_LIMIT_EXAMPLES_MINUTOS", "1"))
 
-# === Configurações do Mercado Pago ===
+# === Configurações de Pagamento ===
+# Mercado Pago
 MERCADOPAGO_ACCESS_TOKEN = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
 MERCADOPAGO_PUBLIC_KEY = os.getenv("MERCADOPAGO_PUBLIC_KEY", "")
+# Stripe
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 # === Versão da Aplicação ===
 VERSION = "1.0.0"

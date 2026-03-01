@@ -3,7 +3,7 @@ Rotas administrativas para gerenciamento de pagamentos.
 
 Permite que administradores:
 - Listem todos os pagamentos do sistema com filtros por status
-- Visualizem detalhes completos de qualquer pagamento
+- Visualizem detalhes completos de qualquer pagamento, incluindo dados do provedor
 """
 
 # =============================================================================
@@ -20,6 +20,7 @@ from model.usuario_logado_model import UsuarioLogado
 from repo import pagamento_repo
 from util.auth_decorator import requer_autenticacao
 from util.logger_config import logger
+from util.payment_service import PaymentService
 from util.perfis import Perfil
 from util.repository_helpers import obter_ou_404
 from util.template_util import criar_templates
@@ -92,7 +93,7 @@ async def detalhes(
     id: int,
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
-    """Exibe detalhes completos de um pagamento, incluindo dados do Mercado Pago."""
+    """Exibe detalhes completos de um pagamento, incluindo dados do provedor."""
     assert usuario_logado is not None
 
     pagamento = obter_ou_404(
@@ -104,18 +105,30 @@ async def detalhes(
     if isinstance(pagamento, RedirectResponse):
         return pagamento
 
-    # Buscar dados atualizados no Mercado Pago se houver payment_id confirmado
-    dados_mp = None
+    # Buscar dados atualizados no provedor se houver payment_id confirmado
+    # Usa o adapter do provedor que criou o pagamento (campo provider),
+    # não o provedor ativo — preserva histórico ao trocar de provedor.
+    dados_provider = None
     if pagamento.payment_id:
-        from util.mercadopago_util import obter_pagamento_mp
-        dados_mp = obter_pagamento_mp(pagamento.payment_id)
+        try:
+            adapter = PaymentService.obter_provider_por_chave(pagamento.provider)
+            dados_provider = adapter.obter_dados_pagamento(pagamento.payment_id)
+        except Exception as e:
+            logger.warning(
+                f"Não foi possível consultar dados do provider {pagamento.provider} "
+                f"para pagamento #{pagamento.id}: {e}"
+            )
+
+    # Obter nome do provedor para exibição
+    provider_nome = PaymentService.obter_provider_por_chave(pagamento.provider).nome
 
     return templates.TemplateResponse(
         "admin/pagamentos/detalhes.html",
         {
             "request": request,
             "pagamento": pagamento,
-            "dados_mp": dados_mp,
+            "dados_provider": dados_provider,
+            "provider_nome": provider_nome,
             "usuario_logado": usuario_logado,
         },
     )

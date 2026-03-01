@@ -38,8 +38,10 @@
                         </p>
                     </div>
                     <div class="col-sm-6">
-                        <label class="text-muted small">Status</label>
-                        <p class="mb-0">{{ badge_status_pagamento(pagamento.status) }}</p>
+                        <label class="text-muted small">Provedor</label>
+                        <p class="mb-0">
+                            <span class="badge bg-secondary">{{ provider_nome }}</span>
+                        </p>
                     </div>
                     <div class="col-sm-6">
                         <label class="text-muted small">Data de Criação</label>
@@ -57,33 +59,39 @@
             </div>
         </div>
 
-        <!-- Dados do Mercado Pago -->
+        <!-- Dados do Provedor (IDs) -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">
                 <span class="fw-semibold">
-                    <i class="bi bi-credit-card-2-front"></i> Dados do Mercado Pago
+                    <i class="bi bi-credit-card-2-front"></i> IDs do {{ provider_nome }}
                 </span>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="text-muted small">Preference ID</label>
+                        <label class="text-muted small">
+                            {% if pagamento.provider == 'stripe' %}Session ID{% else %}Preference ID{% endif %}
+                        </label>
                         <p class="font-monospace small mb-0">
                             {{ pagamento.preference_id or '—' }}
                         </p>
                     </div>
                     <div class="col-12">
-                        <label class="text-muted small">Payment ID</label>
+                        <label class="text-muted small">
+                            {% if pagamento.provider == 'stripe' %}Payment Intent ID{% else %}Payment ID{% endif %}
+                        </label>
                         <p class="font-monospace small mb-0">
                             {{ pagamento.payment_id or '—' }}
                         </p>
                     </div>
+                    {% if pagamento.provider == 'mercadopago' %}
                     <div class="col-12">
                         <label class="text-muted small">External Reference</label>
                         <p class="font-monospace small mb-0">
                             {{ pagamento.external_reference or pagamento.id }}
                         </p>
                     </div>
+                    {% endif %}
                     {% if pagamento.url_checkout %}
                     <div class="col-12">
                         <label class="text-muted small">URL de Checkout</label>
@@ -99,38 +107,42 @@
             </div>
         </div>
 
-        <!-- Dados da API do Mercado Pago (se disponível) -->
-        {% if dados_mp %}
+        <!-- Dados em tempo real do provedor (se disponível) -->
+        {% if dados_provider %}
         <div class="card shadow-sm">
             <div class="card-header">
                 <span class="fw-semibold">
-                    <i class="bi bi-cloud-download"></i> Dados da API do Mercado Pago (tempo real)
+                    <i class="bi bi-cloud-download"></i> Dados do {{ provider_nome }} (tempo real)
                 </span>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="text-muted small">Status (MP)</label>
+                        <label class="text-muted small">Status ({{ provider_nome }})</label>
                         <p class="mb-0">
-                            <span class="badge bg-secondary">{{ dados_mp.get('status', '—') }}</span>
-                            <small class="text-muted ms-1">{{ dados_mp.get('status_detail', '') }}</small>
+                            <span class="badge bg-secondary">{{ dados_provider.get('status', '—') }}</span>
                         </p>
                     </div>
                     <div class="col-sm-6">
                         <label class="text-muted small">Valor Pago</label>
                         <p class="mb-0">
-                            R$ {{ "%.2f"|format(dados_mp.get('transaction_amount', 0))|replace('.', ',') }}
+                            {% set vp = dados_provider.get('valor_pago') %}
+                            {% if vp is not none %}
+                                R$ {{ "%.2f"|format(vp)|replace('.', ',') }}
+                            {% else %}
+                                —
+                            {% endif %}
                         </p>
                     </div>
-                    {% if dados_mp.get('payer') %}
+                    {% if dados_provider.get('email_pagador') %}
                     <div class="col-sm-6">
                         <label class="text-muted small">Email do Pagador</label>
-                        <p class="mb-0">{{ dados_mp.get('payer', {}).get('email', '—') }}</p>
+                        <p class="mb-0">{{ dados_provider.get('email_pagador') }}</p>
                     </div>
                     {% endif %}
                     <div class="col-sm-6">
                         <label class="text-muted small">Data de Aprovação</label>
-                        <p class="mb-0">{{ dados_mp.get('date_approved', '—') }}</p>
+                        <p class="mb-0">{{ dados_provider.get('data_aprovacao', '—') }}</p>
                     </div>
                 </div>
             </div>

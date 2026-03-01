@@ -50,6 +50,12 @@
                 <span class="badge bg-secondary ms-1" id="fotos-count">0</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pagamentos-tab" data-bs-toggle="tab" data-bs-target="#pagamentos" type="button" role="tab" aria-controls="pagamentos" aria-selected="false">
+                <i class="bi bi-credit-card-fill"></i> Pagamentos
+                <span class="badge bg-secondary ms-1" id="pagamentos-count">0</span>
+            </button>
+        </li>
     </ul>
 
     <!-- Conteúdo das Abas -->
@@ -616,6 +622,143 @@
             </form>
         </div>
 
+        <!-- ABA 5: PAGAMENTOS -->
+        <div class="tab-pane fade" id="pagamentos" role="tabpanel" aria-labelledby="pagamentos-tab">
+            {% set configs_pagamentos = configs_por_categoria.get('Pagamentos', []) %}
+            {% if configs_pagamentos %}
+            <form id="form-pagamentos" method="POST" action="/admin/configuracoes/salvar-lote">
+                {{ csrf_input() }}
+                <input type="hidden" name="categoria" value="pagamentos">
+
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Configure o provedor de pagamento ativo e as credenciais de cada gateway.
+                    <strong>Atenção:</strong> As chaves de API são sensíveis — não as compartilhe.
+                </div>
+
+                <!-- Seletor de provedor -->
+                {% set provider_config = configs_pagamentos | selectattr('chave', 'equalto', 'payment_provider') | first %}
+                {% if provider_config %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Provedor de Pagamento Ativo</h6>
+                        <p class="small text-muted mb-3">
+                            Selecione qual gateway será usado para novos pagamentos.
+                            Pagamentos existentes continuam exibindo dados do provedor original.
+                        </p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="payment_provider" class="form-label">Provedor</label>
+                                <select class="form-select" id="payment_provider" name="payment_provider">
+                                    <option value="mercadopago" {% if provider_config.valor == 'mercadopago' %}selected{% endif %}>
+                                        Mercado Pago
+                                    </option>
+                                    <option value="stripe" {% if provider_config.valor == 'stripe' %}selected{% endif %}>
+                                        Stripe
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Credenciais Mercado Pago -->
+                <div id="secao-mercadopago">
+                    <h5 class="mb-3"><i class="bi bi-wallet2"></i> Mercado Pago</h5>
+                    {% for config in configs_pagamentos %}
+                        {% if config.chave in ['mercadopago_access_token', 'mercadopago_public_key'] %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {% if config.chave == 'mercadopago_access_token' %}Access Token (APP_USR-...){% else %}Public Key (APP_USR-...){% endif %}
+                                </h6>
+                                <p class="small text-muted mb-3">
+                                    {% if config.chave == 'mercadopago_access_token' %}
+                                    Chave privada de acesso à API do Mercado Pago. Use credenciais TEST- para sandbox.
+                                    {% else %}
+                                    Chave pública usada no frontend (Checkout Pro).
+                                    {% endif %}
+                                </p>
+                                <input type="text"
+                                    class="form-control font-monospace"
+                                    id="{{ config.chave }}" name="{{ config.chave }}"
+                                    value="{{ config.valor }}"
+                                    placeholder="{% if config.chave == 'mercadopago_access_token' %}TEST-xxxx ou APP_USR-xxxx{% else %}TEST-xxxx ou APP_USR-xxxx{% endif %}">
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Credenciais Stripe -->
+                <div id="secao-stripe">
+                    <h5 class="mb-3 mt-4"><i class="bi bi-stripe"></i> Stripe</h5>
+                    {% for config in configs_pagamentos %}
+                        {% if config.chave in ['stripe_secret_key', 'stripe_public_key', 'stripe_webhook_secret'] %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {% if config.chave == 'stripe_secret_key' %}Secret Key (sk_...)
+                                    {% elif config.chave == 'stripe_public_key' %}Publishable Key (pk_...)
+                                    {% else %}Webhook Secret (whsec_...){% endif %}
+                                </h6>
+                                <p class="small text-muted mb-3">
+                                    {% if config.chave == 'stripe_secret_key' %}
+                                    Chave secreta da API Stripe. Use sk_test_... para sandbox.
+                                    {% elif config.chave == 'stripe_public_key' %}
+                                    Chave pública para inicializar o Stripe.js no frontend.
+                                    {% else %}
+                                    Secret gerado no dashboard do Stripe (Webhooks). Obtenha com: <code>stripe listen</code>.
+                                    {% endif %}
+                                </p>
+                                <input type="text"
+                                    class="form-control font-monospace"
+                                    id="{{ config.chave }}" name="{{ config.chave }}"
+                                    value="{{ config.valor }}"
+                                    placeholder="{% if config.chave == 'stripe_secret_key' %}sk_test_...{% elif config.chave == 'stripe_public_key' %}pk_test_...{% else %}whsec_...{% endif %}">
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save"></i> Salvar Configurações de Pagamento
+                    </button>
+                </div>
+            </form>
+
+            <script>
+            (function() {
+                const select = document.getElementById('payment_provider');
+                const secaoMP = document.getElementById('secao-mercadopago');
+                const secaoStripe = document.getElementById('secao-stripe');
+
+                function atualizarSecoes() {
+                    if (!select) return;
+                    const provider = select.value;
+                    if (secaoMP) secaoMP.style.display = provider === 'mercadopago' ? '' : 'none';
+                    if (secaoStripe) secaoStripe.style.display = provider === 'stripe' ? '' : 'none';
+                }
+
+                if (select) {
+                    select.addEventListener('change', atualizarSecoes);
+                    atualizarSecoes();
+                }
+            })();
+            </script>
+
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Nenhuma configuração de pagamento encontrada. Execute a migração de configurações ou adicione
+                <code>PAYMENT_PROVIDER</code>, <code>MERCADOPAGO_ACCESS_TOKEN</code> (ou chaves Stripe) no <code>.env</code>.
+            </div>
+            {% endif %}
+        </div>
+
     </div>
     {% endif %}
 
@@ -660,18 +803,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const interfaceFields = document.querySelectorAll('#interface .card').length;
     const aplicacaoFields = document.querySelectorAll('#aplicacao .card').length;
     const fotosFields = document.querySelectorAll('#fotos .card').length;
+    const pagamentosFields = document.querySelectorAll('#pagamentos .card').length;
 
     document.getElementById('rate-limit-count').textContent = rateLimitFields;
     document.getElementById('interface-count').textContent = interfaceFields;
     document.getElementById('aplicacao-count').textContent = aplicacaoFields;
     document.getElementById('fotos-count').textContent = fotosFields;
+    if (document.getElementById('pagamentos-count')) {
+        document.getElementById('pagamentos-count').textContent = pagamentosFields;
+    }
 
     // Alerta de mudanças não salvas ao trocar de aba
     let formModified = false;
     const forms = document.querySelectorAll('form');
 
     forms.forEach(form => {
-        const inputs = form.querySelectorAll('input[type="number"], input[type="text"], input[type="email"]');
+        const inputs = form.querySelectorAll('input[type="number"], input[type="text"], input[type="email"], select');
         inputs.forEach(input => {
             input.addEventListener('change', function() {
                 formModified = true;
