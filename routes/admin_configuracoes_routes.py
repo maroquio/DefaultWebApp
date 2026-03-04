@@ -3,14 +3,15 @@
 # =============================================================================
 
 # Standard library
+import re
 import shutil
 import sqlite3
 from pathlib import Path
 from typing import Optional
 
 # Third-party
-from fastapi import APIRouter, Form, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, File, Form, Request, UploadFile, status
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import ValidationError
 
 # DTOs
@@ -218,36 +219,60 @@ async def post_salvar_lote_configuracoes(
 @router.get("/tema")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_tema(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """Exibe seletor de temas visuais da aplicação"""
+    """Exibe seletor de temas visuais da aplicação com abas de personalização"""
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    # Obter tema atual do banco de dados
-    config_tema = configuracao_repo.obter_por_chave("theme")
-    tema_atual = config_tema.valor if config_tema else "original"
 
-    # Listar todos os arquivos PNG na pasta de imagens dos temas
+    # Tema base atual
+    config_tema = configuracao_repo.obter_por_chave("theme")
+    tema_atual_nome = config_tema.valor if config_tema else "original"
+
+    # Listar temas disponíveis
     img_dir = Path("static/img/bootswatch")
     temas_disponiveis = []
-
     if img_dir.exists() and img_dir.is_dir():
         for img_file in sorted(img_dir.glob("*.png")):
-            tema_nome = img_file.stem  # Nome do arquivo sem extensão
-            # Verificar se existe o arquivo CSS correspondente
+            tema_nome = img_file.stem
             css_file = Path(f"static/css/bootswatch/{tema_nome}.bootstrap.min.css")
             if css_file.exists():
                 temas_disponiveis.append({
                     "nome": tema_nome,
                     "nome_exibicao": tema_nome.capitalize(),
                     "imagem": f"/static/img/bootswatch/{img_file.name}",
-                    "selecionado": tema_nome == tema_atual
+                    "selecionado": tema_nome == tema_atual_nome,
                 })
+
+    # Configurações de cores atuais para preencher os campos
+    CHAVES_COR = [
+        "tema_cor_primary", "tema_cor_secondary", "tema_cor_success",
+        "tema_cor_danger", "tema_cor_warning", "tema_cor_info",
+        "tema_cor_light", "tema_cor_dark", "tema_cor_custom",
+    ]
+    config_cores = {chave: config.obter(chave, "") for chave in CHAVES_COR}
+
+    # Configurações de fontes atuais
+    from util.tema_css_util import _obter_config_tema
+
+    class _FontesConfig:
+        tema_fonte_titulos = config.obter("tema_fonte_titulos", "")
+        tema_fonte_corpo = config.obter("tema_fonte_corpo", "")
+
+    # Dados de identidade visual
+    tema_atual = _obter_config_tema()
+    logo_configurado = bool(config.obter("tema_logo", "").strip())
+    favicon_configurado = bool(config.obter("tema_favicon", "").strip())
 
     return templates.TemplateResponse(
         "admin/tema.html",
         {
             "request": request,
             "temas": temas_disponiveis,
+            "tema_atual_nome": tema_atual_nome,
+            "config_cores": config_cores,
+            "config_fontes": _FontesConfig(),
             "tema_atual": tema_atual,
+            "logo_configurado": logo_configurado,
+            "favicon_configurado": favicon_configurado,
             "usuario_logado": usuario_logado,
         }
     )
@@ -307,28 +332,250 @@ async def post_aplicar_tema(
             descricao="Tema visual da aplicação (Bootswatch)"
         )
 
-        if sucesso:
-            # Limpar cache de configurações
-            config.limpar()
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
 
+        if sucesso:
+            config.limpar()
             logger.info(
                 f"Tema alterado para '{tema_normalizado}' por admin {usuario_logado.id} "
                 f"(anterior: {config_existente.valor if config_existente else 'nenhum'})"
             )
+            if is_ajax:
+                return JSONResponse({
+                    "sucesso": True,
+                    "mensagem": f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso!",
+                    "tema": tema_normalizado,
+                })
             informar_sucesso(
                 request,
-                f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso! Recarregue a página para ver as mudanças."
+                f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso!"
             )
         else:
             logger.error(f"Erro ao salvar configuração de tema '{tema_normalizado}' no banco de dados")
+            if is_ajax:
+                return JSONResponse({"sucesso": False, "mensagem": "Erro ao salvar configuração do tema"}, status_code=500)
             informar_erro(request, "Erro ao salvar configuração do tema")
 
     except (sqlite3.Error, OSError) as e:
-        # Usa tema original pois tema_normalizado pode não estar definido em caso de exceção precoce
         logger.error(f"Erro ao aplicar tema '{tema}': {str(e)}")
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+        if is_ajax:
+            return JSONResponse({"sucesso": False, "mensagem": f"Erro ao aplicar tema: {str(e)}"}, status_code=500)
         informar_erro(request, f"Erro ao aplicar tema: {str(e)}")
 
     return RedirectResponse("/admin/tema", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/tema/personalizar")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_personalizar_tema(
+    request: Request,
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """
+    Salva personalização de cores e fontes do tema (AJAX ou form normal).
+
+    Aceita JSON ou form-data com campos:
+      tema_cor_primary, tema_cor_secondary, ... (hex #rrggbb ou vazio)
+      tema_fonte_titulos, tema_fonte_corpo (nome de fonte ou vazio)
+    """
+    assert usuario_logado is not None
+
+    ip = obter_identificador_cliente(request)
+    if not admin_config_limiter.verificar(ip):
+        return JSONResponse(
+            {"sucesso": False, "mensagem": "Muitas operações. Aguarde um momento."},
+            status_code=429,
+        )
+
+    _RE_HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
+    _RE_FONTE = re.compile(r'^[a-zA-Z0-9 ]{0,60}$')
+
+    CHAVES_COR = [
+        "tema_cor_primary", "tema_cor_secondary", "tema_cor_success",
+        "tema_cor_danger", "tema_cor_warning", "tema_cor_info",
+        "tema_cor_light", "tema_cor_dark", "tema_cor_custom",
+    ]
+    CHAVES_FONTE = ["tema_fonte_titulos", "tema_fonte_corpo"]
+
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+    else:
+        form = await request.form()
+        body = dict(form)
+
+    configs: dict[str, str] = {}
+    erros: list[str] = []
+
+    for chave in CHAVES_COR:
+        valor = str(body.get(chave, "")).strip()
+        if valor and not _RE_HEX.match(valor):
+            erros.append(f"Cor inválida para '{chave}': deve ser #rrggbb")
+        else:
+            configs[chave] = valor
+
+    for chave in CHAVES_FONTE:
+        valor = str(body.get(chave, "")).strip()
+        if valor and not _RE_FONTE.match(valor):
+            erros.append(f"Nome de fonte inválido para '{chave}'")
+        else:
+            configs[chave] = valor
+
+    if erros:
+        return JSONResponse({"sucesso": False, "mensagem": "; ".join(erros)}, status_code=400)
+
+    try:
+        configuracao_repo.atualizar_multiplas(configs)
+        config.limpar()
+        logger.info(f"Personalização de tema salva por admin {usuario_logado.id}")
+        return JSONResponse({"sucesso": True, "mensagem": "Personalização salva com sucesso!"})
+    except sqlite3.Error as e:
+        logger.error(f"Erro ao salvar personalização de tema: {e}")
+        return JSONResponse({"sucesso": False, "mensagem": "Erro ao salvar no banco de dados."}, status_code=500)
+
+
+@router.post("/tema/logo")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_logo_tema(
+    request: Request,
+    logo: UploadFile = File(...),
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Upload de logo personalizado para o sistema."""
+    assert usuario_logado is not None
+
+    from util.upload_util import validar_arquivo, TIPOS_IMAGEM
+
+    TIPOS_LOGO = TIPOS_IMAGEM | {".svg"}
+    erro = await validar_arquivo(logo, tipos_permitidos=TIPOS_LOGO, max_bytes=2 * 1024 * 1024)
+    if erro:
+        return JSONResponse({"sucesso": False, "mensagem": erro}, status_code=400)
+
+    try:
+        # Remover logo anterior se existir
+        logo_anterior = config.obter("tema_logo", "").strip()
+        if logo_anterior:
+            Path(f"static/{logo_anterior}").unlink(missing_ok=True)
+
+        # Salvar novo logo com nome fixo (sobrescreve versão anterior)
+        extensao = Path(logo.filename).suffix.lower() if logo.filename else ".png"
+        pasta = Path("static/img/tema")
+        pasta.mkdir(parents=True, exist_ok=True)
+        caminho_arquivo = pasta / f"logo{extensao}"
+
+        await logo.seek(0)
+        with open(caminho_arquivo, "wb") as f:
+            import shutil as _shutil
+            _shutil.copyfileobj(logo.file, f)
+
+        caminho_relativo = f"img/tema/logo{extensao}"
+        configuracao_repo.inserir_ou_atualizar("tema_logo", caminho_relativo, "[Tema] Caminho do logo personalizado")
+        config.limpar()
+
+        logger.info(f"Logo personalizado salvo por admin {usuario_logado.id}: {caminho_relativo}")
+        return JSONResponse({
+            "sucesso": True,
+            "mensagem": "Logo salvo com sucesso!",
+            "logo_url": f"/static/{caminho_relativo}",
+        })
+    except OSError as e:
+        logger.error(f"Erro ao salvar logo: {e}")
+        return JSONResponse({"sucesso": False, "mensagem": "Erro ao salvar logo."}, status_code=500)
+
+
+@router.post("/tema/logo/remover")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_remover_logo_tema(
+    request: Request,
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Remove logo personalizado e volta ao padrão."""
+    assert usuario_logado is not None
+
+    logo_anterior = config.obter("tema_logo", "").strip()
+    if logo_anterior:
+        Path(f"static/{logo_anterior}").unlink(missing_ok=True)
+
+    configuracao_repo.inserir_ou_atualizar("tema_logo", "", "[Tema] Caminho do logo personalizado")
+    config.limpar()
+
+    logger.info(f"Logo personalizado removido por admin {usuario_logado.id}")
+    return JSONResponse({"sucesso": True, "mensagem": "Logo removido. Usando logo padrão."})
+
+
+@router.post("/tema/favicon")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_favicon_tema(
+    request: Request,
+    favicon: UploadFile = File(...),
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Upload de favicon personalizado para o sistema."""
+    assert usuario_logado is not None
+
+    TIPOS_FAVICON = {".ico", ".png", ".svg"}
+    extensao = Path(favicon.filename).suffix.lower() if favicon.filename else ""
+    if extensao not in TIPOS_FAVICON:
+        return JSONResponse(
+            {"sucesso": False, "mensagem": "Favicon deve ser .ico, .png ou .svg"},
+            status_code=400,
+        )
+
+    conteudo = await favicon.read()
+    if len(conteudo) > 512 * 1024:
+        return JSONResponse(
+            {"sucesso": False, "mensagem": "Favicon não pode exceder 512KB"},
+            status_code=400,
+        )
+    if len(conteudo) == 0:
+        return JSONResponse({"sucesso": False, "mensagem": "Arquivo vazio"}, status_code=400)
+
+    try:
+        favicon_anterior = config.obter("tema_favicon", "").strip()
+        if favicon_anterior:
+            Path(f"static/{favicon_anterior}").unlink(missing_ok=True)
+
+        pasta = Path("static/img/tema")
+        pasta.mkdir(parents=True, exist_ok=True)
+        caminho_arquivo = pasta / f"favicon{extensao}"
+
+        with open(caminho_arquivo, "wb") as f:
+            f.write(conteudo)
+
+        caminho_relativo = f"img/tema/favicon{extensao}"
+        configuracao_repo.inserir_ou_atualizar("tema_favicon", caminho_relativo, "[Tema] Caminho do favicon personalizado")
+        config.limpar()
+
+        logger.info(f"Favicon personalizado salvo por admin {usuario_logado.id}")
+        return JSONResponse({
+            "sucesso": True,
+            "mensagem": "Favicon salvo com sucesso!",
+            "favicon_url": f"/static/{caminho_relativo}",
+        })
+    except OSError as e:
+        logger.error(f"Erro ao salvar favicon: {e}")
+        return JSONResponse({"sucesso": False, "mensagem": "Erro ao salvar favicon."}, status_code=500)
+
+
+@router.post("/tema/favicon/remover")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_remover_favicon_tema(
+    request: Request,
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Remove favicon personalizado e volta ao padrão do browser."""
+    assert usuario_logado is not None
+
+    favicon_anterior = config.obter("tema_favicon", "").strip()
+    if favicon_anterior:
+        Path(f"static/{favicon_anterior}").unlink(missing_ok=True)
+
+    configuracao_repo.inserir_ou_atualizar("tema_favicon", "", "[Tema] Caminho do favicon personalizado")
+    config.limpar()
+
+    logger.info(f"Favicon personalizado removido por admin {usuario_logado.id}")
+    return JSONResponse({"sucesso": True, "mensagem": "Favicon removido."})
 
 
 def _ler_log_arquivo(data: str, nivel: str) -> tuple[str, int, Optional[str]]:

@@ -9,7 +9,7 @@
     <title>{{ APP_NAME }} :: {% block titulo %}{% endblock %}</title>
 
     <!-- Bootstrap CSS (local - permite troca de temas) -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link id="bootstrap-css" href="/static/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
@@ -20,6 +20,22 @@
 {{ toast_container_css() }}
     }
     </style>
+
+    <!-- Identidade visual: favicon, fontes e cores personalizadas -->
+    {% set tema = tema_config() %}
+    {% if tema.favicon_url %}
+    <link rel="icon" href="{{ tema.favicon_url }}">
+    {% endif %}
+    {% if tema.fonte_titulos or tema.fonte_corpo %}
+    {% set _fontes_lista = [] %}
+    {% if tema.fonte_titulos %}{% set _ = _fontes_lista.append(tema.fonte_titulos | replace(' ', '+') + ':wght@400;700') %}{% endif %}
+    {% if tema.fonte_corpo and tema.fonte_corpo != tema.fonte_titulos %}{% set _ = _fontes_lista.append(tema.fonte_corpo | replace(' ', '+') + ':wght@400;700') %}{% endif %}
+    <link href="https://fonts.googleapis.com/css2?family={{ _fontes_lista | join('&family=') }}&display=swap" rel="stylesheet">
+    {% endif %}
+    {% set _css_tema = tema_css_inline() %}
+    {% if _css_tema %}
+    <style>{{ _css_tema }}</style>
+    {% endif %}
 
     <!-- Chat Widget CSS (apenas para usuários logados) -->
     {% if request.session.get('usuario_logado') %}
@@ -34,7 +50,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand d-flex align-middle" href="/index">
-                <img src="/static/img/logo.svg" alt="Logo" height="30" class="d-inline-block align-text-top me-2"
+                <img src="{{ tema.logo_url }}" alt="Logo" height="30" class="d-inline-block align-text-top me-2"
                     onerror="this.style.display='none'">
                 {{ APP_NAME }}
             </a>

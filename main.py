@@ -127,6 +127,9 @@ try:
 
     from util.toast_css_util import aplicar_css_toast
     aplicar_css_toast()
+
+    # Garantir que a pasta de uploads de tema existe
+    Path("static/img/tema").mkdir(parents=True, exist_ok=True)
 except sqlite3.Error as e:
     logger.error(f"Erro ao migrar configurações para banco: {e}", exc_info=True)
 

@@ -212,6 +212,22 @@ def inserir_padrao() -> None:
         ("email_contato", "contato@sistema.com", "E-mail de contato"),
         ("tema_padrao", "claro", "Tema padrão (claro/escuro)"),
         ("theme", "original", "Tema visual da aplicação (Bootswatch)"),
+        # Personalização de cores do tema
+        ("tema_cor_primary", "", "[Tema] Cor primária (hex, ex: #1a73e8)"),
+        ("tema_cor_secondary", "", "[Tema] Cor secundária (hex)"),
+        ("tema_cor_success", "", "[Tema] Cor de sucesso (hex)"),
+        ("tema_cor_danger", "", "[Tema] Cor de perigo (hex)"),
+        ("tema_cor_warning", "", "[Tema] Cor de aviso (hex)"),
+        ("tema_cor_info", "", "[Tema] Cor de informação (hex)"),
+        ("tema_cor_light", "", "[Tema] Cor light (hex)"),
+        ("tema_cor_dark", "", "[Tema] Cor dark (hex)"),
+        ("tema_cor_custom", "", "[Tema] Cor personalizada bs-custom (hex)"),
+        # Tipografia
+        ("tema_fonte_titulos", "", "[Tema] Fonte para títulos (Google Fonts)"),
+        ("tema_fonte_corpo", "", "[Tema] Fonte para corpo do texto (Google Fonts)"),
+        # Identidade visual
+        ("tema_logo", "", "[Tema] Caminho do logo personalizado (relativo a static/)"),
+        ("tema_favicon", "", "[Tema] Caminho do favicon personalizado (relativo a static/)"),
     ]
 
     with obter_conexao() as conn:

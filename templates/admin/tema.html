@@ -9,66 +9,674 @@
             <h2><i class="bi bi-palette"></i> Personalizar Tema</h2>
         </div>
 
-        <div class="alert alert-info mb-4">
-            <i class="bi bi-info-circle"></i>
-            Escolha um dos temas visuais abaixo para personalizar a aparência da aplicação.
-            Após selecionar, <strong>recarregue a página</strong> para visualizar as mudanças.
-        </div>
+        <!-- Abas de navegação -->
+        <ul class="nav nav-tabs mb-4" id="temaTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-base-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-base" type="button" role="tab">
+                    <i class="bi bi-grid"></i> Tema Base
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-cores-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-cores" type="button" role="tab">
+                    <i class="bi bi-droplet"></i> Paleta de Cores
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-fontes-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-fontes" type="button" role="tab">
+                    <i class="bi bi-type"></i> Tipografia
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-identidade-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-identidade" type="button" role="tab">
+                    <i class="bi bi-image"></i> Identidade Visual
+                </button>
+            </li>
+        </ul>
 
-        {% if temas %}
-        <div class="row g-4">
-            {% for tema in temas %}
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <form method="POST" action="/admin/tema/aplicar" class="h-100">
-                    <input type="hidden" name="tema" value="{{ tema.nome }}">
-                    <button type="submit" class="btn
-                                   p-0 w-100 h-100 position-relative tema-card tema-card-btn
-                                   {{ 'tema-selected' if tema.selecionado else '' }}">
+        <div class="tab-content" id="temaTabsContent">
 
-                        <!-- Badge "Selecionado" -->
-                        {% if tema.selecionado %}
-                        <span
-                            class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3">
-                            <i class="bi bi-check-circle-fill"></i> Selecionado
-                        </span>
-                        {% endif %}
+            <!-- ======================== ABA 1: TEMA BASE ======================== -->
+            <div class="tab-pane fade show active" id="tab-base" role="tabpanel">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    Clique em um tema para aplicá-lo instantaneamente, <strong>sem recarregar a página</strong>.
+                </div>
 
-                        <div class="card h-100 border-0 overflow-hidden">
-                            <!-- Imagem de Preview do Tema -->
-                            <div class="card-img-top overflow-hidden">
-                                <img src="{{ tema.imagem }}" alt="Preview do tema {{ tema.nome_exibicao }}"
+                {% if temas %}
+                <div class="row g-4" id="temas-grid">
+                    {% for tema in temas %}
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="card h-100 border overflow-hidden tema-card position-relative
+                                    {{ 'border-primary border-2' if tema.selecionado else '' }}"
+                             data-tema="{{ tema.nome }}"
+                             role="button"
+                             style="cursor:pointer">
+                            {% if tema.selecionado %}
+                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado">
+                                <i class="bi bi-check-circle-fill"></i> Selecionado
+                            </span>
+                            {% endif %}
+                            <div class="card-img-top overflow-hidden" style="height:140px">
+                                <img src="{{ tema.imagem }}" alt="Preview {{ tema.nome_exibicao }}"
                                     class="w-100 h-100 object-fit-cover object-top">
                             </div>
+                            <div class="card-body py-2 text-center">
+                                <small class="fw-semibold">{{ tema.nome_exibicao }}</small>
+                            </div>
                         </div>
-                    </button>
-                </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Nenhum tema disponível. Verifique os arquivos de tema.
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="alert alert-warning text-center">
-            <i class="bi bi-exclamation-triangle"></i>
-            Nenhum tema disponível. Verifique se os arquivos de tema estão instalados corretamente.
-        </div>
-        {% endif %}
+
+            <!-- ======================== ABA 2: CORES ======================== -->
+            <div class="tab-pane fade" id="tab-cores" role="tabpanel">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    Personalize as cores do tema. Deixe em branco para usar as cores padrão do tema selecionado.
+                    O preview é <strong>em tempo real</strong> — salve para persistir.
+                </div>
+
+                <div class="row g-4">
+                    {% set cores = [
+                        ("tema_cor_primary",   "Primary",   "Cor principal — botões, links, navbar"),
+                        ("tema_cor_secondary", "Secondary", "Cor secundária — botões e destaques"),
+                        ("tema_cor_success",   "Success",   "Alertas e botões de sucesso"),
+                        ("tema_cor_danger",    "Danger",    "Alertas e botões de perigo/erro"),
+                        ("tema_cor_warning",   "Warning",   "Alertas de atenção"),
+                        ("tema_cor_info",      "Info",      "Alertas informativos"),
+                        ("tema_cor_light",     "Light",     "Fundo claro, cards"),
+                        ("tema_cor_dark",      "Dark",      "Texto e elementos escuros"),
+                        ("tema_cor_custom",    "Custom",    "Cor extra personalizada (bs-custom)"),
+                    ] %}
+                    {% for chave, label, descricao in cores %}
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label class="form-label fw-semibold" for="{{ chave }}">
+                                    <span class="me-1" id="preview-{{ chave }}"
+                                          style="background-color:{{ config_cores[chave] if config_cores[chave] else '#6c757d' }}; width:20px; height:20px; display:inline-block; vertical-align:middle; border-radius:4px;"></span>
+                                    {{ label }}
+                                </label>
+                                <p class="text-muted small mb-2">{{ descricao }}</p>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color cor-input"
+                                           id="{{ chave }}" name="{{ chave }}"
+                                           data-chave="{{ chave }}"
+                                           value="{{ config_cores[chave] if config_cores[chave] else '#6c757d' }}">
+                                    <input type="text" class="form-control cor-hex"
+                                           id="{{ chave }}_hex"
+                                           placeholder="#rrggbb"
+                                           value="{{ config_cores[chave] }}">
+                                    <button type="button" class="btn btn-outline-secondary btn-limpar-cor"
+                                            data-target="{{ chave }}" title="Usar padrão do tema">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-primary" id="btn-salvar-cores">
+                        <i class="bi bi-floppy"></i> Salvar Paleta
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-resetar-cores">
+                        <i class="bi bi-arrow-counterclockwise"></i> Resetar Todas as Cores
+                    </button>
+                </div>
+            </div>
+
+            <!-- ======================== ABA 3: TIPOGRAFIA ======================== -->
+            <div class="tab-pane fade" id="tab-fontes" role="tabpanel">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    Insira o nome exato de uma fonte do
+                    <a href="https://fonts.google.com" target="_blank" rel="noopener">Google Fonts <i class="bi bi-box-arrow-up-right small"></i></a>.
+                    Deixe em branco para usar a fonte padrão do tema.
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <label class="form-label fw-semibold" for="tema_fonte_titulos">
+                                    <i class="bi bi-type-h1"></i> Fonte dos Títulos
+                                </label>
+                                <p class="text-muted small mb-2">Aplicada aos elementos h1–h6</p>
+                                <input type="text" class="form-control" id="tema_fonte_titulos"
+                                       placeholder="Ex: Playfair Display"
+                                       maxlength="60"
+                                       value="{{ config_fontes.tema_fonte_titulos }}">
+                                <div id="preview-titulo" class="mt-3 p-3 border rounded text-center"
+                                     style="min-height:60px">
+                                    <span id="preview-titulo-texto" class="fs-4"
+                                          style="font-family: '{{ config_fontes.tema_fonte_titulos }}', sans-serif">
+                                        Título de Exemplo
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <label class="form-label fw-semibold" for="tema_fonte_corpo">
+                                    <i class="bi bi-fonts"></i> Fonte do Corpo
+                                </label>
+                                <p class="text-muted small mb-2">Aplicada ao texto geral da página</p>
+                                <input type="text" class="form-control" id="tema_fonte_corpo"
+                                       placeholder="Ex: Open Sans"
+                                       maxlength="60"
+                                       value="{{ config_fontes.tema_fonte_corpo }}">
+                                <div id="preview-corpo" class="mt-3 p-3 border rounded"
+                                     style="min-height:60px">
+                                    <span id="preview-corpo-texto"
+                                          style="font-family: '{{ config_fontes.tema_fonte_corpo }}', sans-serif">
+                                        Este é um exemplo de texto com a fonte selecionada para o corpo da página.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-primary" id="btn-salvar-fontes">
+                        <i class="bi bi-floppy"></i> Salvar Fontes
+                    </button>
+                </div>
+            </div>
+
+            <!-- ======================== ABA 4: IDENTIDADE VISUAL ======================== -->
+            <div class="tab-pane fade" id="tab-identidade" role="tabpanel">
+
+                <!-- Logo -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-image"></i> Logo da Aplicação
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto">
+                                <div class="border rounded p-2 bg-primary d-flex align-items-center justify-content-center"
+                                     style="width:120px;height:60px;overflow:hidden">
+                                    <img id="preview-logo"
+                                         src="{{ tema_atual.logo_url }}"
+                                         alt="Logo atual" height="40"
+                                         style="max-width:100%;max-height:100%;object-fit:contain"
+                                         onerror="this.src='/static/img/logo.svg'">
+                                </div>
+                                <small class="text-muted d-block text-center mt-1">Preview</small>
+                            </div>
+                            <div class="col">
+                                <form id="form-logo" enctype="multipart/form-data">
+                                    {{ csrf_input(request) }}
+                                    <div class="input-group mb-2">
+                                        <input type="file" class="form-control" id="input-logo"
+                                               name="logo" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-upload"></i> Enviar Logo
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Formatos: PNG, JPG, GIF, WEBP, SVG — máx. 2MB</small>
+                                </form>
+                                {% if logo_configurado %}
+                                <form id="form-remover-logo" class="mt-2">
+                                    {{ csrf_input(request) }}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Remover Logo Personalizado
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favicon -->
+                <div class="card">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-star"></i> Favicon
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto">
+                                <div class="border rounded p-2 d-flex align-items-center justify-content-center"
+                                     style="width:64px;height:64px;overflow:hidden">
+                                    <img id="preview-favicon"
+                                         src="{{ tema_atual.favicon_url if tema_atual.favicon_url else '/static/img/favicon.ico' }}"
+                                         alt="Favicon atual" width="32" height="32"
+                                         style="object-fit:contain"
+                                         onerror="this.style.display='none'">
+                                </div>
+                                <small class="text-muted d-block text-center mt-1">Preview</small>
+                            </div>
+                            <div class="col">
+                                <form id="form-favicon" enctype="multipart/form-data">
+                                    {{ csrf_input(request) }}
+                                    <div class="input-group mb-2">
+                                        <input type="file" class="form-control" id="input-favicon"
+                                               name="favicon" accept=".ico,.png,.svg">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-upload"></i> Enviar Favicon
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Formatos: ICO, PNG, SVG — máx. 512KB</small>
+                                </form>
+                                {% if favicon_configurado %}
+                                <form id="form-remover-favicon" class="mt-2">
+                                    {{ csrf_input(request) }}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Remover Favicon Personalizado
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /tab-content -->
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Confirmação antes de aplicar tema
-    document.querySelectorAll('.tema-card').forEach(card => {
-        card.addEventListener('click', function (e) {
-            const temaNome = this.querySelector('input[name="tema"]').value;
-            const isSelecionado = this.classList.contains('tema-selected');
+(function () {
+    "use strict";
 
-            if (isSelecionado) {
-                e.preventDefault();
+    // Lê o token CSRF do DOM
+    function csrfToken() {
+        const el = document.querySelector('input[name="csrf_token"]');
+        return el ? el.value : '';
+    }
+
+    // Exibe feedback ao usuário via toast
+    function feedback(msg, tipo) {
+        if (window.App && window.App.Toasts) {
+            window.App.Toasts.show(msg, tipo || 'success');
+        }
+    }
+
+    // ─── ABA 1: TROCA DE TEMA VIA AJAX ───────────────────────────────────────
+
+    document.querySelectorAll('.tema-card').forEach(function (card) {
+        card.addEventListener('click', async function () {
+            const temaNome = this.dataset.tema;
+
+            // Não re-aplicar o tema já selecionado
+            if (this.querySelector('.tema-badge-selecionado')) {
                 window.App.Modal.showInfo('Este tema já está aplicado ao sistema.', 'Tema Já Selecionado');
-                return false;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('tema', temaNome);
+            formData.append('csrf_token', csrfToken());
+
+            try {
+                const resp = await fetch('/admin/tema/aplicar', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                });
+                const data = await resp.json();
+
+                if (data.sucesso) {
+                    // Atualizar <link> do Bootstrap com cache-busting
+                    const link = document.getElementById('bootstrap-css');
+                    if (link) {
+                        const base = link.href.split('?')[0];
+                        link.href = base + '?v=' + Date.now();
+                    }
+
+                    // Atualizar badges "Selecionado" na grid
+                    document.querySelectorAll('.tema-card').forEach(function (c) {
+                        c.classList.remove('border-primary', 'border-2');
+                        const badge = c.querySelector('.tema-badge-selecionado');
+                        if (badge) badge.remove();
+                    });
+                    this.classList.add('border-primary', 'border-2');
+
+                    // Criar badge com DOM seguro (sem innerHTML)
+                    const badge = document.createElement('span');
+                    badge.className = 'position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-check-circle-fill';
+                    badge.appendChild(icon);
+                    badge.appendChild(document.createTextNode(' Selecionado'));
+                    this.appendChild(badge);
+
+                    feedback(data.mensagem, 'success');
+                } else {
+                    feedback(data.mensagem || 'Erro ao aplicar tema.', 'danger');
+                }
+            } catch (err) {
+                feedback('Erro de comunicação ao aplicar tema.', 'danger');
             }
         });
     });
+
+    // ─── ABA 2: PALETA DE CORES ──────────────────────────────────────────────
+
+    // Sincroniza input[type=color] <-> input[type=text] e preview em tempo real
+    document.querySelectorAll('.cor-input').forEach(function (colorPicker) {
+        const chave = colorPicker.dataset.chave;
+        const hexInput = document.getElementById(chave + '_hex');
+        const preview = document.getElementById('preview-' + chave);
+
+        function aplicarCor(hex) {
+            if (preview) preview.style.backgroundColor = hex;
+            const nomeBs = chave.replace('tema_cor_', '');
+            document.documentElement.style.setProperty('--bs-' + nomeBs, hex);
+        }
+
+        colorPicker.addEventListener('input', function () {
+            if (hexInput) hexInput.value = this.value;
+            aplicarCor(this.value);
+        });
+
+        if (hexInput) {
+            hexInput.addEventListener('input', function () {
+                const val = this.value.trim();
+                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    colorPicker.value = val;
+                    aplicarCor(val);
+                }
+            });
+        }
+    });
+
+    // Limpar cor individual
+    document.querySelectorAll('.btn-limpar-cor').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const chave = this.dataset.target;
+            const colorPicker = document.getElementById(chave);
+            const hexInput = document.getElementById(chave + '_hex');
+            const preview = document.getElementById('preview-' + chave);
+
+            if (colorPicker) colorPicker.value = '#6c757d';
+            if (hexInput) hexInput.value = '';
+            if (preview) preview.style.backgroundColor = '#6c757d';
+            const nomeBs = chave.replace('tema_cor_', '');
+            document.documentElement.style.removeProperty('--bs-' + nomeBs);
+        });
+    });
+
+    // Salvar paleta
+    document.getElementById('btn-salvar-cores').addEventListener('click', async function () {
+        const CHAVES_COR = [
+            'tema_cor_primary', 'tema_cor_secondary', 'tema_cor_success',
+            'tema_cor_danger', 'tema_cor_warning', 'tema_cor_info',
+            'tema_cor_light', 'tema_cor_dark', 'tema_cor_custom',
+        ];
+        const payload = {};
+        CHAVES_COR.forEach(function (chave) {
+            const el = document.getElementById(chave + '_hex');
+            payload[chave] = el ? el.value.trim() : '';
+        });
+
+        try {
+            const resp = await fetch('/admin/tema/personalizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+        } catch (err) {
+            feedback('Erro ao salvar paleta.', 'danger');
+        }
+    });
+
+    // Resetar todas as cores
+    document.getElementById('btn-resetar-cores').addEventListener('click', async function () {
+        document.querySelectorAll('.cor-input').forEach(function (c) { c.value = '#6c757d'; });
+        document.querySelectorAll('.cor-hex').forEach(function (c) { c.value = ''; });
+        document.querySelectorAll('[id^="preview-tema_cor_"]').forEach(function (p) {
+            p.style.backgroundColor = '#6c757d';
+        });
+
+        const CHAVES_COR = [
+            'tema_cor_primary', 'tema_cor_secondary', 'tema_cor_success',
+            'tema_cor_danger', 'tema_cor_warning', 'tema_cor_info',
+            'tema_cor_light', 'tema_cor_dark', 'tema_cor_custom',
+        ];
+        const payload = {};
+        CHAVES_COR.forEach(function (chave) { payload[chave] = ''; });
+
+        try {
+            const resp = await fetch('/admin/tema/personalizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+        } catch (err) {
+            feedback('Erro ao resetar cores.', 'danger');
+        }
+    });
+
+    // ─── ABA 3: TIPOGRAFIA ───────────────────────────────────────────────────
+
+    function carregarFonte(nome, elementoId) {
+        if (!nome) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(nome) + ':wght@400;700&display=swap';
+        document.head.appendChild(link);
+        const el = document.getElementById(elementoId);
+        if (el) el.style.fontFamily = "'" + nome + "', sans-serif";
+    }
+
+    const inputTitulo = document.getElementById('tema_fonte_titulos');
+    const inputCorpo = document.getElementById('tema_fonte_corpo');
+
+    if (inputTitulo) {
+        if (inputTitulo.value) carregarFonte(inputTitulo.value, 'preview-titulo-texto');
+        var timerTitulo;
+        inputTitulo.addEventListener('input', function () {
+            clearTimeout(timerTitulo);
+            var val = this.value.trim();
+            timerTitulo = setTimeout(function () { carregarFonte(val, 'preview-titulo-texto'); }, 600);
+        });
+    }
+
+    if (inputCorpo) {
+        if (inputCorpo.value) carregarFonte(inputCorpo.value, 'preview-corpo-texto');
+        var timerCorpo;
+        inputCorpo.addEventListener('input', function () {
+            clearTimeout(timerCorpo);
+            var val = this.value.trim();
+            timerCorpo = setTimeout(function () { carregarFonte(val, 'preview-corpo-texto'); }, 600);
+        });
+    }
+
+    document.getElementById('btn-salvar-fontes').addEventListener('click', async function () {
+        const payload = {
+            tema_fonte_titulos: inputTitulo ? inputTitulo.value.trim() : '',
+            tema_fonte_corpo: inputCorpo ? inputCorpo.value.trim() : '',
+        };
+        try {
+            const resp = await fetch('/admin/tema/personalizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+        } catch (err) {
+            feedback('Erro ao salvar fontes.', 'danger');
+        }
+    });
+
+    // ─── ABA 4: IDENTIDADE VISUAL ────────────────────────────────────────────
+
+    // Preview imediato antes do upload via FileReader
+    function previewImagem(inputId, previewId) {
+        const inputEl = document.getElementById(inputId);
+        const previewEl = document.getElementById(previewId);
+        if (!inputEl || !previewEl) return;
+        inputEl.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) { previewEl.src = e.target.result; };
+            reader.readAsDataURL(file);
+        });
+    }
+    previewImagem('input-logo', 'preview-logo');
+    previewImagem('input-favicon', 'preview-favicon');
+
+    // Upload de logo
+    const formLogo = document.getElementById('form-logo');
+    if (formLogo) {
+        formLogo.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const file = document.getElementById('input-logo').files[0];
+            if (!file) { feedback('Selecione um arquivo de logo.', 'warning'); return; }
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/logo', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso && data.logo_url) {
+                    const ts = '?v=' + Date.now();
+                    document.getElementById('preview-logo').src = data.logo_url + ts;
+                    document.querySelectorAll('.navbar-brand img').forEach(function (img) {
+                        img.src = data.logo_url + ts;
+                    });
+                    if (!document.getElementById('form-remover-logo')) {
+                        location.reload();
+                    }
+                }
+            } catch (err) {
+                feedback('Erro ao enviar logo.', 'danger');
+            }
+        });
+    }
+
+    // Remover logo
+    const formRemoverLogo = document.getElementById('form-remover-logo');
+    if (formRemoverLogo) {
+        formRemoverLogo.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/logo/remover', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso) {
+                    document.getElementById('preview-logo').src = '/static/img/logo.svg';
+                    document.querySelectorAll('.navbar-brand img').forEach(function (img) {
+                        img.src = '/static/img/logo.svg';
+                    });
+                    this.style.display = 'none';
+                }
+            } catch (err) {
+                feedback('Erro ao remover logo.', 'danger');
+            }
+        });
+    }
+
+    // Upload de favicon
+    const formFavicon = document.getElementById('form-favicon');
+    if (formFavicon) {
+        formFavicon.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const file = document.getElementById('input-favicon').files[0];
+            if (!file) { feedback('Selecione um arquivo de favicon.', 'warning'); return; }
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/favicon', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso && data.favicon_url) {
+                    const ts = '?v=' + Date.now();
+                    document.getElementById('preview-favicon').src = data.favicon_url + ts;
+                    // Atualizar link favicon na aba do browser
+                    let link = document.querySelector("link[rel~='icon']");
+                    if (!link) {
+                        link = document.createElement('link');
+                        link.rel = 'icon';
+                        document.head.appendChild(link);
+                    }
+                    link.href = data.favicon_url + ts;
+                    if (!document.getElementById('form-remover-favicon')) {
+                        location.reload();
+                    }
+                }
+            } catch (err) {
+                feedback('Erro ao enviar favicon.', 'danger');
+            }
+        });
+    }
+
+    // Remover favicon
+    const formRemoverFavicon = document.getElementById('form-remover-favicon');
+    if (formRemoverFavicon) {
+        formRemoverFavicon.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/favicon/remover', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso) {
+                    document.getElementById('preview-favicon').src = '';
+                    document.querySelector("link[rel~='icon']")?.remove();
+                    this.style.display = 'none';
+                }
+            } catch (err) {
+                feedback('Erro ao remover favicon.', 'danger');
+            }
+        });
+    }
+
+})();
 </script>
 {% endblock %}

@@ -233,6 +233,12 @@ def criar_templates() -> Jinja2Templates:
     # refletir o config atual sem depender de cache de arquivo CSS estático
     env.globals['toast_container_css'] = _gerar_css_toast_inline
 
+    # Callables para personalização de tema (cores, fontes, logo, favicon)
+    # Executados a cada render para refletir o config_cache atual
+    from util.tema_css_util import gerar_css_tema_inline, _obter_config_tema
+    env.globals['tema_css_inline'] = gerar_css_tema_inline
+    env.globals['tema_config'] = _obter_config_tema
+
     # CSRF Protection: Adicionar função global para gerar input CSRF
     # IMPORTANTE: Esta função precisa receber 'request' do contexto
     # Uso no template: {{ csrf_input(request) }}
