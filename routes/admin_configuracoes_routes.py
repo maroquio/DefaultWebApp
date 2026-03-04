@@ -83,12 +83,49 @@ async def get_listar_configuracoes(request: Request, usuario_logado: Optional[Us
         # Calcular total de configurações
         total_configs = sum(len(configs) for configs in configs_por_categoria.values())
 
+        # Dados da aba Tema
+        from util.tema_css_util import _obter_config_tema
+        config_tema_db = configuracao_repo.obter_por_chave("theme")
+        tema_atual_nome = config_tema_db.valor if config_tema_db else "original"
+        img_dir = Path("static/img/bootswatch")
+        temas_disponiveis = []
+        if img_dir.exists() and img_dir.is_dir():
+            for img_file in sorted(img_dir.glob("*.png")):
+                tema_nome = img_file.stem
+                css_file = Path(f"static/css/bootswatch/{tema_nome}.bootstrap.min.css")
+                if css_file.exists():
+                    temas_disponiveis.append({
+                        "nome": tema_nome,
+                        "nome_exibicao": tema_nome.capitalize(),
+                        "imagem": f"/static/img/bootswatch/{img_file.name}",
+                        "selecionado": tema_nome == tema_atual_nome,
+                    })
+        _CHAVES_COR = [
+            "tema_cor_primary", "tema_cor_secondary", "tema_cor_success",
+            "tema_cor_danger", "tema_cor_warning", "tema_cor_info",
+            "tema_cor_light", "tema_cor_dark", "tema_cor_custom",
+        ]
+        tema_config_cores = {chave: config.obter(chave, "") for chave in _CHAVES_COR}
+        tema_identidade = _obter_config_tema()
+        tema_fonte_titulos = config.obter("tema_fonte_titulos", "")
+        tema_fonte_corpo = config.obter("tema_fonte_corpo", "")
+        tema_logo_configurado = bool(config.obter("tema_logo", "").strip())
+        tema_favicon_configurado = bool(config.obter("tema_favicon", "").strip())
+
         return templates.TemplateResponse(
             "admin/configuracoes/listar.html",
             {
                 "request": request,
                 "configs_por_categoria": configs_por_categoria,
                 "total_configs": total_configs,
+                "temas": temas_disponiveis,
+                "tema_atual_nome": tema_atual_nome,
+                "tema_config_cores": tema_config_cores,
+                "tema_fonte_titulos": tema_fonte_titulos,
+                "tema_fonte_corpo": tema_fonte_corpo,
+                "tema_identidade": tema_identidade,
+                "tema_logo_configurado": tema_logo_configurado,
+                "tema_favicon_configurado": tema_favicon_configurado,
                 "usuario_logado": usuario_logado,
             }
         )
@@ -219,6 +256,13 @@ async def post_salvar_lote_configuracoes(
 @router.get("/tema")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def get_tema(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
+    """Redireciona para a aba de tema na página de configurações"""
+    return RedirectResponse("/admin/configuracoes", status_code=status.HTTP_302_FOUND)
+
+
+@router.get("/tema-legado")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def get_tema_legado(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     """Exibe seletor de temas visuais da aplicação com abas de personalização"""
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
@@ -332,35 +376,22 @@ async def post_aplicar_tema(
             descricao="Tema visual da aplicação (Bootswatch)"
         )
 
-        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-
         if sucesso:
             config.limpar()
             logger.info(
                 f"Tema alterado para '{tema_normalizado}' por admin {usuario_logado.id} "
                 f"(anterior: {config_existente.valor if config_existente else 'nenhum'})"
             )
-            if is_ajax:
-                return JSONResponse({
-                    "sucesso": True,
-                    "mensagem": f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso!",
-                    "tema": tema_normalizado,
-                })
             informar_sucesso(
                 request,
                 f"Tema '{tema_normalizado.capitalize()}' aplicado com sucesso!"
             )
         else:
             logger.error(f"Erro ao salvar configuração de tema '{tema_normalizado}' no banco de dados")
-            if is_ajax:
-                return JSONResponse({"sucesso": False, "mensagem": "Erro ao salvar configuração do tema"}, status_code=500)
             informar_erro(request, "Erro ao salvar configuração do tema")
 
     except (sqlite3.Error, OSError) as e:
         logger.error(f"Erro ao aplicar tema '{tema}': {str(e)}")
-        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-        if is_ajax:
-            return JSONResponse({"sucesso": False, "mensagem": f"Erro ao aplicar tema: {str(e)}"}, status_code=500)
         informar_erro(request, f"Erro ao aplicar tema: {str(e)}")
 
     return RedirectResponse("/admin/tema", status_code=status.HTTP_303_SEE_OTHER)

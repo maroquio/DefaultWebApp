@@ -8,8 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ APP_NAME }} :: {% block titulo %}{% endblock %}</title>
 
+    {% set tema = tema_config() %}
     <!-- Bootstrap CSS (local - permite troca de temas) -->
-    <link id="bootstrap-css" href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link id="bootstrap-css" href="/static/css/bootstrap.min.css?v={{ tema.tema_atual }}" rel="stylesheet">
 
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/static/css/custom.css">
@@ -22,7 +23,6 @@
     </style>
 
     <!-- Identidade visual: favicon, fontes e cores personalizadas -->
-    {% set tema = tema_config() %}
     {% if tema.favicon_url %}
     <link rel="icon" href="{{ tema.favicon_url }}">
     {% endif %}

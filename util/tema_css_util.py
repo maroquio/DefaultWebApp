@@ -176,9 +176,12 @@ def _obter_config_tema() -> dict:
     else:
         favicon_url = ""
 
+    tema_atual = config.obter("theme", "original").strip()
+
     return {
         "logo_url": logo_url,
         "favicon_url": favicon_url,
         "fonte_titulos": fonte_titulos,
         "fonte_corpo": fonte_corpo,
+        "tema_atual": tema_atual,
     }

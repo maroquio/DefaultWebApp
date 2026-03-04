@@ -33,9 +33,9 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="interface-tab" data-bs-toggle="tab" data-bs-target="#interface" type="button" role="tab" aria-controls="interface" aria-selected="false">
-                <i class="bi bi-palette-fill"></i> Interface
-                <span class="badge bg-secondary ms-1" id="interface-count">0</span>
+            <button class="nav-link" id="notificacoes-tab" data-bs-toggle="tab" data-bs-target="#notificacoes" type="button" role="tab" aria-controls="notificacoes" aria-selected="false">
+                <i class="bi bi-bell-fill"></i> Notificações
+                <span class="badge bg-secondary ms-1" id="notificacoes-count">0</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -54,6 +54,11 @@
             <button class="nav-link" id="pagamentos-tab" data-bs-toggle="tab" data-bs-target="#pagamentos" type="button" role="tab" aria-controls="pagamentos" aria-selected="false">
                 <i class="bi bi-credit-card-fill"></i> Pagamentos
                 <span class="badge bg-secondary ms-1" id="pagamentos-count">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tema-tab" data-bs-toggle="tab" data-bs-target="#tema" type="button" role="tab" aria-controls="tema" aria-selected="false">
+                <i class="bi bi-palette"></i> Tema
             </button>
         </li>
     </ul>
@@ -352,15 +357,15 @@
             </form>
         </div>
 
-        <!-- ABA 2: INTERFACE -->
-        <div class="tab-pane fade" id="interface" role="tabpanel" aria-labelledby="interface-tab">
-            <form id="form-interface" method="POST" action="/admin/configuracoes/salvar-lote">
+        <!-- ABA 2: NOTIFICAÇÕES -->
+        <div class="tab-pane fade" id="notificacoes" role="tabpanel" aria-labelledby="notificacoes-tab">
+            <form id="form-notificacoes" method="POST" action="/admin/configuracoes/salvar-lote">
                 {{ csrf_input() }}
                 <input type="hidden" name="categoria" value="interface">
 
                 <div class="alert alert-info mb-4">
                     <i class="bi bi-info-circle-fill"></i>
-                    Configurações que afetam a aparência e comportamento da interface do usuário.
+                    Configurações das notificações toast exibidas ao usuário.
                 </div>
 
                 {# Extrair valores das configs de posição do toast #}
@@ -535,7 +540,7 @@
 
                 <div class="d-grid gap-2 mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-save"></i> Salvar Configurações de Interface
+                        <i class="bi bi-save"></i> Salvar Configurações de Notificações
                     </button>
                 </div>
             </form>
@@ -894,6 +899,297 @@
             {% endif %}
         </div>
 
+        <!-- ABA 6: TEMA -->
+        <div class="tab-pane fade" id="tema" role="tabpanel" aria-labelledby="tema-tab">
+
+            <!-- Sub-abas de tema -->
+            <ul class="nav nav-pills mb-4" id="temaSubTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tema-base-btn" data-bs-toggle="pill"
+                        data-bs-target="#tema-base" type="button" role="tab">
+                        <i class="bi bi-grid"></i> Tema Base
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tema-cores-btn" data-bs-toggle="pill"
+                        data-bs-target="#tema-cores" type="button" role="tab">
+                        <i class="bi bi-droplet"></i> Paleta de Cores
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tema-fontes-btn" data-bs-toggle="pill"
+                        data-bs-target="#tema-fontes" type="button" role="tab">
+                        <i class="bi bi-type"></i> Tipografia
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tema-identidade-btn" data-bs-toggle="pill"
+                        data-bs-target="#tema-identidade" type="button" role="tab">
+                        <i class="bi bi-image"></i> Identidade Visual
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="temaSubTabsContent">
+
+                <!-- TEMA: Tema Base -->
+                <div class="tab-pane fade show active" id="tema-base" role="tabpanel">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        Clique em um tema para aplicá-lo. A <strong>página será recarregada</strong> com o novo CSS aplicado.
+                    </div>
+
+                    {% if temas %}
+                    <div class="row g-4" id="temas-grid">
+                        {% for t in temas %}
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                            <form method="POST" action="/admin/tema/aplicar" class="h-100 tema-form">
+                                {{ csrf_input(request) }}
+                                <input type="hidden" name="tema" value="{{ t.nome }}">
+                                <button type="submit" class="btn p-0 w-100 h-100 d-block">
+                                    <div class="card h-100 border tema-card position-relative
+                                                {{ 'border-primary border-2' if t.selecionado else '' }}"
+                                         style="cursor:pointer;pointer-events:none">
+                                        {% if t.selecionado %}
+                                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado">
+                                            <i class="bi bi-check-circle-fill"></i> Selecionado
+                                        </span>
+                                        {% endif %}
+                                        <div class="card-img-top overflow-hidden" style="height:140px">
+                                            <img src="{{ t.imagem }}" alt="Preview {{ t.nome_exibicao }}"
+                                                class="w-100 h-100 object-fit-cover object-top">
+                                        </div>
+                                        <div class="card-body py-2 text-center">
+                                            <small class="fw-semibold">{{ t.nome_exibicao }}</small>
+                                        </div>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum tema disponível. Verifique os arquivos de tema.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- TEMA: Paleta de Cores -->
+                <div class="tab-pane fade" id="tema-cores" role="tabpanel">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        Personalize as cores do tema. Deixe em branco para usar as cores padrão do tema selecionado.
+                        O preview é <strong>em tempo real</strong> — salve para persistir.
+                    </div>
+
+                    <div class="row g-4">
+                        {% set cores_lista = [
+                            ("tema_cor_primary",   "Primary",   "Cor principal — botões, links, navbar"),
+                            ("tema_cor_secondary", "Secondary", "Cor secundária — botões e destaques"),
+                            ("tema_cor_success",   "Success",   "Alertas e botões de sucesso"),
+                            ("tema_cor_danger",    "Danger",    "Alertas e botões de perigo/erro"),
+                            ("tema_cor_warning",   "Warning",   "Alertas de atenção"),
+                            ("tema_cor_info",      "Info",      "Alertas informativos"),
+                            ("tema_cor_light",     "Light",     "Fundo claro, cards"),
+                            ("tema_cor_dark",      "Dark",      "Texto e elementos escuros"),
+                            ("tema_cor_custom",    "Custom",    "Cor extra personalizada (bs-custom)"),
+                        ] %}
+                        {% for chave, label, descricao in cores_lista %}
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <label class="form-label fw-semibold" for="tc_{{ chave }}">
+                                        <span class="me-1" id="preview-{{ chave }}"
+                                              style="background-color:{{ tema_config_cores[chave] if tema_config_cores[chave] else '#6c757d' }}; width:20px; height:20px; display:inline-block; vertical-align:middle; border-radius:4px;"></span>
+                                        {{ label }}
+                                    </label>
+                                    <p class="text-muted small mb-2">{{ descricao }}</p>
+                                    <div class="input-group">
+                                        <input type="color" class="form-control form-control-color cor-input"
+                                               id="tc_{{ chave }}" name="{{ chave }}"
+                                               data-chave="{{ chave }}"
+                                               value="{{ tema_config_cores[chave] if tema_config_cores[chave] else '#6c757d' }}">
+                                        <input type="text" class="form-control cor-hex"
+                                               id="tc_{{ chave }}_hex"
+                                               placeholder="#rrggbb"
+                                               value="{{ tema_config_cores[chave] }}">
+                                        <button type="button" class="btn btn-outline-secondary btn-limpar-cor"
+                                                data-target="{{ chave }}" title="Usar padrão do tema">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="button" class="btn btn-primary" id="btn-salvar-cores">
+                            <i class="bi bi-floppy"></i> Salvar Paleta
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-resetar-cores">
+                            <i class="bi bi-arrow-counterclockwise"></i> Resetar Todas as Cores
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TEMA: Tipografia -->
+                <div class="tab-pane fade" id="tema-fontes" role="tabpanel">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        Insira o nome exato de uma fonte do
+                        <a href="https://fonts.google.com" target="_blank" rel="noopener">Google Fonts <i class="bi bi-box-arrow-up-right small"></i></a>.
+                        Deixe em branco para usar a fonte padrão do tema.
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-12 col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <label class="form-label fw-semibold" for="tema_fonte_titulos">
+                                        <i class="bi bi-type-h1"></i> Fonte dos Títulos
+                                    </label>
+                                    <p class="text-muted small mb-2">Aplicada aos elementos h1–h6</p>
+                                    <input type="text" class="form-control" id="tema_fonte_titulos"
+                                           placeholder="Ex: Playfair Display"
+                                           maxlength="60"
+                                           value="{{ tema_fonte_titulos }}">
+                                    <div id="preview-titulo" class="mt-3 p-3 border rounded text-center"
+                                         style="min-height:60px">
+                                        <span id="preview-titulo-texto" class="fs-4"
+                                              style="font-family: '{{ tema_fonte_titulos }}', sans-serif">
+                                            Título de Exemplo
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <label class="form-label fw-semibold" for="tema_fonte_corpo">
+                                        <i class="bi bi-fonts"></i> Fonte do Corpo
+                                    </label>
+                                    <p class="text-muted small mb-2">Aplicada ao texto geral da página</p>
+                                    <input type="text" class="form-control" id="tema_fonte_corpo"
+                                           placeholder="Ex: Open Sans"
+                                           maxlength="60"
+                                           value="{{ tema_fonte_corpo }}">
+                                    <div id="preview-corpo" class="mt-3 p-3 border rounded"
+                                         style="min-height:60px">
+                                        <span id="preview-corpo-texto"
+                                              style="font-family: '{{ tema_fonte_corpo }}', sans-serif">
+                                            Este é um exemplo de texto com a fonte selecionada para o corpo da página.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary" id="btn-salvar-fontes">
+                            <i class="bi bi-floppy"></i> Salvar Fontes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TEMA: Identidade Visual -->
+                <div class="tab-pane fade" id="tema-identidade" role="tabpanel">
+
+                    <!-- Logo -->
+                    <div class="card mb-4">
+                        <div class="card-header fw-semibold">
+                            <i class="bi bi-image"></i> Logo da Aplicação
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center g-3">
+                                <div class="col-auto">
+                                    <div class="border rounded p-2 bg-primary d-flex align-items-center justify-content-center"
+                                         style="width:120px;height:60px;overflow:hidden">
+                                        <img id="preview-logo"
+                                             src="{{ tema_identidade.logo_url }}"
+                                             alt="Logo atual" height="40"
+                                             style="max-width:100%;max-height:100%;object-fit:contain"
+                                             onerror="this.src='/static/img/logo.svg'">
+                                    </div>
+                                    <small class="text-muted d-block text-center mt-1">Preview</small>
+                                </div>
+                                <div class="col">
+                                    <form id="form-logo" enctype="multipart/form-data">
+                                        {{ csrf_input(request) }}
+                                        <div class="input-group mb-2">
+                                            <input type="file" class="form-control" id="input-logo"
+                                                   name="logo" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-upload"></i> Enviar Logo
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Formatos: PNG, JPG, GIF, WEBP, SVG — máx. 2MB</small>
+                                    </form>
+                                    {% if tema_logo_configurado %}
+                                    <form id="form-remover-logo" class="mt-2">
+                                        {{ csrf_input(request) }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Remover Logo Personalizado
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favicon -->
+                    <div class="card">
+                        <div class="card-header fw-semibold">
+                            <i class="bi bi-star"></i> Favicon
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center g-3">
+                                <div class="col-auto">
+                                    <div class="border rounded p-2 d-flex align-items-center justify-content-center"
+                                         style="width:64px;height:64px;overflow:hidden">
+                                        <img id="preview-favicon"
+                                             src="{{ tema_identidade.favicon_url if tema_identidade.favicon_url else '/static/img/favicon.ico' }}"
+                                             alt="Favicon atual" width="32" height="32"
+                                             style="object-fit:contain"
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                    <small class="text-muted d-block text-center mt-1">Preview</small>
+                                </div>
+                                <div class="col">
+                                    <form id="form-favicon" enctype="multipart/form-data">
+                                        {{ csrf_input(request) }}
+                                        <div class="input-group mb-2">
+                                            <input type="file" class="form-control" id="input-favicon"
+                                                   name="favicon" accept=".ico,.png,.svg">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-upload"></i> Enviar Favicon
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Formatos: ICO, PNG, SVG — máx. 512KB</small>
+                                    </form>
+                                    {% if tema_favicon_configurado %}
+                                    <form id="form-remover-favicon" class="mt-2">
+                                        {{ csrf_input(request) }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Remover Favicon Personalizado
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /temaSubTabsContent -->
+        </div><!-- /tab-pane #tema -->
+
     </div>
     {% endif %}
 
@@ -935,13 +1231,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Contar campos em cada aba e atualizar badges
     const rateLimitFields = document.querySelectorAll('#rate-limit .card').length;
-    const interfaceFields = document.querySelectorAll('#interface .card').length;
+    const notificacoesFields = document.querySelectorAll('#notificacoes .card').length;
     const aplicacaoFields = document.querySelectorAll('#aplicacao .card').length;
     const fotosFields = document.querySelectorAll('#fotos .card').length;
     const pagamentosFields = document.querySelectorAll('#pagamentos .card').length;
 
     document.getElementById('rate-limit-count').textContent = rateLimitFields;
-    document.getElementById('interface-count').textContent = interfaceFields;
+    document.getElementById('notificacoes-count').textContent = notificacoesFields;
     document.getElementById('aplicacao-count').textContent = aplicacaoFields;
     document.getElementById('fotos-count').textContent = fotosFields;
     if (document.getElementById('pagamentos-count')) {
@@ -950,7 +1246,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Alerta de mudanças não salvas ao trocar de aba
     let formModified = false;
-    const forms = document.querySelectorAll('form');
+    // Apenas forms que fazem POST para /admin/configuracoes/salvar-lote
+    const forms = document.querySelectorAll('form[action="/admin/configuracoes/salvar-lote"]');
 
     forms.forEach(form => {
         const inputs = form.querySelectorAll('input[type="number"], input[type="text"], input[type="email"], select');
@@ -983,5 +1280,339 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+
+<script>
+(function () {
+    "use strict";
+
+    function csrfToken() {
+        const el = document.querySelector('input[name="csrf_token"]');
+        return el ? el.value : '';
+    }
+
+    function feedback(msg, tipo) {
+        if (window.App && window.App.Toasts) {
+            window.App.Toasts.show(msg, tipo || 'success');
+        }
+    }
+
+    // ─── TEMA BASE: previne re-submit de tema já ativo ───────────────────────
+    document.querySelectorAll('.tema-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (this.querySelector('.tema-badge-selecionado')) {
+                e.preventDefault();
+                window.App.Modal.showInfo('Este tema já está aplicado ao sistema.', 'Tema Já Selecionado');
+            }
+        });
+    });
+
+    // ─── CORES: sincronização color picker <-> hex ───────────────────────────
+    function rgbParaHex(rgb) {
+        var m = rgb.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
+        if (!m) return null;
+        return '#' + [m[1], m[2], m[3]].map(function (n) {
+            return ('0' + parseInt(n, 10).toString(16)).slice(-2);
+        }).join('');
+    }
+
+    function corDoTema(nomeBs) {
+        var val = getComputedStyle(document.documentElement)
+            .getPropertyValue('--bs-' + nomeBs).trim();
+        if (!val) return null;
+        if (val.startsWith('#')) return val.length === 7 ? val : null;
+        if (val.startsWith('rgb')) return rgbParaHex(val);
+        return null;
+    }
+
+    document.querySelectorAll('.cor-input').forEach(function (colorPicker) {
+        var chave = colorPicker.dataset.chave;
+        var hexInput = document.getElementById('tc_' + chave + '_hex');
+        var preview = document.getElementById('preview-' + chave);
+        var valorSalvo = hexInput ? hexInput.value.trim() : '';
+
+        if (!valorSalvo) {
+            var nomeBs = chave.replace('tema_cor_', '');
+            var corAtual = corDoTema(nomeBs);
+            if (corAtual) {
+                colorPicker.value = corAtual;
+                if (preview) preview.style.backgroundColor = corAtual;
+            }
+        }
+    });
+
+    document.querySelectorAll('.cor-input').forEach(function (colorPicker) {
+        const chave = colorPicker.dataset.chave;
+        const hexInput = document.getElementById('tc_' + chave + '_hex');
+        const preview = document.getElementById('preview-' + chave);
+
+        function aplicarCor(hex) {
+            if (preview) preview.style.backgroundColor = hex;
+            document.documentElement.style.setProperty('--bs-' + chave.replace('tema_cor_', ''), hex);
+        }
+
+        colorPicker.addEventListener('input', function () {
+            if (hexInput) hexInput.value = this.value;
+            aplicarCor(this.value);
+        });
+
+        if (hexInput) {
+            hexInput.addEventListener('input', function () {
+                const val = this.value.trim();
+                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    colorPicker.value = val;
+                    aplicarCor(val);
+                }
+            });
+        }
+    });
+
+    document.querySelectorAll('.btn-limpar-cor').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var chave = this.dataset.target;
+            var colorPicker = document.getElementById('tc_' + chave);
+            var hexInput = document.getElementById('tc_' + chave + '_hex');
+            var preview = document.getElementById('preview-' + chave);
+            var nomeBs = chave.replace('tema_cor_', '');
+
+            if (hexInput) hexInput.value = '';
+            document.documentElement.style.removeProperty('--bs-' + nomeBs);
+            var corAtual = corDoTema(nomeBs);
+            if (colorPicker) colorPicker.value = corAtual || '#6c757d';
+            if (preview) preview.style.backgroundColor = corAtual || '#6c757d';
+        });
+    });
+
+    const CHAVES_COR = [
+        'tema_cor_primary', 'tema_cor_secondary', 'tema_cor_success',
+        'tema_cor_danger', 'tema_cor_warning', 'tema_cor_info',
+        'tema_cor_light', 'tema_cor_dark', 'tema_cor_custom',
+    ];
+
+    const btnSalvarCores = document.getElementById('btn-salvar-cores');
+    if (btnSalvarCores) {
+        btnSalvarCores.addEventListener('click', async function () {
+            const payload = {};
+            CHAVES_COR.forEach(function (chave) {
+                const el = document.getElementById('tc_' + chave + '_hex');
+                payload[chave] = el ? el.value.trim() : '';
+            });
+            try {
+                const resp = await fetch('/admin/tema/personalizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify(payload),
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+            } catch (err) {
+                feedback('Erro ao salvar paleta.', 'danger');
+            }
+        });
+    }
+
+    const btnResetarCores = document.getElementById('btn-resetar-cores');
+    if (btnResetarCores) {
+        btnResetarCores.addEventListener('click', async function () {
+            document.querySelectorAll('.cor-input').forEach(function (c) {
+                var nomeBs = c.dataset.chave.replace('tema_cor_', '');
+                var corAtual = corDoTema(nomeBs);
+                c.value = corAtual || '#6c757d';
+                var preview = document.getElementById('preview-' + c.dataset.chave);
+                if (preview) preview.style.backgroundColor = corAtual || '#6c757d';
+            });
+            document.querySelectorAll('.cor-hex').forEach(function (c) { c.value = ''; });
+            const payload = {};
+            CHAVES_COR.forEach(function (chave) { payload[chave] = ''; });
+            try {
+                const resp = await fetch('/admin/tema/personalizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify(payload),
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+            } catch (err) {
+                feedback('Erro ao resetar cores.', 'danger');
+            }
+        });
+    }
+
+    // ─── TIPOGRAFIA ──────────────────────────────────────────────────────────
+    function primeiraFamilia(fontFamilyStr) {
+        if (!fontFamilyStr) return '';
+        return fontFamilyStr.split(',')[0].trim().replace(/^["']|["']$/g, '');
+    }
+
+    (function inicializarFontes() {
+        var fonteCorpo = primeiraFamilia(getComputedStyle(document.body).fontFamily);
+        var elementoH1 = document.querySelector('h1, h2, h3');
+        var fonteTitulo = elementoH1 ? primeiraFamilia(getComputedStyle(elementoH1).fontFamily) : fonteCorpo;
+
+        var inputTitulo = document.getElementById('tema_fonte_titulos');
+        var inputCorpo = document.getElementById('tema_fonte_corpo');
+
+        if (inputTitulo && !inputTitulo.value && fonteTitulo) {
+            inputTitulo.placeholder = fonteTitulo + ' (padrão do tema)';
+            var pt = document.getElementById('preview-titulo-texto');
+            if (pt) pt.style.fontFamily = "'" + fonteTitulo + "', sans-serif";
+        }
+        if (inputCorpo && !inputCorpo.value && fonteCorpo) {
+            inputCorpo.placeholder = fonteCorpo + ' (padrão do tema)';
+            var pc = document.getElementById('preview-corpo-texto');
+            if (pc) pc.style.fontFamily = "'" + fonteCorpo + "', sans-serif";
+        }
+    })();
+
+    function carregarFonte(nome, elementoId) {
+        if (!nome) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(nome) + ':wght@400;700&display=swap';
+        document.head.appendChild(link);
+        const el = document.getElementById(elementoId);
+        if (el) el.style.fontFamily = "'" + nome + "', sans-serif";
+    }
+
+    const inputTitulo = document.getElementById('tema_fonte_titulos');
+    const inputCorpo = document.getElementById('tema_fonte_corpo');
+
+    if (inputTitulo) {
+        if (inputTitulo.value) carregarFonte(inputTitulo.value, 'preview-titulo-texto');
+        var timerTitulo;
+        inputTitulo.addEventListener('input', function () {
+            clearTimeout(timerTitulo);
+            var val = this.value.trim();
+            timerTitulo = setTimeout(function () { carregarFonte(val, 'preview-titulo-texto'); }, 600);
+        });
+    }
+    if (inputCorpo) {
+        if (inputCorpo.value) carregarFonte(inputCorpo.value, 'preview-corpo-texto');
+        var timerCorpo;
+        inputCorpo.addEventListener('input', function () {
+            clearTimeout(timerCorpo);
+            var val = this.value.trim();
+            timerCorpo = setTimeout(function () { carregarFonte(val, 'preview-corpo-texto'); }, 600);
+        });
+    }
+
+    const btnSalvarFontes = document.getElementById('btn-salvar-fontes');
+    if (btnSalvarFontes) {
+        btnSalvarFontes.addEventListener('click', async function () {
+            const payload = {
+                tema_fonte_titulos: inputTitulo ? inputTitulo.value.trim() : '',
+                tema_fonte_corpo: inputCorpo ? inputCorpo.value.trim() : '',
+            };
+            try {
+                const resp = await fetch('/admin/tema/personalizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify(payload),
+                });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+            } catch (err) {
+                feedback('Erro ao salvar fontes.', 'danger');
+            }
+        });
+    }
+
+    // ─── IDENTIDADE VISUAL: logo e favicon ───────────────────────────────────
+    function previewImagem(inputId, previewId) {
+        const inputEl = document.getElementById(inputId);
+        const previewEl = document.getElementById(previewId);
+        if (!inputEl || !previewEl) return;
+        inputEl.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) { previewEl.src = e.target.result; };
+            reader.readAsDataURL(file);
+        });
+    }
+    previewImagem('input-logo', 'preview-logo');
+    previewImagem('input-favicon', 'preview-favicon');
+
+    const formLogo = document.getElementById('form-logo');
+    if (formLogo) {
+        formLogo.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const file = document.getElementById('input-logo').files[0];
+            if (!file) { feedback('Selecione um arquivo de logo.', 'warning'); return; }
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/logo', { method: 'POST', body: fd });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso && data.logo_url) {
+                    const ts = '?v=' + Date.now();
+                    document.getElementById('preview-logo').src = data.logo_url + ts;
+                    document.querySelectorAll('.navbar-brand img').forEach(function (img) { img.src = data.logo_url + ts; });
+                    if (!document.getElementById('form-remover-logo')) location.reload();
+                }
+            } catch (err) { feedback('Erro ao enviar logo.', 'danger'); }
+        });
+    }
+
+    const formRemoverLogo = document.getElementById('form-remover-logo');
+    if (formRemoverLogo) {
+        formRemoverLogo.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/logo/remover', { method: 'POST', body: fd });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso) {
+                    document.getElementById('preview-logo').src = '/static/img/logo.svg';
+                    document.querySelectorAll('.navbar-brand img').forEach(function (img) { img.src = '/static/img/logo.svg'; });
+                    this.style.display = 'none';
+                }
+            } catch (err) { feedback('Erro ao remover logo.', 'danger'); }
+        });
+    }
+
+    const formFavicon = document.getElementById('form-favicon');
+    if (formFavicon) {
+        formFavicon.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const file = document.getElementById('input-favicon').files[0];
+            if (!file) { feedback('Selecione um arquivo de favicon.', 'warning'); return; }
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/favicon', { method: 'POST', body: fd });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso && data.favicon_url) {
+                    const ts = '?v=' + Date.now();
+                    document.getElementById('preview-favicon').src = data.favicon_url + ts;
+                    let link = document.querySelector("link[rel~='icon']");
+                    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+                    link.href = data.favicon_url + ts;
+                    if (!document.getElementById('form-remover-favicon')) location.reload();
+                }
+            } catch (err) { feedback('Erro ao enviar favicon.', 'danger'); }
+        });
+    }
+
+    const formRemoverFavicon = document.getElementById('form-remover-favicon');
+    if (formRemoverFavicon) {
+        formRemoverFavicon.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            try {
+                const resp = await fetch('/admin/tema/favicon/remover', { method: 'POST', body: fd });
+                const data = await resp.json();
+                feedback(data.mensagem, data.sucesso ? 'success' : 'danger');
+                if (data.sucesso) {
+                    document.getElementById('preview-favicon').src = '';
+                    document.querySelector("link[rel~='icon']")?.remove();
+                    this.style.display = 'none';
+                }
+            } catch (err) { feedback('Erro ao remover favicon.', 'danger'); }
+        });
+    }
+
+})();
 </script>
 {% endblock %}

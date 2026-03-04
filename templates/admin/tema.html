@@ -43,31 +43,35 @@
             <div class="tab-pane fade show active" id="tab-base" role="tabpanel">
                 <div class="alert alert-info mb-4">
                     <i class="bi bi-info-circle"></i>
-                    Clique em um tema para aplicá-lo instantaneamente, <strong>sem recarregar a página</strong>.
+                    Clique em um tema para aplicá-lo. A <strong>página será recarregada</strong> com o novo CSS aplicado.
                 </div>
 
                 {% if temas %}
                 <div class="row g-4" id="temas-grid">
                     {% for tema in temas %}
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                        <div class="card h-100 border overflow-hidden tema-card position-relative
-                                    {{ 'border-primary border-2' if tema.selecionado else '' }}"
-                             data-tema="{{ tema.nome }}"
-                             role="button"
-                             style="cursor:pointer">
-                            {% if tema.selecionado %}
-                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado">
-                                <i class="bi bi-check-circle-fill"></i> Selecionado
-                            </span>
-                            {% endif %}
-                            <div class="card-img-top overflow-hidden" style="height:140px">
-                                <img src="{{ tema.imagem }}" alt="Preview {{ tema.nome_exibicao }}"
-                                    class="w-100 h-100 object-fit-cover object-top">
-                            </div>
-                            <div class="card-body py-2 text-center">
-                                <small class="fw-semibold">{{ tema.nome_exibicao }}</small>
-                            </div>
-                        </div>
+                        <form method="POST" action="/admin/tema/aplicar" class="h-100 tema-form">
+                            {{ csrf_input(request) }}
+                            <input type="hidden" name="tema" value="{{ tema.nome }}">
+                            <button type="submit" class="btn p-0 w-100 h-100 d-block">
+                                <div class="card h-100 border tema-card position-relative
+                                            {{ 'border-primary border-2' if tema.selecionado else '' }}"
+                                     style="cursor:pointer;pointer-events:none">
+                                    {% if tema.selecionado %}
+                                    <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado">
+                                        <i class="bi bi-check-circle-fill"></i> Selecionado
+                                    </span>
+                                    {% endif %}
+                                    <div class="card-img-top overflow-hidden" style="height:140px">
+                                        <img src="{{ tema.imagem }}" alt="Preview {{ tema.nome_exibicao }}"
+                                            class="w-100 h-100 object-fit-cover object-top">
+                                    </div>
+                                    <div class="card-body py-2 text-center">
+                                        <small class="fw-semibold">{{ tema.nome_exibicao }}</small>
+                                    </div>
+                                </div>
+                            </button>
+                        </form>
                     </div>
                     {% endfor %}
                 </div>
@@ -313,66 +317,57 @@
         }
     }
 
-    // ─── ABA 1: TROCA DE TEMA VIA AJAX ───────────────────────────────────────
+    // ─── ABA 1: SELEÇÃO DE TEMA ───────────────────────────────────────────────
 
-    document.querySelectorAll('.tema-card').forEach(function (card) {
-        card.addEventListener('click', async function () {
-            const temaNome = this.dataset.tema;
-
-            // Não re-aplicar o tema já selecionado
+    // Exibe modal ao tentar selecionar um tema que já está ativo
+    document.querySelectorAll('.tema-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
             if (this.querySelector('.tema-badge-selecionado')) {
+                e.preventDefault();
                 window.App.Modal.showInfo('Este tema já está aplicado ao sistema.', 'Tema Já Selecionado');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('tema', temaNome);
-            formData.append('csrf_token', csrfToken());
-
-            try {
-                const resp = await fetch('/admin/tema/aplicar', {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: formData,
-                });
-                const data = await resp.json();
-
-                if (data.sucesso) {
-                    // Atualizar <link> do Bootstrap com cache-busting
-                    const link = document.getElementById('bootstrap-css');
-                    if (link) {
-                        const base = link.href.split('?')[0];
-                        link.href = base + '?v=' + Date.now();
-                    }
-
-                    // Atualizar badges "Selecionado" na grid
-                    document.querySelectorAll('.tema-card').forEach(function (c) {
-                        c.classList.remove('border-primary', 'border-2');
-                        const badge = c.querySelector('.tema-badge-selecionado');
-                        if (badge) badge.remove();
-                    });
-                    this.classList.add('border-primary', 'border-2');
-
-                    // Criar badge com DOM seguro (sem innerHTML)
-                    const badge = document.createElement('span');
-                    badge.className = 'position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary py-2 px-3 small z-3 tema-badge-selecionado';
-                    const icon = document.createElement('i');
-                    icon.className = 'bi bi-check-circle-fill';
-                    badge.appendChild(icon);
-                    badge.appendChild(document.createTextNode(' Selecionado'));
-                    this.appendChild(badge);
-
-                    feedback(data.mensagem, 'success');
-                } else {
-                    feedback(data.mensagem || 'Erro ao aplicar tema.', 'danger');
-                }
-            } catch (err) {
-                feedback('Erro de comunicação ao aplicar tema.', 'danger');
             }
         });
     });
 
     // ─── ABA 2: PALETA DE CORES ──────────────────────────────────────────────
+
+    // Converte "rgb(r, g, b)" para "#rrggbb"
+    function rgbParaHex(rgb) {
+        var m = rgb.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
+        if (!m) return null;
+        return '#' + [m[1], m[2], m[3]].map(function (n) {
+            return ('0' + parseInt(n, 10).toString(16)).slice(-2);
+        }).join('');
+    }
+
+    // Lê a cor atual de uma variável CSS do tema (resolve rgb→hex)
+    function corDoTema(nomeBs) {
+        var val = getComputedStyle(document.documentElement)
+            .getPropertyValue('--bs-' + nomeBs).trim();
+        if (!val) return null;
+        if (val.startsWith('#')) return val.length === 7 ? val : null;
+        if (val.startsWith('rgb')) return rgbParaHex(val);
+        // formato "r,g,b" usado pelo Bootstrap para as variáveis -rgb
+        return null;
+    }
+
+    // Inicializa campos de cor: se vazio, usa a cor real do tema atual
+    document.querySelectorAll('.cor-input').forEach(function (colorPicker) {
+        var chave = colorPicker.dataset.chave;
+        var hexInput = document.getElementById(chave + '_hex');
+        var preview = document.getElementById('preview-' + chave);
+        var valorSalvo = hexInput ? hexInput.value.trim() : '';
+
+        if (!valorSalvo) {
+            var nomeBs = chave.replace('tema_cor_', '');
+            var corAtual = corDoTema(nomeBs);
+            if (corAtual) {
+                colorPicker.value = corAtual;
+                if (preview) preview.style.backgroundColor = corAtual;
+                // Mantém hexInput vazio para indicar "usando padrão do tema"
+            }
+        }
+    });
 
     // Sincroniza input[type=color] <-> input[type=text] e preview em tempo real
     document.querySelectorAll('.cor-input').forEach(function (colorPicker) {
@@ -402,19 +397,20 @@
         }
     });
 
-    // Limpar cor individual
+    // Limpar cor individual (volta para cor real do tema atual)
     document.querySelectorAll('.btn-limpar-cor').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            const chave = this.dataset.target;
-            const colorPicker = document.getElementById(chave);
-            const hexInput = document.getElementById(chave + '_hex');
-            const preview = document.getElementById('preview-' + chave);
+            var chave = this.dataset.target;
+            var colorPicker = document.getElementById(chave);
+            var hexInput = document.getElementById(chave + '_hex');
+            var preview = document.getElementById('preview-' + chave);
+            var nomeBs = chave.replace('tema_cor_', '');
 
-            if (colorPicker) colorPicker.value = '#6c757d';
             if (hexInput) hexInput.value = '';
-            if (preview) preview.style.backgroundColor = '#6c757d';
-            const nomeBs = chave.replace('tema_cor_', '');
             document.documentElement.style.removeProperty('--bs-' + nomeBs);
+            var corAtual = corDoTema(nomeBs);
+            if (colorPicker) colorPicker.value = corAtual || '#6c757d';
+            if (preview) preview.style.backgroundColor = corAtual || '#6c757d';
         });
     });
 
@@ -448,13 +444,16 @@
         }
     });
 
-    // Resetar todas as cores
+    // Resetar todas as cores (volta para cores reais do tema atual)
     document.getElementById('btn-resetar-cores').addEventListener('click', async function () {
-        document.querySelectorAll('.cor-input').forEach(function (c) { c.value = '#6c757d'; });
-        document.querySelectorAll('.cor-hex').forEach(function (c) { c.value = ''; });
-        document.querySelectorAll('[id^="preview-tema_cor_"]').forEach(function (p) {
-            p.style.backgroundColor = '#6c757d';
+        document.querySelectorAll('.cor-input').forEach(function (c) {
+            var nomeBs = c.dataset.chave.replace('tema_cor_', '');
+            var corAtual = corDoTema(nomeBs);
+            c.value = corAtual || '#6c757d';
+            var preview = document.getElementById('preview-' + c.dataset.chave);
+            if (preview) preview.style.backgroundColor = corAtual || '#6c757d';
         });
+        document.querySelectorAll('.cor-hex').forEach(function (c) { c.value = ''; });
 
         const CHAVES_COR = [
             'tema_cor_primary', 'tema_cor_secondary', 'tema_cor_success',
@@ -482,6 +481,35 @@
     });
 
     // ─── ABA 3: TIPOGRAFIA ───────────────────────────────────────────────────
+
+    // Extrai o primeiro nome de família de uma string como '"Roboto", sans-serif'
+    function primeiraFamilia(fontFamilyStr) {
+        if (!fontFamilyStr) return '';
+        return fontFamilyStr.split(',')[0].trim().replace(/^["']|["']$/g, '');
+    }
+
+    // Inicializa placeholders de tipografia com as fontes reais do tema atual
+    (function inicializarFontes() {
+        var fonteCorpo = primeiraFamilia(getComputedStyle(document.body).fontFamily);
+        var elementoH1 = document.querySelector('h1, h2, h3');
+        var fonteTitulo = elementoH1
+            ? primeiraFamilia(getComputedStyle(elementoH1).fontFamily)
+            : fonteCorpo;
+
+        var inputTitulo = document.getElementById('tema_fonte_titulos');
+        var inputCorpo = document.getElementById('tema_fonte_corpo');
+
+        if (inputTitulo && !inputTitulo.value && fonteTitulo) {
+            inputTitulo.placeholder = fonteTitulo + ' (padrão do tema)';
+            var previewTitulo = document.getElementById('preview-titulo-texto');
+            if (previewTitulo) previewTitulo.style.fontFamily = "'" + fonteTitulo + "', sans-serif";
+        }
+        if (inputCorpo && !inputCorpo.value && fonteCorpo) {
+            inputCorpo.placeholder = fonteCorpo + ' (padrão do tema)';
+            var previewCorpo = document.getElementById('preview-corpo-texto');
+            if (previewCorpo) previewCorpo.style.fontFamily = "'" + fonteCorpo + "', sans-serif";
+        }
+    })();
 
     function carregarFonte(nome, elementoId) {
         if (!nome) return;
