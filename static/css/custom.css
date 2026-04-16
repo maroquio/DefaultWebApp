@@ -139,8 +139,8 @@
 
 /* === TOAST-CONFIG:START === */
 #toast-container {
-    top: 80px;
-    bottom: auto;
+    bottom: 20px;
+    top: auto;
     right: 20px;
     left: auto;
 }
