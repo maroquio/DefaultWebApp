@@ -38,10 +38,11 @@ from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
 # Rotas
 from routes.auth_routes import router as auth_router
 from routes.chamados_routes import router as chamados_router
-from routes.admin_usuarios_routes import router as admin_usuarios_router
+from routes.admin_cargas_routes import router as admin_usuarios_router
 from routes.admin_configuracoes_routes import router as admin_config_router
 from routes.admin_backups_routes import router as admin_backups_router
 from routes.admin_chamados_routes import router as admin_chamados_router
+from routes.admin_cargas_routes import router as admin_cargas_router
 from routes.usuario_routes import router as usuario_router
 from routes.chat_routes import router as chat_router
 from routes.notificacao_routes import router as notificacao_router
@@ -142,6 +143,7 @@ ROUTERS = [
     (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
     (admin_backups_router, ["Admin - Backups"], "admin de backups"),
     (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_cargas_router, ["Admin - Cargas"], "admin de cargas"),
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
     (notificacao_router, ["Notificações"], "notificações"),
