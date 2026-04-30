@@ -127,6 +127,7 @@ try:
     garantir_configs_toast()
 
     from util.toast_css_util import aplicar_css_toast
+
     aplicar_css_toast()
 
     # Garantir que a pasta de uploads de tema existe

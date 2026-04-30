@@ -47,16 +47,25 @@ admin_cargas_limiter = DynamicRateLimiter(
     nome="admin_cargas",
 )
 
+
 @router.get("/cadastrar")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    categorias = []
+    categorias = [
+        {"id": 0, "nome": ""},
+        {"id": 1, "nome": "dsfsdfsd"},
+        {"id": 2, "nome": "sdfsdffds"},
+        {"id": 3, "nome": "sdffdsfds"},
+        {"id": 4, "nome": "sdfsdfsd"},
+        {"id": 5, "nome": "sdfsdfds"},
+    ]
     return templates.TemplateResponse(
         "admin/cargas/cadastro.html",
-        {"request": request,"usuario_logado": usuario_logado}
+        {"request": request, "usuario_logado": usuario_logado, "categorias": categorias},
     )
+
 
 @router.get("/listar")
 @requer_autenticacao([Perfil.ADMIN.value])
@@ -65,5 +74,5 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse(
         "admin/cargas/listar.html",
-        {"request": request, "cargas": [], "usuario_logado": usuario_logado}
+        {"request": request, "cargas": [], "usuario_logado": usuario_logado},
     )

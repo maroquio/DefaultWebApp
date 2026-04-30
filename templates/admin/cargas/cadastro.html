@@ -1,6 +1,7 @@
-{% extends "base_privada.html" %} {% from "macros/form_fields.html" import field
-with context %} {% block titulo %}Cadastrar Usuário{% endblock %} {% block
-content %}
+{% extends "base_privada.html" %} 
+{% from "macros/form_fields.html" import field with context %}
+{% block titulo %}Cadastrar Carga{% endblock %} 
+{% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
     <div class="d-flex align-items-center mb-4">
@@ -17,10 +18,11 @@ content %}
             </div>
 
             <div class="col-12 mb-3">
-              {% set categorias_dicts = {} %} {% for categoria in perfis %} {%
-              set _ = categorias_dicts.update({categoria: categoria}) %} {%
-              endfor %} {{ field(name='categoria', label='Categoria',
-              type='select', required=true, options=categorias_dicts) }}
+              {% set categorias_dict = {} %} 
+              {% for categoria in categorias %} 
+              {% set _ = categorias_dict.update({categoria.id: categoria.nome}) %}
+              {% endfor %} 
+              {{ field(name='categoria', label='Categoria', type='select', required=true, options=categorias_dict)}}
             </div>
 
             <div class="col-12 mb-3">
@@ -36,7 +38,7 @@ content %}
               {{ field(name='peso', label='Peso', type='number', required=true) }}
             </div>
 
-            <div class="col-md-6 mb-3 mb-md-0">
+            <div class="col-6 mb-0">
               {{ field(name='senha', label='Senha', type='password',
               required=true, append_icon='bi-eye',
               append_button_onclick="alternarVisibilidadeSenha('senha')",
@@ -58,7 +60,9 @@ content %}
     </div>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %} 
+
+{% block scripts %}
 <script>
   // Inicializar validador de senha (apenas feedback visual)
   const validadorSenha = new ValidadorSenha({
