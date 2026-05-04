@@ -55,11 +55,11 @@ async def cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = 
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     categorias = [
         {"id": 0, "nome": ""},
-        {"id": 1, "nome": "dsfsdfsd"},
-        {"id": 2, "nome": "sdfsdffds"},
-        {"id": 3, "nome": "sdffdsfds"},
-        {"id": 4, "nome": "sdfsdfsd"},
-        {"id": 5, "nome": "sdfsdfds"},
+        {"id": 1, "nome": "cargas"},
+        {"id": 2, "nome": "teste"},
+        {"id": 3, "nome": "tesre"},
+        {"id": 4, "nome": "trser"},
+        {"id": 5, "nome": "ertredss"},
     ]
     return templates.TemplateResponse(
         "admin/cargas/cadastro.html",
