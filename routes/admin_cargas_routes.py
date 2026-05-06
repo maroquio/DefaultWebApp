@@ -72,6 +72,17 @@ async def cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = 
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    cargas = []
+    for i in range (1,13):
+        cargas.append(
+    {"id": i,
+      "nome": f"psalpalspapsk",
+      "categoria": f"finanças",
+      "sinopse": f"livro que mostra como ganhar dinheiro",
+      "preco": 35.99
+     }
+  )
+    
     return templates.TemplateResponse(
         "admin/cargas/listar.html",
         {"request": request, "cargas": [], "usuario_logado": usuario_logado},
