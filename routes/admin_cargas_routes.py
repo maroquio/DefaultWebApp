@@ -66,6 +66,53 @@ async def cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = 
         {"request": request, "usuario_logado": usuario_logado, "categorias": categorias},
     )
 
+@router.post("/cadastrar")
+@requer_autenticacao([Perfil.ADMIN.value])
+async def post_cadastrar(
+    request: Request,
+    nome: str = Form(...),
+    email: str = Form(...),
+    senha: str = Form(...),
+    perfil: str = Form(...),
+    usuario_logado: Optional[UsuarioLogado] = None
+):
+    if not usuario_logado:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    # Rate limiting
+    ip = obter_identificador_cliente(request)
+    if not admin_cargas_limiter.verificar(ip):
+        informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
+        return RedirectResponse("/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Armazena os dados do formulário para reexibição em caso de erro
+    dados_formulario: dict = {"nome": nome, "email": email, "perfil": perfil}
+
+    try:
+        # Validar com DTO
+        dto = CriarCargaDTO(
+            nome=nome,
+            email=email,
+            senha=senha,
+            perfil=perfil
+        )
+
+        carga_repo.inserir(carga)
+        logger.info(f"Carga '{dto.nome}' cadastrado por admin {usuario_logado.id}")
+
+        informar_sucesso(request, "Carga cadastrada com sucesso!")
+        return RedirectResponse("/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER)
+
+    except ValidationError as e:
+        # Adicionar perfis aos dados para renderizar o select no template
+        # dados_formulario["perfis"] = Perfil.valores()
+        raise ErroValidacaoFormulario(
+            validation_error=e,
+            template_path="admin/cargas/cadastrar.html",
+            dados_formulario=dados_formulario,
+            campo_padrao="senha",
+        )
+
 
 @router.get("/listar")
 @requer_autenticacao([Perfil.ADMIN.value])
@@ -76,9 +123,9 @@ async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = Non
     for i in range (1,13):
         cargas.append(
     {"id": i,
-      "nome": f"psalpalspapsk",
-      "categoria": f"finanças",
-      "sinopse": f"livro que mostra como ganhar dinheiro",
+      "nome": f"psalpalspapsk {i}",
+      "categoria": f"finanças {i}",
+      "sinopse": f"livro que mostra como ganhar dinheiro {i}",
       "preco": 35.99
      }
   )
