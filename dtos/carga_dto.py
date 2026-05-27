@@ -9,7 +9,7 @@ from dtos.validators import (
 
 
 class CriarCargaDTO(BaseModel):
-    """DTO para criação de Cagas pelo administrador."""
+    """DTO para criação de Cargas pelo administrador."""
 
     # nome: str = Field(..., description="Nome completo do usuário")
     # email: str = Field(..., description="E-mail do usuário")
