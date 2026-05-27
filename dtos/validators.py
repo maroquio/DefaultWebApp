@@ -94,6 +94,7 @@ def validar_string_obrigatoria(
 
 
 def validar_comprimento(
+    nome_campo: str = "Campo",
     tamanho_minimo: Optional[int] = None,
     tamanho_maximo: Optional[int] = None,
     truncar: bool = True,
@@ -102,6 +103,7 @@ def validar_comprimento(
     Valida comprimento de string (permite vazia).
 
     Args:
+        nome_campo: Nome do campo para mensagens de erro
         tamanho_minimo: Comprimento mínimo (opcional)
         tamanho_maximo: Comprimento máximo (opcional)
         truncar: Se deve remover espaços das bordas
@@ -112,7 +114,7 @@ def validar_comprimento(
 
     def validator(cls: Any, v: Any) -> Any:
         return _validar_string_base(
-            v, "Campo", tamanho_minimo, tamanho_maximo, truncar, obrigatorio=False
+            v, nome_campo, tamanho_minimo, tamanho_maximo, truncar, obrigatorio=False
         )
 
     return validator
@@ -809,6 +811,24 @@ def validar_tipo(nome_campo: str, tipo_enum: Any) -> Callable[[Any, Any], Any]:
             raise ValueError(
                 f"{nome_campo} deve ter um valor válido. Valores válidos: {tipos_validos}."
             )
+        return v
+
+    return validator
+
+def validar_preco(nome_campo: str = "Preço") -> Callable[[Any, Any], Any]:
+    """
+    Valida preço como número positivo.
+
+    Args:
+        nome_campo: Nome do campo para mensagens de erro
+
+    Returns:
+        Função validadora para uso com field_validator
+    """
+
+    def validator(cls: Any, v: Any) -> Any:
+        if not isinstance(v, (int, float)) or v <= 0:
+            raise ValueError(f"{nome_campo} deve ser um número positivo.")
         return v
 
     return validator
