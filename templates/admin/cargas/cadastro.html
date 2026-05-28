@@ -8,8 +8,8 @@
       <h2 class="mb-0"><i class="bi bi-truck"></i> Cadastrar Nova Carga</h2>
     </div>
 
-    <div class="card shadow-sm">
-      <form method="POST" action="/admin/cargas/cadastr0">
+<div class="card shadow-sm">
+      <form method="POST" action="/admin/cargas/cadastrar">
         {{ csrf_input() }}
         <div class="card-body p-4">
           <div class="row">
@@ -17,41 +17,56 @@
               {% include "components/alerta_erro.html" %}
             </div>
 
-            <div class="col-12 mb-3">
+            <div class="col-md-6 mb-3">
               {% set categorias_dict = {} %} 
               {% for categoria in categorias %} 
-              {% set _ = categorias_dict.update({categoria.id: categoria.nome}) %}
+                {% set _ = categorias_dict.update({categoria.id: categoria.nome}) %}
               {% endfor %} 
-              {{ field(name='categoria', label='Categoria', type='select', required=true, options=categorias_dict)}}
+              {{ field(name='id_categoria', label='Categoria (Carroceria)', type='select', required=true, options=categorias_dict) }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              {% set empresas_dict = {} %} 
+              {% for empresa in empresas %} 
+                {% set _ = empresas_dict.update({empresa.id: empresa.nome}) %}
+              {% endfor %} 
+              {{ field(name='id_empresa', label='Empresa', type='select', required=true, options=empresas_dict) }}
             </div>
 
             <div class="col-12 mb-3">
-              {{ field(name='Titulo', label='Titulo', type='text',
-              required=true) }}
+              {{ field(name='titulo', label='Título do Frete', type='text', required=true, placeholder='Ex: Carga de Granito 12T') }}
             </div>
 
-            <div class="col-12 mb-3">
-              {{ field(name='tipo', label='Tipo', type='text', required=true) }}
+            <div class="col-md-6 mb-3">
+              {{ field(name='origem', label='Origem (Cidade - UF)', type='text', required=true, placeholder='Ex: Cachoeiro de Itapemirim - ES') }}
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              {{ field(name='destino', label='Destino (Cidade - UF)', type='text', required=true, placeholder='Ex: São Paulo - SP') }}
             </div>
 
-            <div class="col-12 mb-3">
-              {{ field(name='peso', label='Peso', type='number', required=true) }}
+            <div class="col-md-4 mb-3">
+              {{ field(name='peso', label='Peso (Toneladas)', type='number', required=true, attributes={'step': '0.1', 'min': '0'}) }}
             </div>
 
-            <div class="col-6 mb-0">
-              {{ field(name='senha', label='Senha', type='password',
-              required=true, append_icon='bi-eye',
-              append_button_onclick="alternarVisibilidadeSenha('senha')",
-              attributes={'minlength': 8}) }}
+            <div class="col-md-4 mb-3">
+              {{ field(name='valor', label='Valor do Frete (R$)', type='number', required=true, attributes={'step': '0.01', 'min': '0'}) }}
             </div>
+
+            
+            <div class="col-md-4 mb-3">
+              {% set status_dict = {'Disponível': 'Disponível', 'Em Andamento': 'Em Andamento', 'Concluída': 'Concluída'} %}
+              {{ field(name='status_carga', label='Status Inicial', type='select', required=true, options=status_dict) }}
+            </div>
+
           </div>
         </div>
         <div class="card-footer p-4">
           <div class="d-flex gap-3">
             <button type="submit" class="btn btn-primary">
-              <i class="bi bi-check-circle"></i> Cadastrar
+              <i class="bi bi-check-circle"></i> Cadastrar Carga
             </button>
-            <a href="/admin/listar" class="btn btn-secondary">
+            <a href="/admin/cargas/listar" class="btn btn-secondary">
               <i class="bi bi-x-circle"></i> Cancelar
             </a>
           </div>
@@ -64,25 +79,7 @@
 
 {% block scripts %}
 <script>
-  // Inicializar validador de senha (apenas feedback visual)
-  const validadorSenha = new ValidadorSenha({
-    passwordFieldId: "senha",
-    confirmPasswordFieldId: "confirma_senha",
-    strengthBarId: "senha-strength",
-    strengthTextId: "senha-strength-text",
-    matchMessageId: "senha-match",
-    requirements: {
-      length: "req-length",
-      uppercase: "req-uppercase",
-      lowercase: "req-lowercase",
-      number: "req-number",
-      special: "req-special",
-    },
-    minLength: 8,
-    showStrength: true,
-    showRequirements: true,
-  });
-
-  // Validação é feita server-side via CadastroUsuarioDTO
+  // O validador de senha foi removido, pois esta página cadastra apenas cargas.
+  // Validações principais de regra de negócios e IDs ocorrem no server-side via CriarCargaDTO.
 </script>
 {% endblock %}

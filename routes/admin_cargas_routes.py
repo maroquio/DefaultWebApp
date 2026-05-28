@@ -10,13 +10,16 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
 # DTOs
+from dtos.carga_dto import CriarCargaDTO
 
 # Models
+from model.carga_model import Carga
 from model.usuario_logado_model import UsuarioLogado
 
 # Repositories
 
 # Utilities
+from repo import carga_repo
 from util.auth_decorator import requer_autenticacao
 from util.exceptions import ErroValidacaoFormulario
 from util.flash_messages import informar_sucesso, informar_erro
@@ -53,28 +56,47 @@ admin_cargas_limiter = DynamicRateLimiter(
 async def cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    categorias = [
-        {"id": 0, "nome": ""},
-        {"id": 1, "nome": "cargas"},
-        {"id": 2, "nome": "teste"},
-        {"id": 3, "nome": "tesre"},
-        {"id": 4, "nome": "trser"},
-        {"id": 5, "nome": "ertredss"},
+    categorias_carroceria = [
+        {"id": 1, "nome": "Baú (Carga Seca)"},
+        {"id": 2, "nome": "Sider"},
+        {"id": 3, "nome": "Grade Baixa"},
+        {"id": 4, "nome": "Graneleiro"},
+        {"id": 5, "nome": "Prancha"},
+        {"id": 6, "nome": "Frigorífico / Refrigerada"},
+        {"id": 7, "nome": "Caçamba"},
+        {"id": 8, "nome": "Tanque"},
     ]
+
+    empresas = [
+        {"id": 1, "nome": "Empresa A"},
+        {"id": 2, "nome": "Empresa B"},
+        {"id": 3, "nome": "Empresa C"},
+    ]
+
     return templates.TemplateResponse(
         "admin/cargas/cadastro.html",
-        {"request": request, "usuario_logado": usuario_logado, "categorias": categorias},
+        {
+            "request": request,
+            "usuario_logado": usuario_logado,
+            "categorias": categorias_carroceria,
+            "empresas": empresas
+        },
     )
+
 
 @router.post("/cadastrar")
 @requer_autenticacao([Perfil.ADMIN.value])
 async def post_cadastrar(
     request: Request,
-    nome: str = Form(...),
-    email: str = Form(...),
-    senha: str = Form(...),
-    perfil: str = Form(...),
-    usuario_logado: Optional[UsuarioLogado] = None
+    titulo: str = Form(...),
+    origem: str = Form(...),
+    destino: str = Form(...),
+    peso: str = Form(...),
+    valor: str = Form(...),
+    id_categoria: int = Form(...),
+    id_empresa: int = Form(...),
+    status_carga: str = Form(...),
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
@@ -82,35 +104,67 @@ async def post_cadastrar(
     # Rate limiting
     ip = obter_identificador_cliente(request)
     if not admin_cargas_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
-        return RedirectResponse("/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER)
+        informar_erro(
+            request, "Muitas operações. Aguarde um momento e tente novamente."
+        )
+        return RedirectResponse(
+            "/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER
+        )
 
     # Armazena os dados do formulário para reexibição em caso de erro
-    dados_formulario: dict = {"nome": nome, "email": email, "perfil": perfil}
+    dados_formulario: dict = {
+        "titulo": titulo,
+        "origem": origem,
+        "destino": destino,
+        "peso": peso,
+        "valor": valor,
+        "id_categoria": id_categoria,
+        "id_empresa": id_empresa,
+        "status": status_carga,
+    }
 
     try:
         # Validar com DTO
         dto = CriarCargaDTO(
-            nome=nome,
-            email=email,
-            senha=senha,
-            perfil=perfil
+            titulo=titulo,
+            origem=origem,
+            destino=destino,
+            peso=float(peso.replace(",",".")),
+            valor=float(valor.replace(",", ".")),
+            id_categoria=id_categoria,
+            id_empresa=id_empresa,
+            status=status_carga,
+        )
+
+        # Monta a entidade (passando id=None para banco gerar automaticamente)
+        carga = Carga(
+            id=None,
+            titulo=dto.titulo,
+            origem=dto.origem,
+            destino=dto.destino,
+            peso=dto.peso,
+            valor=dto.valor,
+            id_categoria=dto.id_categoria,
+            id_empresa=dto.id_empresa,
+            status=dto.status,
         )
 
         carga_repo.inserir(carga)
-        logger.info(f"Carga '{dto.nome}' cadastrado por admin {usuario_logado.id}")
+        logger.info(f"Carga '{dto.titulo}' cadastrada por admin {usuario_logado.id}")
 
         informar_sucesso(request, "Carga cadastrada com sucesso!")
-        return RedirectResponse("/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(
+            "/admin/cargas/listar", status_code=status.HTTP_303_SEE_OTHER
+        )
 
     except ValidationError as e:
-        # Adicionar perfis aos dados para renderizar o select no template
-        # dados_formulario["perfis"] = Perfil.valores()
+        # Adicionar categorias e empresas aos dados para renderizar os selects no template
+        # dados_formulario["categorias"] = categorias_carroceria
         raise ErroValidacaoFormulario(
             validation_error=e,
             template_path="admin/cargas/cadastrar.html",
             dados_formulario=dados_formulario,
-            campo_padrao="senha",
+            campo_padrao="titulo",
         )
 
 
@@ -119,18 +173,26 @@ async def post_cadastrar(
 async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
     cargas = []
-    for i in range (1,13):
+    # Simulando dados da Carga para o front-end
+    for i in range(1, 13):
         cargas.append(
-    {"id": i,
-      "nome": f"psalpalspapsk {i}",
-      "categoria": f"finanças {i}",
-      "sinopse": f"livro que mostra como ganhar dinheiro {i}",
-      "preco": 35.99
-     }
-  )
-    
+            {
+                "id": i,
+                "titulo": f"Frete de Granito/Mármore {i}",
+                "origem": "Cachoeiro de Itapemirim - ES",
+                "destino": "São Paulo - SP",
+                "peso": 12.5 + i,
+                "valor": 3200.00 + (i * 100),
+                "id_categoria": 1,
+                "id_empresa": 1,
+                "status": "Disponível",
+            }
+        )
+
     return templates.TemplateResponse(
         "admin/cargas/listar.html",
-        {"request": request, "cargas": [], "usuario_logado": usuario_logado},
+        # Alterado de "cargas": [] para "cargas": cargas
+        {"request": request, "cargas": cargas, "usuario_logado": usuario_logado},
     )

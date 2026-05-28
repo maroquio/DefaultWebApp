@@ -16,47 +16,62 @@
         </div>
 
         <div class="card shadow-sm">
-            <div class="card-body">
-                {% if Cargas %}
+<div class="card-body">
+                {% if cargas %}
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
-                            <!-- <tr>                Alterar quando estiver finalizado o cadastro
+                            <tr> 
                                 <th scope="col">ID</th>
-                                <th scope="col">Nome</th>
-                                <th scope="col">Email</th>
-                                <th scope="col">Perfil</th>
-                                <th scope="col">Data Cadastro</th>
+                                <th scope="col">Título do Frete</th>
+                                <th scope="col">Rota (Origem ➔ Destino)</th>
+                                <th scope="col">Peso / Valor</th>
+                                <th scope="col">Status</th>
                                 <th scope="col" class="text-center">Ações</th>
-                            </tr> -->
+                            </tr> 
                         </thead>
-                        <!-- <tbody>
-                            {% for carga in Cargas %}
+                        <tbody>
+                            {% for carga in cargas %}
                             <tr>
-                                <td>{{ cargas.id }}</td>
-                                <td>{{ cargas.nome }}</td>
-                                <td>{{ cargas.email }}</td>
-                                <td>{{ cargas.email }}</td>
-                                <td>{{ cargas.email }}</td>
+                                <td>#{{ carga.id }}</td>
+                                <td class="fw-bold">{{ carga.titulo }}</td>
+                                <td>
+                                    <small>
+                                        <i class="bi bi-circle text-primary" style="font-size: 0.5rem;"></i> {{ carga.origem }} <br>
+                                        <i class="bi bi-circle-fill text-danger" style="font-size: 0.5rem;"></i> {{ carga.destino }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {{ carga.peso }} Ton. <br>
+                                    <span class="text-success fw-bold">R$ {{ "%.2f"|format(carga.valor) }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if carga.status == 'Disponível' %}bg-success{% elif carga.status == 'Em Andamento' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ carga.status }}
+                                    </span>
+                                </td>
                                 <td class="text-center">
                                     {{ btn_group_crud(
                                         carga.id,
-                                        'carga ' ~ carga.nome,
+                                        'carga ' ~ carga.titulo,
                                         '/admin/cargas',
-                                        "excluirCarga(%d, '%s', '%s', '%s')" | format(
+                                        "excluirCarga(%d, '%s')" | format(
                                             carga.id,
-                                            Carga.nome|replace("'", "\\'"),
-                                            carga.email,
-                                            carga.perfil
+                                            carga.titulo|replace("'", "\\'")
                                         )
                                     ) }}
                                 </td>
                             </tr>
                             {% endfor %}
-                        </tbody> -->
+                        </tbody> 
                     </table>
                 </div>
-
+                {% else %}
+                <div class="alert alert-info text-center mb-0">
+                    Nenhuma carga cadastrada no momento.
+                </div>
+                {% endif %}
+            </div>
                 <div class="mt-3">
                     <small class="text-muted">
                         Total: {{ cargas|length }} cargas(s)

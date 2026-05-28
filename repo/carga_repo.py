@@ -14,15 +14,17 @@ from sql.carga_sql import (
 from util.db_util import obter_conexao
 
 def _row_to_carga(row: sqlite3.Row) -> Carga:
-    
     return Carga(
         id=row["id"],
-        nome=row["nome"],
-        email=row["email"],
-        senha=row["senha"],
-        perfil=row["perfil"]
+        titulo=row["titulo"],               
+        origem=row["origem"],               
+        destino=row["destino"],             
+        peso=row["peso"],                  
+        valor=row["valor"],                 
+        id_categoria=row["id_categoria"],   
+        id_empresa=row["id_empresa"],       
+        status=row["status"]                
     )
-
 
 def criar_tabela() -> bool:
     with obter_conexao() as conn:
@@ -30,28 +32,35 @@ def criar_tabela() -> bool:
         cursor.execute(CRIAR_TABELA)
         return True
 
-
 def inserir(carga: Carga) -> Optional[int]:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(INSERIR, (
-            carga.nome,
-            carga.email,
-            carga.senha,
-            carga.perfil
+            carga.titulo,
+            carga.origem,
+            carga.destino,
+            carga.peso,
+            carga.valor,
+            carga.id_categoria,
+            carga.id_empresa,
+            carga.status
         ))
         carga_id = cursor.lastrowid
         return carga_id if carga_id else None
-
 
 def alterar(carga: Carga) -> bool:
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(ALTERAR, (
-            carga.nome,
-            carga.email,
-            carga.perfil,
-            carga.id
+            carga.titulo,
+            carga.origem,
+            carga.destino,
+            carga.peso,
+            carga.valor,
+            carga.id_categoria,
+            carga.id_empresa,
+            carga.status,
+            carga.id  # O ID fica no final para a cláusula WHERE do SQL
         ))
         return cursor.rowcount > 0
 
