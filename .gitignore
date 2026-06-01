@@ -38,7 +38,7 @@ env/
 .DS_Store
 
 # Database
-*.db
+# *.db
 *.sqlite
 *.sqlite3
 *.db-journal
