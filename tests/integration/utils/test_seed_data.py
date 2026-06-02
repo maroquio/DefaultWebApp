@@ -4,6 +4,7 @@ Testes para o módulo util/seed_data.py
 Testa a carga de dados seed para o sistema.
 """
 
+import json
 import pytest
 import sqlite3
 from unittest.mock import patch, MagicMock
@@ -56,6 +57,48 @@ class TestCarregarUsuariosSeed:
 
             # Não deve lançar exceção
             carregar_usuarios_seed()
+
+    def test_cria_admin_definido_no_json(self, tmp_path):
+        """Deve criar o usuário configurado em data/usuarios_seed.json"""
+        seed_file = tmp_path / "usuarios_seed.json"
+        seed_file.write_text(
+            json.dumps({"usuarios": [
+                {"nome": "Chefe", "email": "chefe@empresa.com",
+                 "senha": "Senha@123", "perfil": "Administrador"}
+            ]}),
+            encoding="utf-8",
+        )
+
+        with patch('util.seed_data.usuario_repo') as mock_repo, \
+             patch('util.seed_data.CAMINHO_SEED_USUARIOS', seed_file):
+            mock_repo.obter_quantidade.return_value = 0
+            mock_repo.inserir.return_value = 1
+
+            from util.seed_data import carregar_usuarios_seed
+            carregar_usuarios_seed()
+
+            # Deve criar exatamente o usuário do JSON (não os perfis do enum)
+            assert mock_repo.inserir.call_count == 1
+            usuario = mock_repo.inserir.call_args[0][0]
+            assert usuario.email == "chefe@empresa.com"
+            assert usuario.nome == "Chefe"
+            assert usuario.perfil == "Administrador"
+            # Senha deve ser armazenada com hash, nunca em texto puro
+            assert usuario.senha != "Senha@123"
+
+    def test_fallback_para_perfis_sem_json(self, tmp_path):
+        """Sem arquivo de seed, deve gerar um usuário por perfil do enum"""
+        seed_file = tmp_path / "inexistente.json"
+
+        with patch('util.seed_data.usuario_repo') as mock_repo, \
+             patch('util.seed_data.CAMINHO_SEED_USUARIOS', seed_file):
+            mock_repo.obter_quantidade.return_value = 0
+            mock_repo.inserir.return_value = 1
+
+            from util.seed_data import carregar_usuarios_seed, Perfil
+            carregar_usuarios_seed()
+
+            assert mock_repo.inserir.call_count == len(list(Perfil))
 
 
 class TestInicializarDados:
