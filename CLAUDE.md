@@ -33,9 +33,9 @@ python3 -m mypy .
 
 ### Database Operations
 ```bash
-sqlite3 database.db       # Access database directly
-sqlite3 database.db ".tables"  # List tables
-sqlite3 database.db "SELECT * FROM usuario;"  # Query data
+sqlite3 dados.db       # Access database directly
+sqlite3 dados.db ".tables"  # List tables
+sqlite3 dados.db "SELECT * FROM usuario;"  # Query data
 ```
 
 ## Architecture
@@ -224,7 +224,9 @@ Routes (HTTP) → DTOs (Validation) → Repositories → SQL → Database
   - `DynamicRateLimiter`: **Recommended** - Reads values from `config_cache` on each check, no server restart needed
 - Decorator `@com_rate_limit(limiter, mensagem_erro)` in `util/rate_limiter.py` - Raises HTTPException 429
 - Decorator `@aplicar_rate_limit(limiter, mensagem_erro, redirect_url)` in `util/rate_limit_decorator.py` - Redirects or returns JSON
-- Helper: `obter_identificador_cliente(request)` extracts client IP (supports X-Forwarded-For, X-Real-IP)
+- Helper `obter_identificador_cliente(request)` exists in **two** modules with **different** behavior:
+  - `util/rate_limiter.py`: returns only `request.client.host` (NO proxy header support) — used by `@com_rate_limit` and by the admin CRUD routes
+  - `util/rate_limit_decorator.py`: proxy-aware (tries `X-Forwarded-For`, then `X-Real-IP`, then `request.client.host`) — used by `@aplicar_rate_limit`
 - Global registry: `RegistroLimiters` for monitoring all limiters
 
 **Permission Helpers** (`util/permission_helpers.py`):
@@ -450,13 +452,14 @@ All JavaScript modules are fully documented and production-ready:
 - **NEVER use native `alert()`, `confirm()` or `prompt()` - always use modals**
 
 **`static/js/mascara-input.js`** - Input Masking System:
-- **InputMask Class**: Pattern-based input masking
+- **MascaraInput Class**: Pattern-based input masking
   - Pattern syntax: `0` = digit, `A` = uppercase letter, `a` = lowercase letter, any other = literal
-  - Pre-defined masks in `InputMask.MASKS`: CPF, CNPJ, TELEFONE, TELEFONE_FIXO, CEP, DATA, HORA, DATA_HORA, PLACA_ANTIGA, PLACA_MERCOSUL, CARTAO, CVV, CVV4, VALIDADE_CARTAO
+  - Pre-defined masks in `MascaraInput.MASKS`: CPF, CNPJ, TELEFONE, TELEFONE_FIXO, CEP, DATA, HORA, DATA_HORA, PLACA_ANTIGA, PLACA_MERCOSUL, CARTAO, CVV, CVV4, VALIDADE_CARTAO
   - Usage: `<input data-mask="CPF" data-unmask="true">`
-- **DecimalMask Class**: Decimal/monetary value formatting (Brazilian format)
+- **MascaraDecimal Class**: Decimal/monetary value formatting (Brazilian format)
   - Usage: `<input data-decimal data-decimal-places="2" data-decimal-prefix="R$ ">`
-  - Static methods: `DecimalMask.format(value, options)`, `DecimalMask.parse(value, options)`
+  - On submit, appends a hidden `{name}_unmasked` field with the parsed numeric value (e.g. `1234.56`)
+  - Static methods: `MascaraDecimal.format(value, options)`, `MascaraDecimal.parse(value, options)`
 
 **`static/js/validador-senha.js`** - Password Strength Feedback (Visual Only):
 - **IMPORTANT**: Provides ONLY visual feedback, does NOT validate or block form submission
@@ -523,7 +526,7 @@ Follow this exact sequence (detailed guide in `docs/CRIAR_CRUD.md`):
 ## Configuration
 
 **Environment Variables (.env):**
-- `DATABASE_PATH`: SQLite database file path (default: database.db)
+- `DATABASE_PATH`: SQLite database file path (default: dados.db)
 - `APP_NAME`: Application name shown in UI and logs
 - `SECRET_KEY`: Session secret (MUST change in production, min 32 chars)
 - `HOST`, `PORT`: Server configuration (default: localhost:8400)
@@ -725,8 +728,8 @@ All configuration is loaded via `util/config.py` using python-dotenv.
     - `window.App.Modal.show()` / `window.App.Modal.showError()` / `window.App.Modal.showWarning()` / `window.App.Modal.showInfo()` for user messages
     - `abrirModalConfirmacao()` for confirmations (delete, etc.)
     - `window.App.Toasts.show()` for non-critical notifications
-13. **Input Masks**: Use `data-mask` attribute for automatic initialization, or `InputMask.MASKS` constants programmatically
-14. **Decimal Formatting**: DecimalMask uses Brazilian format (comma decimal, dot thousands) by default
+13. **Input Masks**: Use `data-mask` attribute for automatic initialization, or `MascaraInput.MASKS` constants programmatically
+14. **Decimal Formatting**: `MascaraDecimal` uses Brazilian format (comma decimal, dot thousands) by default
 15. **CSRF Tokens**: Always include `{{ csrf_input(request) }}` in all POST/PUT/DELETE forms
 16. **Domain Enums**: Always inherit from `EnumEntidade` (from `util/enum_base.py`), never use plain `Enum`
 17. **Lazy Imports**: Used in `chamado_repo` to avoid circular dependencies with `chamado_interacao_repo`
