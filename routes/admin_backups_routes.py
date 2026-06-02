@@ -71,7 +71,7 @@ async def post_criar(request: Request, usuario_logado: Optional[UsuarioLogado] =
     """
     Cria um novo backup do banco de dados
 
-    Copia o arquivo database.db para backups/ com timestamp no nome.
+    Copia o arquivo dados.db para backups/ com timestamp no nome.
     """
     if not usuario_logado:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
