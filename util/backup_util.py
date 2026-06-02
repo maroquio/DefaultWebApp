@@ -6,6 +6,7 @@ Os backups são armazenados no diretório 'backups/' com nomenclatura padronizad
 """
 import shutil
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
@@ -147,15 +148,15 @@ def _validar_integridade_backup(caminho: Path) -> tuple[bool, str]:
         if caminho.stat().st_size == 0:
             return False, "Arquivo de backup está vazio"
 
-        # Tentar abrir e validar integridade do banco
-        conn = sqlite3.connect(str(caminho))
-        cursor = conn.cursor()
-
-        # PRAGMA integrity_check retorna "ok" se banco está íntegro
-        cursor.execute("PRAGMA integrity_check")
-        result = cursor.fetchone()
-
-        conn.close()
+        # Tentar abrir e validar integridade do banco.
+        # closing() garante o fechamento da conexão mesmo se o PRAGMA lançar
+        # DatabaseError (banco corrompido). Sem isso, a conexão vazaria e o
+        # arquivo ficaria travado no Windows (PermissionError ao excluí-lo).
+        with closing(sqlite3.connect(str(caminho))) as conn:
+            cursor = conn.cursor()
+            # PRAGMA integrity_check retorna "ok" se banco está íntegro
+            cursor.execute("PRAGMA integrity_check")
+            result = cursor.fetchone()
 
         if result and result[0] == "ok":
             logger.debug(f"Validação de integridade OK: {caminho.name}")

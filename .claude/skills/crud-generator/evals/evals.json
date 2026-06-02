@@ -1,0 +1,35 @@
+{
+  "skill_name": "crud-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Cria um CRUD de Produtos para a área admin. Campos: nome (str), descricao (str), preco (float), estoque (int), ativo (bool). Status: Ativo, Inativo. Usa o ícone bi-box.",
+      "expected_output": "Todos os 8 arquivos criados (model, sql, repo, dto, routes, 3 templates) mais alterações em main.py, sql/indices_sql.py e base_privada.html. Rotas em /admin/produtos, StatusProduto herdando EnumEntidade, bool convertido para INTEGER no SQLite, preco usando type='decimal' nos templates e normalização brasileira (_normalizar_decimal) na rota, e {{ csrf_input(request) }} (com request) nos forms. Colisão do parâmetro 'status' com fastapi.status resolvida via import status as http_status.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Preciso de um CRUD de Categorias de Produto. Campos: nome (str), descricao (str). Simples, sem status, sem usuario_id.",
+      "expected_output": "CRUD simplificado sem enum de status, sem JOIN com usuario, sem campo usuario_id. Model sem EnumEntidade. SQL sem FOREIGN KEY. Repo sem _converter_enum_seguro. DTO com apenas nome e descricao. GET editar passa dados=item.__dict__.copy(). Templates com apenas campos nome e descricao e {{ csrf_input(request) }}.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Gera um CRUD admin de Pedidos. Cada pedido pertence a um usuário. Campos: descricao (str), valor_total (float). Status: Pendente, Em Processamento, Enviado, Entregue, Cancelado. Ícone bi-cart.",
+      "expected_output": "Model com usuario_id e usuario_nome (Optional[str]). SQL com FOREIGN KEY usuario ON DELETE CASCADE e INNER JOIN em OBTER_TODOS/OBTER_POR_ID. DTO NÃO inclui usuario_id. Router passa usuario_id=usuario_logado.id na criação e usuario_id=item.usuario_id no update (dono não muda). Índice idx_pedido_usuario_id em sql/indices_sql.py. Templates exibem usuario_nome na listagem. Os 5 status como EnumEntidade.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Cria um CRUD admin de Produtos onde cada produto pertence a uma Categoria (selecionável). Campos do produto: nome (str), preco (float). Cada produto também pertence ao usuário que o cadastrou. Assuma que já existe o CRUD de Categoria.",
+      "expected_output": "Relacionamento de referência implementado: Model com categoria_id:int + categoria_nome:Optional[str] E usuario_id:int + usuario_nome. SQL com duas FOREIGN KEYs (categoria ON DELETE RESTRICT, usuario ON DELETE CASCADE) e dois INNER JOINs selecionando categoria_nome e usuario_nome. DTO inclui categoria_id:int=Field(...,gt=0) com validar_id_positivo, mas NÃO inclui usuario_id. Rotas GET cadastrar/editar carregam categoria_repo.obter_todos() e passam como opções; no except ValidationError reinjetam as opções em dados_formulario. Template tem <select> de categoria populado com {c.id: c.nome} (dict, não lista de tuplas). main.py TABELAS com categoria antes de produto. Índice idx_produto_categoria_id adicionado. usuario_id=usuario_logado.id na criação.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Preciso gerenciar Pedidos e seus Itens. Um pedido tem vários itens; cada item referencia um produto, com quantidade e preço unitário. Ícone bi-cart.",
+      "expected_output": "Reconhece relação mestre-detalhe 1:N (consulta references/master-detail.md). Entidade filha pedido_item com pedido_id (FK ao pai, ON DELETE CASCADE) e produto_id (FK referência). Filho NÃO tem telas próprias de listar/editar; é gerenciado na tela de detalhe do pai. Repo do filho tem obter_por_pedido(pedido_id). Rotas no router do pai: GET /{id}/itens (detalhe com lista de itens + form de adicionar), POST /{id}/itens/adicionar, POST /{id}/itens/{item_id}/excluir. pedido_id vem da URL, não do formulário/DTO. main.py cria pedido antes de pedido_item. Índices das FKs adicionados.",
+      "files": []
+    }
+  ]
+}

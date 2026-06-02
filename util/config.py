@@ -41,7 +41,7 @@ if RUNNING_MODE_CHECK.lower() != "development":
         )
 
 # === Configurações do Banco de Dados ===
-DATABASE_PATH = os.getenv("DATABASE_PATH", "database.db")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "dados.db")
 
 # === Configurações de Logging ===
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

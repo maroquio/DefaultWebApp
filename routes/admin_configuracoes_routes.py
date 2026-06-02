@@ -636,8 +636,9 @@ def _ler_log_arquivo(data: str, nivel: str) -> tuple[str, int, Optional[str]]:
             msg = f"Arquivo de log muito grande ({tamanho_mb:.2f} MB). Use ferramentas externas."
             return "", 0, msg
 
-        # Ler arquivo
-        with open(arquivo_log, 'r', encoding='utf-8') as f:
+        # Ler arquivo (errors='replace' evita falhar em logs legados gravados
+        # em encoding diferente de UTF-8, ex.: cp1252 no Windows)
+        with open(arquivo_log, 'r', encoding='utf-8', errors='replace') as f:
             linhas = f.readlines()
 
         # Filtrar por nível se não for "TODOS"

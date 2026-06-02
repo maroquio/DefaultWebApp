@@ -195,27 +195,32 @@ class TestValidarIntegridadeBackup:
     @pytest.fixture
     def backup_valido(self):
         """Cria um arquivo de backup SQLite válido"""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
-            # Criar banco SQLite válido
-            conn = sqlite3.connect(f.name)
-            cursor = conn.cursor()
-            cursor.execute("CREATE TABLE teste (id INTEGER PRIMARY KEY)")
-            cursor.execute("INSERT INTO teste VALUES (1)")
-            conn.commit()
-            conn.close()
+        # Fecha o handle do OS imediatamente (delete=False mantém o arquivo);
+        # manter o handle aberto travaria o arquivo no Windows na exclusão.
+        f = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        f.close()
 
-            yield Path(f.name)
+        # Criar banco SQLite válido
+        conn = sqlite3.connect(f.name)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE teste (id INTEGER PRIMARY KEY)")
+        cursor.execute("INSERT INTO teste VALUES (1)")
+        conn.commit()
+        conn.close()
 
-            # Cleanup
-            Path(f.name).unlink(missing_ok=True)
+        yield Path(f.name)
+
+        # Cleanup
+        Path(f.name).unlink(missing_ok=True)
 
     @pytest.fixture
     def backup_vazio(self):
         """Cria um arquivo vazio"""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
-            # Arquivo vazio (tamanho 0)
-            yield Path(f.name)
-            Path(f.name).unlink(missing_ok=True)
+        f = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        f.close()  # fecha o handle; arquivo vazio persiste (delete=False)
+        # Arquivo vazio (tamanho 0)
+        yield Path(f.name)
+        Path(f.name).unlink(missing_ok=True)
 
     def test_backup_valido(self, backup_valido):
         """Deve validar backup íntegro"""
@@ -242,14 +247,15 @@ class TestValidarIntegridadeBackup:
             # Escrever dados inválidos
             f.write(b"conteudo invalido para sqlite")
             f.flush()
-
             caminho = Path(f.name)
-            valido, mensagem = _validar_integridade_backup(caminho)
 
-            assert valido is False
-            assert "corrompido" in mensagem.lower() or "inválido" in mensagem.lower()
+        # Fora do with: handle fechado, seguro para validar e excluir no Windows
+        valido, mensagem = _validar_integridade_backup(caminho)
 
-            caminho.unlink(missing_ok=True)
+        assert valido is False
+        assert "corrompido" in mensagem.lower() or "inválido" in mensagem.lower()
+
+        caminho.unlink(missing_ok=True)
 
 
 class TestCriarBackup:
@@ -836,34 +842,38 @@ class TestValidarIntegridadeBackupErros:
             # Escrever conteúdo que parece SQLite mas está corrompido
             f.write(b"SQLite format 3\x00" + b"\x00" * 100)
             f.flush()
-
             caminho = Path(f.name)
-            valido, mensagem = _validar_integridade_backup(caminho)
 
-            assert valido is False
-            assert "corrompido" in mensagem.lower() or "inválido" in mensagem.lower()
+        # Fora do with: handle fechado, seguro para validar e excluir no Windows
+        valido, mensagem = _validar_integridade_backup(caminho)
 
-            caminho.unlink(missing_ok=True)
+        assert valido is False
+        assert "corrompido" in mensagem.lower() or "inválido" in mensagem.lower()
+
+        caminho.unlink(missing_ok=True)
 
     def test_validar_integridade_oserror(self):
         """Deve tratar OSError na validação"""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
-            # Criar banco válido
-            conn = sqlite3.connect(f.name)
-            conn.execute("CREATE TABLE t (id INT)")
-            conn.commit()
-            conn.close()
+        # Fecha o handle do OS imediatamente (delete=False mantém o arquivo)
+        f = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        f.close()
 
-            caminho = Path(f.name)
+        # Criar banco válido
+        conn = sqlite3.connect(f.name)
+        conn.execute("CREATE TABLE t (id INT)")
+        conn.commit()
+        conn.close()
 
-            # Simular erro ao conectar
-            with patch('sqlite3.connect', side_effect=OSError("Access denied")):
-                valido, mensagem = _validar_integridade_backup(caminho)
+        caminho = Path(f.name)
 
-                assert valido is False
-                assert "erro" in mensagem.lower()
+        # Simular erro ao conectar
+        with patch('sqlite3.connect', side_effect=OSError("Access denied")):
+            valido, mensagem = _validar_integridade_backup(caminho)
 
-            caminho.unlink(missing_ok=True)
+            assert valido is False
+            assert "erro" in mensagem.lower()
+
+        caminho.unlink(missing_ok=True)
 
 
 class TestObterInfoBackupDataFallback:

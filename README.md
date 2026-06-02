@@ -49,7 +49,7 @@ Se voce esta comecando, estes termos aparecem ao longo do documento:
 ## Instalacao Rapida
 
 ### Pre-requisitos
-- Python 3.11 ou superior
+- Python 3.11 a 3.14
 - pip (gerenciador de pacotes Python)
 
 ### Passo a Passo
@@ -82,6 +82,11 @@ Se voce esta comecando, estes termos aparecem ao longo do documento:
    ```
    Edite o arquivo `.env` — pelo menos altere `SECRET_KEY` e `APP_NAME`.
 
+   > **Dica:** em vez de editar o `.env` manualmente, voce pode rodar
+   > `python scripts/configurar_projeto.py` para gerar o `.env` (com `SECRET_KEY`
+   > aleatoria), definir os perfis de usuario e o administrador inicial de forma
+   > interativa. O script nunca sobrescreve arquivos existentes sem confirmacao.
+
 5. **Execute a aplicacao**
    ```bash
    python main.py
@@ -99,15 +104,15 @@ Se voce esta comecando, estes termos aparecem ao longo do documento:
 
 ## Usuarios Padrao
 
-O sistema vem com usuarios pre-cadastrados para testes:
+O sistema cria automaticamente um administrador inicial a partir de `data/usuarios_seed.json`:
 
 | Perfil | E-mail | Senha | Descricao |
 |--------|--------|-------|-----------|
-| **Administrador** | padrao@administrador.com | 1234aA@# | Acesso administrativo completo |
-| **Cliente** | padrao@cliente.com | 1234aA@# | Usuario com perfil Cliente |
-| **Vendedor** | padrao@vendedor.com | 1234aA@# | Usuario com perfil Vendedor |
+| **Administrador** | admin@sistema.com | Admin@123 | Acesso administrativo completo |
 
-> **Importante**: Altere essas senhas em ambiente de producao!
+Os perfis disponiveis sao **Administrador**, **Cliente** e **Vendedor** (extensiveis em `util/perfis.py`). Para adicionar outros usuarios seed, edite `data/usuarios_seed.json` ou rode `python scripts/configurar_projeto.py`.
+
+> **Importante**: Altere esse e-mail e senha em ambiente de producao!
 
 ## Funcionalidades Principais
 
@@ -395,6 +400,7 @@ DefaultWebApp/
 │   └── usuarios_seed.json
 │
 ├── docs/                        # Documentacao adicional
+│   ├── blog-tutorial.md         # Tutorial: criando um Blog com o boilerplate
 │   └── TESTES_E2E.md           # Tutorial de testes E2E com Playwright
 │
 ├── dtos/                        # DTOs Pydantic para validacao
@@ -541,11 +547,15 @@ DefaultWebApp/
 │   ├── e2e/                    # Testes end-to-end (Playwright)
 │   └── helpers/                # Testes de helpers
 │
+├── scripts/                     # Scripts utilitarios de linha de comando
+│   ├── configurar_projeto.py   # Configuracao inicial interativa (.env, perfis, admin)
+│   ├── redefinir_senha.py      # Redefine a senha de um usuario pelo email
+│   └── instalar_playwright.py  # Baixa o navegador Chromium para testes E2E
+│
 ├── logs/                        # Logs da aplicacao (criado automaticamente)
 ├── backups/                     # Backups do banco (criado automaticamente)
 │
 ├── .env.example                 # Modelo de variaveis de ambiente
-├── BLOG.md                      # Tutorial: criando um Blog com o boilerplate
 ├── CLAUDE.md                    # Instrucoes para Claude Code
 ├── Dockerfile                   # Imagem Docker da aplicacao
 ├── docker-compose.yml           # Orquestracao Docker
@@ -563,7 +573,7 @@ DefaultWebApp/
 - **Python 3.11+** — Linguagem principal
 - **FastAPI 0.115** — Framework web moderno e rapido
 - **Uvicorn** — Servidor ASGI de alta performance
-- **Pydantic 2.9** — Validacao de dados com type hints
+- **Pydantic 2.13** — Validacao de dados com type hints
 - **Passlib + Bcrypt** — Hash seguro de senhas
 - **Pillow** — Processamento de imagens (crop, redimensionamento)
 - **SSE (Server-Sent Events)** — Chat em tempo real
@@ -687,7 +697,23 @@ pytest --cov=. --cov-report=html
 
 **Marcadores disponiveis**: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.e2e`, `@pytest.mark.auth`, `@pytest.mark.crud`
 
-Para testes end-to-end com Playwright, consulte `docs/TESTES_E2E.md`.
+Para testes end-to-end com Playwright, instale primeiro o navegador Chromium (o pacote pip nao baixa os binarios automaticamente):
+
+```bash
+python scripts/instalar_playwright.py
+```
+
+Depois consulte `docs/TESTES_E2E.md` para escrever e executar os testes E2E.
+
+## Scripts Utilitarios
+
+O diretorio `scripts/` reune utilitarios de linha de comando para tarefas comuns:
+
+| Script | O que faz |
+|--------|-----------|
+| `python scripts/configurar_projeto.py` | Configuracao inicial interativa — gera o `.env` com `SECRET_KEY` aleatoria, define os perfis de usuario e o administrador inicial (nunca sobrescreve arquivos existentes sem confirmacao) |
+| `python scripts/redefinir_senha.py <email> <nova_senha>` | Redefine a senha de um usuario diretamente no banco (valida forca da senha) |
+| `python scripts/instalar_playwright.py` | Baixa o navegador Chromium usado pelos testes E2E (use `--inseguro` em redes com interceptacao TLS) |
 
 ## Seguranca
 
@@ -738,6 +764,10 @@ Edite o `.env` e altere pelo menos:
 - `APP_NAME` — Nome do seu projeto
 - `SECRET_KEY` — Gere uma chave unica em https://generate-secret.now.sh/64
 
+> **Atalho:** rode `python scripts/configurar_projeto.py` para fazer os passos 2 e 3
+> de forma interativa — o script gera o `.env`, define os perfis e cria o administrador
+> inicial automaticamente.
+
 ### 3. Altere os usuarios seed
 
 Edite `data/usuarios_seed.json` com os usuarios iniciais do seu projeto. Altere emails e senhas.
@@ -754,7 +784,7 @@ Para cada nova funcionalidade (ex: Produto, Servico, Pedido), siga esta sequenci
 6. **Templates** (`templates/`) — Paginas HTML
 7. **Registrar em `main.py`** — Adicionar tabela e router
 
-Para um tutorial pratico completo deste processo, veja o **BLOG.md** que guia a criacao de um blog com categorias e artigos usando este boilerplate.
+Para um tutorial pratico completo deste processo, veja o **docs/blog-tutorial.md** que guia a criacao de um blog com categorias e artigos usando este boilerplate.
 
 ## Solucao de Problemas Comuns
 
@@ -778,7 +808,7 @@ Verifique se a pasta `static/img/usuarios/` existe e tem permissao de escrita. O
 
 ## Documentacao Adicional
 
-- **[BLOG.md](BLOG.md)** — Tutorial pratico: criando um Blog completo usando este boilerplate como base
+- **[docs/blog-tutorial.md](docs/blog-tutorial.md)** — Tutorial pratico: criando um Blog completo usando este boilerplate como base
 - **[docs/TESTES_E2E.md](docs/TESTES_E2E.md)** — Tutorial de testes end-to-end com Playwright
 - **[tests/README.md](tests/README.md)** — Guia completo de testes (convencoes, fixtures, exemplos)
 - **[/exemplos](http://localhost:8400/exemplos)** — 9 paginas de exemplo com componentes, layouts e funcionalidades

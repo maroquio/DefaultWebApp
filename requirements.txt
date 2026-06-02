@@ -6,9 +6,11 @@ uvicorn[standard]==0.32.0
 jinja2==3.1.4
 
 # Validação
-pydantic==2.9.2
-pydantic[email]==2.9.2
-pydantic-settings==2.5.2
+# pydantic 2.9.2 (pydantic-core 2.23.4) não tem wheel para Python 3.14 (cp314) e
+# falha ao compilar do código-fonte. 2.11+ traz pydantic-core com wheels cp314.
+pydantic==2.13.4
+pydantic[email]==2.13.4
+pydantic-settings==2.14.1
 
 # Segurança
 passlib[bcrypt]==1.7.4
@@ -33,7 +35,9 @@ python-dotenv==1.0.1
 # Testes
 pytest==7.4.0
 pytest-asyncio==0.21.0
-httpx==0.24.1
+# httpx 0.24.1 puxa httpcore antigo que quebra no Python 3.14
+# (typing.Union.__module__). 0.28.x é compatível com 3.14.
+httpx==0.28.1
 pytest-cov==7.0.0
 
 # Testes E2E com Playwright

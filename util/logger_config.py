@@ -35,7 +35,8 @@ class DailyRotatingFileHandler(TimedRotatingFileHandler):
             filename=filename,
             when=when,
             interval=interval,
-            backupCount=backupCount
+            backupCount=backupCount,
+            encoding='utf-8'
         )
 
     def _get_filename_for_date(self, dt):

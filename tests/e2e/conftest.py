@@ -11,6 +11,7 @@ import os
 import socket
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import time
 from typing import Generator
@@ -121,11 +122,26 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
         'RATE_LIMIT_LOGIN_MINUTOS': '1',
     })
 
+    # sys.executable garante que o servidor use o MESMO interpretador do pytest
+    # (ex.: o do .venv), evitando ModuleNotFoundError quando o 'python' do PATH
+    # for outro ambiente sem as dependências instaladas.
+    #
+    # A saída do servidor é redirecionada para um arquivo, NÃO para PIPE: com
+    # stdout/stderr=PIPE e ninguém drenando os pipes durante a sessão, o buffer
+    # do SO enche com os logs e o processo do servidor TRAVA na próxima escrita,
+    # congelando o servidor e derrubando todos os testes seguintes por timeout.
+    log_tmp = tempfile.NamedTemporaryFile(
+        delete=False, suffix='_e2e_server.log', prefix='e2e_'
+    )
+    log_path = log_tmp.name
+    log_tmp.close()
+    log_handle = open(log_path, 'w', encoding='utf-8', errors='replace')
+
     process = subprocess.Popen(
-        ['python', 'main.py'],
+        [sys.executable, 'main.py'],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
         cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     )
 
@@ -134,11 +150,15 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
     ):
         process.terminate()
         process.wait()
-        stdout, stderr = process.communicate()
+        log_handle.close()
+        try:
+            with open(log_path, encoding='utf-8', errors='replace') as fh:
+                saida = fh.read()
+        except OSError:
+            saida = '(sem saida capturada)'
         pytest.fail(
             f"Servidor nao iniciou em {E2E_SERVER_STARTUP_TIMEOUT}s.\n"
-            f"stdout: {stdout.decode()}\n"
-            f"stderr: {stderr.decode()}"
+            f"saida do servidor:\n{saida}"
         )
 
     yield E2E_BASE_URL
@@ -149,6 +169,11 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait()
+    log_handle.close()
+    try:
+        os.unlink(log_path)
+    except OSError:
+        pass
 
 
 @pytest.fixture(scope="session")

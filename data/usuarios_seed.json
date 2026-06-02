@@ -1,9 +1,9 @@
 {
   "usuarios": [
     {
-      "nome": "admin",
-      "email": "admin@girochoffer.site.ifes",
-      "senha": "Admin@123",
+      "nome": "Administrador Padrão",
+      "email": "padrao@administrador.com",
+      "senha": "1234aA@#",
       "perfil": "Administrador"
     }
   ]

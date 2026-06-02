@@ -15,10 +15,16 @@ _test_db = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.db')
 _TEST_DB_PATH = _test_db.name
 _test_db.close()
 
-# Configurar variáveis de ambiente ANTES de importar qualquer módulo da aplicação
+# Configurar variáveis de ambiente ANTES de importar qualquer módulo da aplicação.
+# load_dotenv() (em util/config.py) não sobrescreve variáveis já definidas, então
+# estes valores têm prioridade e garantem que a suíte rode mesmo sem um arquivo .env.
 os.environ['DATABASE_PATH'] = _TEST_DB_PATH
 os.environ['RESEND_API_KEY'] = ''
 os.environ['LOG_LEVEL'] = 'ERROR'
+# Modo de desenvolvimento + chave de teste evitam a validação de segurança do
+# SECRET_KEY em util/config.py (que aborta a importação num clone sem .env).
+os.environ['RUNNING_MODE'] = 'Development'
+os.environ['SECRET_KEY'] = 'test-secret-key-for-pytest-only-not-for-production'
 
 # ============================================================
 # Agora sim, importar o resto (db_util já lerá o valor correto)

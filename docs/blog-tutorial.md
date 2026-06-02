@@ -39,7 +39,7 @@ Este tutorial guia você passo a passo na criação de um blog completo usando c
 
 Antes de começar, certifique-se de ter instalado:
 
-- **Python 3.10+**
+- **Python 3.12.10**
 - **Git**
 - **Conta no GitHub**
 - **Editor de código** (VS Code recomendado)
@@ -240,6 +240,45 @@ O arquivo `model/usuario_logado_model.py` contém o dataclass `UsuarioLogado` qu
 ```
 
 > **Nota:** O método `is_admin()` deve ser mantido. Remova apenas `is_cliente()` e `is_vendedor()`.
+
+### 5.2. Adicionando Usuários de Teste (Seed)
+
+O projeto cria usuários iniciais automaticamente a partir do arquivo `data/usuarios_seed.json`. Por padrão, esse arquivo contém **apenas** o usuário administrador. Para conseguir testar os perfis de **Autor** e **Leitor** mais adiante neste tutorial, edite o arquivo `data/usuarios_seed.json` e deixe-o com o seguinte conteúdo:
+
+```json
+{
+  "usuarios": [
+    {
+      "nome": "Administrador",
+      "email": "admin@sistema.com",
+      "senha": "Admin@123",
+      "perfil": "Administrador"
+    },
+    {
+      "nome": "Autor Padrão",
+      "email": "autor@sistema.com",
+      "senha": "Autor@123",
+      "perfil": "Autor"
+    },
+    {
+      "nome": "Leitor Padrão",
+      "email": "leitor@sistema.com",
+      "senha": "Leitor@123",
+      "perfil": "Leitor"
+    }
+  ]
+}
+```
+
+As credenciais criadas serão:
+
+| Perfil        | E-mail               | Senha       |
+|---------------|----------------------|-------------|
+| Administrador | `admin@sistema.com`  | `Admin@123` |
+| Autor         | `autor@sistema.com`  | `Autor@123` |
+| Leitor        | `leitor@sistema.com` | `Leitor@123`|
+
+> **IMPORTANTE:** O seed só é executado quando **não existe nenhum usuário** no banco de dados. Se você já executou a aplicação na Seção 4.6 (e o arquivo de banco `dados.db` já foi criado com o administrador), **apague o arquivo `dados.db`** na raiz do projeto antes de rodar a aplicação novamente, para que os três usuários acima sejam recriados.
 
 ### 5.3. Substituindo os Perfis Antigos Pelos Novos no Restante do Projeto
 
@@ -1185,7 +1224,7 @@ Antes de testar o CRUD de Categorias, precisamos registrá-lo no `main.py` para 
 
 ### 7.1. Adicionar import do repositório
 
-No início do arquivo `main.py`, no final da linha 26, adicione `categoria_repo`. A linha vai ficar assim:
+No início do arquivo `main.py`, localize a linha que importa os repositórios de chat (por volta da **linha 36**) e adicione `categoria_repo` ao final dela. A linha vai ficar assim:
 
 ```python
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo
@@ -1193,7 +1232,7 @@ from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, cat
 
 ### 7.2. Adicionar import das rotas
 
-Ainda no `main.py`, no final da seção de importação de rotas, aproximadamente depois da linha 38, adicione a linha a seguir:
+Ainda no `main.py`, no final da seção de importação de rotas (por volta da **linha 51**, logo após o import do `examples_router`), adicione a linha a seguir:
 
 ```python
 from routes.admin_categorias_routes import router as admin_categorias_router
@@ -1201,7 +1240,7 @@ from routes.admin_categorias_routes import router as admin_categorias_router
 
 ### 7.3. Adicionar tabela na lista TABELAS
 
-No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `categoria` ao final da listagem:
+No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `categoria` ao final da listagem (antes do `]` que fecha a lista):
 
 ```python
 TABELAS = [
@@ -1212,13 +1251,18 @@ TABELAS = [
     (chat_sala_repo, "chat_sala"),
     (chat_participante_repo, "chat_participante"),
     (chat_mensagem_repo, "chat_mensagem"),
+    (notificacao_repo, "notificacao"),
+    (auditoria_repo, "auditoria"),
+    (pagamento_repo, "pagamento"),
     (categoria_repo, "categoria"),  # NOVA TABELA
 ]
 ```
 
+> **Nota:** A lista `TABELAS` do boilerplate já contém outras tabelas (como `notificacao`, `auditoria` e `pagamento`). Não remova nenhuma delas — apenas **acrescente** a linha de `categoria` ao final.
+
 ### 7.4. Adicionar router na lista ROUTERS
 
-Localize a lista `ROUTERS` e adicione o novo router, logo depois da linha `(admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),`, que provavelmente está na linha 118. A linha a ser adicionada é:
+Localize a lista `ROUTERS` e adicione o novo router, logo depois da linha `(admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),`, que fica por volta da **linha 144**. A linha a ser adicionada é:
 
 ```python
     (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
@@ -1237,10 +1281,15 @@ ROUTERS = [
     (admin_categorias_router, ["Admin - Categorias"], "admin de categorias"),  # NOVO ROUTER
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
+    (notificacao_router, ["Notificações"], "notificações"),
+    (pagamento_router, ["Pagamentos"], "pagamentos"),
+    (admin_pagamentos_router, ["Admin - Pagamentos"], "admin de pagamentos"),
     (public_router, ["Público"], "público"),  # Deve ficar por último
     (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
 ]
 ```
+
+> **Nota:** O boilerplate já registra outros routers (`notificacao_router`, `pagamento_router`, `admin_pagamentos_router`). Mantenha-os e apenas **acrescente** o `admin_categorias_router`. Os routers `public_router` e `examples_router` devem permanecer por último.
 
 > **IMPORTANTE**: Os routers `public_router` e `examples_router` devem ser incluídos **por último** para evitar conflitos de rotas com "/".
 
@@ -1267,9 +1316,9 @@ Agora vamos adicionar o acesso ao CRUD de Categorias no painel do administrador.
 
 ### 8.1. Adicionando o link no menu de navegação
 
-No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}` da linha 52).
+No arquivo `templates/base_privada.html`, localize a seção de navegação do administrador (dentro do bloco `{% if usuario_logado and usuario_logado.perfil == 'Administrador' %}`, por volta da **linha 75**).
 
-Após o final do link de **Backup** na linha 82, de um ENTER e adicione o link para **Categorias**:
+Após o final do link de **Backup** (a tag `</li>` por volta da **linha 101**, logo antes do `{% else %}`), dê um ENTER e adicione o link para **Categorias**:
 
 ```html
                     <li class="nav-item">
@@ -1336,12 +1385,13 @@ Você deverá ver algo como:
 
 ```
 ============================================================
-                    BLOG DO FULANO
+Iniciando Blog do João Silva v1.0.0
 ============================================================
-Modo de execução: Development
+Servidor rodando em http://0.0.0.0:8400
+Hot reload: Ativado
+Documentação API: http://0.0.0.0:8400/docs
 ============================================================
-
-INFO:     Tabela 'categoria' verificada/criada com sucesso.
+INFO:     Tabela 'categoria' criada/verificada
 ...
 INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 ```
@@ -1350,9 +1400,9 @@ INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 
 1. Acesse http://localhost:8400 no navegador
 2. Clique em **Entrar** ou acesse http://localhost:8400/login
-3. Faça login com as credenciais do administrador padrão:
-   - **E-mail:** `padrao@administrador.com`
-   - **Senha:** `1234aA@#`
+3. Faça login com as credenciais do administrador padrão (definidas em `data/usuarios_seed.json`):
+   - **E-mail:** `admin@sistema.com`
+   - **Senha:** `Admin@123`
 
 ### 9.3. Testando as funcionalidades
 
@@ -1413,6 +1463,8 @@ class Artigo:
     usuario_email: Optional[str] = None
     categoria_nome: Optional[str] = None
 ```
+
+> **Nota sobre o `StatusArtigo`:** Por convenção, os enums de domínio do projeto herdam de `EnumEntidade` (de `util/enum_base.py`). Aqui, para simplificar, usamos um `Enum` padrão — o que funciona perfeitamente com o validador `validar_tipo`, que apenas percorre os valores do enum. Se quiser seguir a convenção à risca, troque `class StatusArtigo(Enum)` por `class StatusArtigo(EnumEntidade)` (e importe `EnumEntidade` em vez de `Enum`).
 
 ### 10.2. Queries SQL de Artigo
 
@@ -3278,7 +3330,7 @@ Antes de testar o CRUD de Artigos, precisamos registrá-lo no `main.py` para que
 
 ### 12.1. Adicionar import do repositório
 
-No início do arquivo `main.py`, localize a linha de importação dos repositórios (aproximadamente linha 27) e adicione `artigo_repo`. A linha ficará assim:
+No início do arquivo `main.py`, localize a linha de importação dos repositórios de chat (a mesma que você editou na Seção 7.1, por volta da **linha 36**) e adicione `artigo_repo`. A linha ficará assim:
 
 ```python
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, categoria_repo, artigo_repo
@@ -3286,7 +3338,7 @@ from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo, cat
 
 ### 12.2. Adicionar import das rotas
 
-Ainda no `main.py`, na seção de importação de rotas, logo depois da linha 40, adicione a linha a seguir:
+Ainda no `main.py`, na seção de importação de rotas, logo depois do import do `admin_categorias_router` que você adicionou na Seção 7.2 (por volta da **linha 52**), adicione a linha a seguir:
 
 ```python
 from routes.artigos_routes import router as artigos_router
@@ -3294,7 +3346,7 @@ from routes.artigos_routes import router as artigos_router
 
 ### 12.3. Adicionar tabela na lista TABELAS
 
-No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `artigo` ao final da listagem, logo após a linha 81:
+No arquivo `main.py`, localize a lista `TABELAS` e adicione a nova tabela `artigo` ao final da listagem, logo após a linha de `categoria` que você adicionou na Seção 7.3:
 
 ```python
 TABELAS = [
@@ -3305,6 +3357,9 @@ TABELAS = [
     (chat_sala_repo, "chat_sala"),
     (chat_participante_repo, "chat_participante"),
     (chat_mensagem_repo, "chat_mensagem"),
+    (notificacao_repo, "notificacao"),
+    (auditoria_repo, "auditoria"),
+    (pagamento_repo, "pagamento"),
     (categoria_repo, "categoria"),
     (artigo_repo, "artigo"),  # NOVA TABELA
 ]
@@ -3312,7 +3367,7 @@ TABELAS = [
 
 ### 12.4. Adicionar router na lista ROUTERS
 
-Localize a lista `ROUTERS` e adicione o novo router após a linha do `admin_categorias_router`, logo após a linha 121:
+Localize a lista `ROUTERS` e adicione o novo router logo após a linha do `admin_categorias_router` (que você adicionou na Seção 7.4):
 
 ```python
     (artigos_router, ["Artigos"], "artigos"),  # NOVO ROUTER
@@ -3332,6 +3387,9 @@ ROUTERS = [
     (artigos_router, ["Artigos"], "artigos"),  # NOVO ROUTER
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
+    (notificacao_router, ["Notificações"], "notificações"),
+    (pagamento_router, ["Pagamentos"], "pagamentos"),
+    (admin_pagamentos_router, ["Admin - Pagamentos"], "admin de pagamentos"),
     (public_router, ["Público"], "público"),  # Deve ficar por último
     (examples_router, ["Exemplos"], "exemplos"),  # Deve ficar por último
 ]
@@ -3362,7 +3420,7 @@ Agora vamos adicionar o acesso ao CRUD de Artigos no painel do autor.
 
 ### 13.1. Adicionando o link no menu de navegação
 
-No arquivo `templates/base_privada.html`, localize a seção de navegação. Após o bloco do administrador (que termina com `{% endif %}`), após a linha 124, adicione uma verificação para autores e administradores terem acesso a "Meus Artigos":
+No arquivo `templates/base_privada.html`, localize a seção de navegação. Após o bloco do administrador (que termina com o `{% endif %}` por volta da **linha 113**, logo antes do `</ul>`), adicione uma verificação para autores terem acesso a "Meus Artigos":
 
 ```html
                     {% if usuario_logado and usuario_logado.perfil == 'Autor' %}
@@ -3376,7 +3434,7 @@ No arquivo `templates/base_privada.html`, localize a seção de navegação. Ap�
 
 ### 13.2. Adicionando o card no dashboard do autor
 
-No arquivo `templates/dashboard.html`, adicione uma seção para autores logo após a seção do administrador. Localize o fechamento do bloco `{% endif %}` do administrador, logo após a linha 173, e adicione:
+No arquivo `templates/dashboard.html`, adicione uma seção para autores logo após a seção do administrador. Localize o fechamento do bloco `{% endif %}` do administrador (por volta da **linha 172**, considerando o card de Categorias já adicionado na Seção 8.2) e adicione, antes do `</div>` que fecha a linha de cards:
 
 ```html
     {# Cards do Autor #}
@@ -3432,13 +3490,14 @@ Você deverá ver algo como:
 
 ```
 ============================================================
-                    BLOG DO FULANO
+Iniciando Blog do João Silva v1.0.0
 ============================================================
-Modo de execução: Development
+Servidor rodando em http://0.0.0.0:8400
+Hot reload: Ativado
+Documentação API: http://0.0.0.0:8400/docs
 ============================================================
-
-INFO:     Tabela 'categoria' verificada/criada com sucesso.
-INFO:     Tabela 'artigo' verificada/criada com sucesso.
+INFO:     Tabela 'categoria' criada/verificada
+INFO:     Tabela 'artigo' criada/verificada
 ...
 INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 ```
@@ -3447,9 +3506,9 @@ INFO:     Uvicorn running on http://0.0.0.0:8400 (Press CTRL+C to quit)
 
 1. Acesse http://localhost:8400 no navegador
 2. Clique em **Entrar** ou acesse http://localhost:8400/login
-3. Faça login com as credenciais do autor padrão:
-   - **E-mail:** `padrao@autor.com`
-   - **Senha:** `1234aA@#`
+3. Faça login com as credenciais do autor padrão (criado via seed na Seção 5.2):
+   - **E-mail:** `autor@sistema.com`
+   - **Senha:** `Autor@123`
 
 ### 14.3. Testando as funcionalidades
 
@@ -3870,11 +3929,11 @@ async def sobre(request: Request):
 > - As rotas `/` e `/index` agora buscam os últimos 6 artigos publicados
 > - Categorias são carregadas para exibir os filtros na home
 
-### 16.2 Atualizando o Menu Público
+### 16.2 Removendo o Link de Exemplos do Menu Público
 
-O template `templates/base_publica.html` contém o menu de navegação público. Vamos substituir o link "Exemplos" pelo link "Artigos", que levará à página de busca de artigos.
+O link "Artigos" já foi adicionado ao menu público na **Seção 15.1**. Agora vamos apenas **remover** o link "Exemplos", que não faz parte do blog. (Não adicione um segundo link "Artigos" — isso duplicaria o item no menu.)
 
-No arquivo `templates/base_publica.html`, localize o item de menu "Exemplos" (por volta da linha 49):
+No arquivo `templates/base_publica.html`, localize o item de menu "Exemplos" (por volta da **linha 77**, já considerando o link de Artigos adicionado na Seção 15.1):
 
 ```html
                     <li class="nav-item">
@@ -3883,16 +3942,9 @@ No arquivo `templates/base_publica.html`, localize o item de menu "Exemplos" (po
                     </li>
 ```
 
-Substitua por:
+**Remova esse bloco inteiro** (o `<li>` completo).
 
-```html
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if '/artigos' in request.path else '' }}"
-                            href="/artigos">Artigos</a>
-                    </li>
-```
-
-> **Resultado esperado:** O menu público agora exibe: **Início** → **Sobre** → **Artigos**. O link "Artigos" direciona para a página de busca/listagem pública de artigos (`/artigos`).
+> **Resultado esperado:** O menu público agora exibe: **Início** → **Artigos** → **Sobre**. O link "Artigos" direciona para a página de busca/listagem pública de artigos (`/artigos`).
 
 ### Salvando seu progresso
 
@@ -3936,6 +3988,8 @@ Documentação API: http://0.0.0.0:8400/docs
 ```
 
 ### 17.2 Testando o Fluxo Completo
+
+> **Atalho:** Se você configurou os usuários de seed na **Seção 5.2**, já possui um administrador (`admin@sistema.com`), um autor (`autor@sistema.com`) e um leitor (`leitor@sistema.com`) prontos para uso. Nesse caso, você pode pular a criação manual e a promoção de perfis descritas abaixo e ir direto para os passos de criar categorias e artigos. Os passos a seguir mostram o fluxo completo de cadastro manual, caso você prefira criar novos usuários.
 
 #### Passo 1: Criar um Administrador
 

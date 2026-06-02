@@ -1,4 +1,6 @@
+import json
 import sqlite3
+from pathlib import Path
 
 from repo import usuario_repo
 from model.usuario_model import Usuario
@@ -6,19 +8,64 @@ from util.security import criar_hash_senha
 from util.logger_config import logger
 from util.perfis import Perfil
 
+# Caminho do arquivo de seed de usuários (raiz_do_projeto/data/usuarios_seed.json).
+# Este arquivo é gerado/atualizado pelo scripts/configurar_projeto.py.
+CAMINHO_SEED_USUARIOS = Path(__file__).resolve().parent.parent / "data" / "usuarios_seed.json"
+
+
+def _ler_usuarios_do_json() -> list[dict]:
+    """
+    Lê os usuários definidos em data/usuarios_seed.json.
+
+    Returns:
+        Lista de dicionários de usuários. Retorna lista vazia se o arquivo
+        não existir, estiver vazio ou for inválido.
+    """
+    if not CAMINHO_SEED_USUARIOS.exists():
+        return []
+    try:
+        dados = json.loads(CAMINHO_SEED_USUARIOS.read_text(encoding="utf-8"))
+        return dados.get("usuarios", [])
+    except (json.JSONDecodeError, OSError) as e:
+        logger.error(
+            f"Erro ao ler {CAMINHO_SEED_USUARIOS.name}: {e}. "
+            "Usando perfis do enum como fallback."
+        )
+        return []
+
+
+def _gerar_usuarios_dos_perfis() -> list[dict]:
+    """
+    Gera um usuário padrão para cada perfil do enum Perfil (fallback).
+
+    Formato gerado por perfil:
+    - nome: {Perfil} Padrão
+    - email: padrao@{perfil}.com
+    - senha: 1234aA@#
+    - perfil: {Perfil}
+    """
+    usuarios = []
+    for perfil_enum in Perfil:
+        perfil_valor = perfil_enum.value
+        usuarios.append({
+            "nome": f"{perfil_valor} Padrão",
+            "email": f"padrao@{perfil_valor.lower()}.com",
+            "senha": "1234aA@#",
+            "perfil": perfil_valor,
+        })
+    return usuarios
+
 
 def carregar_usuarios_seed():
     """
-    Carrega usuários padrão gerando automaticamente 1 usuário para cada perfil do enum.
+    Carrega usuários padrão no banco de dados.
+
+    Prioriza os usuários definidos em data/usuarios_seed.json (gerado pelo
+    scripts/configurar_projeto.py). Caso o arquivo não exista ou esteja vazio/inválido,
+    gera automaticamente 1 usuário para cada perfil do enum Perfil como fallback.
 
     Só insere usuários se não houver nenhum usuário cadastrado no banco.
-
-    Formato gerado:
-    - id: sequencial iniciando em 1
-    - nome: {Perfil} Padrão
-    - email: {perfil}@email.com
-    - senha: 1234aA@#
-    - perfil: {Perfil}
+    A senha de cada usuário é sempre armazenada com hash bcrypt.
     """
     # Verificar se já existem usuários cadastrados
     quantidade_usuarios = usuario_repo.obter_quantidade()
@@ -26,28 +73,31 @@ def carregar_usuarios_seed():
         logger.info(f"Já existem {quantidade_usuarios} usuários cadastrados. Seed não será executado.")
         return
 
+    usuarios_seed = _ler_usuarios_do_json()
+    if usuarios_seed:
+        logger.info(
+            f"Nenhum usuário encontrado. Carregando {len(usuarios_seed)} usuário(s) "
+            f"de {CAMINHO_SEED_USUARIOS.name}..."
+        )
+    else:
+        usuarios_seed = _gerar_usuarios_dos_perfis()
+        logger.info(
+            "Nenhum usuário encontrado e seed JSON ausente/vazio. "
+            "Gerando usuários padrão a partir dos perfis..."
+        )
+
     usuarios_criados = 0
     usuarios_com_erro = 0
 
-    logger.info("Nenhum usuário encontrado. Iniciando seed de usuários padrão...")
-
-    # Itera sobre todos os perfis definidos no enum
-    for perfil_enum in Perfil:
+    for dados in usuarios_seed:
+        email = dados.get("email", "")
         try:
-            perfil_valor = perfil_enum.value
-
-            # Gera dados do usuário baseado no perfil
-            nome = f"{perfil_valor} Padrão"
-            email = f"padrao@{perfil_valor.lower()}.com"
-            senha_plain = "1234aA@#"
-
-            # Criar usuário
             usuario = Usuario(
                 id=0,
-                nome=nome,
+                nome=dados.get("nome", ""),
                 email=email,
-                senha=criar_hash_senha(senha_plain),
-                perfil=perfil_valor
+                senha=criar_hash_senha(dados.get("senha", "")),
+                perfil=dados.get("perfil", ""),
             )
 
             usuario_id = usuario_repo.inserir(usuario)
@@ -59,7 +109,7 @@ def carregar_usuarios_seed():
                 usuarios_com_erro += 1
 
         except sqlite3.Error as e:
-            logger.error(f"✗ Erro ao processar usuário do perfil {perfil_enum.name}: {e}")
+            logger.error(f"✗ Erro ao processar usuário {email}: {e}")
             usuarios_com_erro += 1
 
     # Resumo
