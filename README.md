@@ -395,6 +395,7 @@ DefaultWebApp/
 │   └── usuarios_seed.json
 │
 ├── docs/                        # Documentacao adicional
+│   ├── blog-tutorial.md         # Tutorial: criando um Blog com o boilerplate
 │   └── TESTES_E2E.md           # Tutorial de testes E2E com Playwright
 │
 ├── dtos/                        # DTOs Pydantic para validacao
@@ -545,7 +546,6 @@ DefaultWebApp/
 ├── backups/                     # Backups do banco (criado automaticamente)
 │
 ├── .env.example                 # Modelo de variaveis de ambiente
-├── BLOG.md                      # Tutorial: criando um Blog com o boilerplate
 ├── CLAUDE.md                    # Instrucoes para Claude Code
 ├── Dockerfile                   # Imagem Docker da aplicacao
 ├── docker-compose.yml           # Orquestracao Docker
@@ -754,7 +754,7 @@ Para cada nova funcionalidade (ex: Produto, Servico, Pedido), siga esta sequenci
 6. **Templates** (`templates/`) — Paginas HTML
 7. **Registrar em `main.py`** — Adicionar tabela e router
 
-Para um tutorial pratico completo deste processo, veja o **BLOG.md** que guia a criacao de um blog com categorias e artigos usando este boilerplate.
+Para um tutorial pratico completo deste processo, veja o **docs/blog-tutorial.md** que guia a criacao de um blog com categorias e artigos usando este boilerplate.
 
 ## Solucao de Problemas Comuns
 
@@ -778,7 +778,7 @@ Verifique se a pasta `static/img/usuarios/` existe e tem permissao de escrita. O
 
 ## Documentacao Adicional
 
-- **[BLOG.md](BLOG.md)** — Tutorial pratico: criando um Blog completo usando este boilerplate como base
+- **[docs/blog-tutorial.md](docs/blog-tutorial.md)** — Tutorial pratico: criando um Blog completo usando este boilerplate como base
 - **[docs/TESTES_E2E.md](docs/TESTES_E2E.md)** — Tutorial de testes end-to-end com Playwright
 - **[tests/README.md](tests/README.md)** — Guia completo de testes (convencoes, fixtures, exemplos)
 - **[/exemplos](http://localhost:8400/exemplos)** — 9 paginas de exemplo com componentes, layouts e funcionalidades
