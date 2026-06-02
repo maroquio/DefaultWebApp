@@ -69,7 +69,8 @@ ROTEIRO.md
 TODO.md
 AGENT.md
 codebase.md
-.claude/
+.claude/*
+!.claude/skills/
 .mcp/
 .aidigestignore
 codebase*
