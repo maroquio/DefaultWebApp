@@ -6,7 +6,7 @@ Execute este script ao clonar o projeto para configurar
 o ambiente rapidamente sem editar arquivos manualmente.
 
 Uso:
-    python setup_projeto.py
+    python scripts/configurar_projeto.py
 
 O script irá:
 1. Criar o arquivo .env com configurações personalizadas
@@ -233,7 +233,7 @@ if not env_path.exists():
             conteudo_env = conteudo_env.replace(antigo, novo)
     else:
         # Criar .env do zero se não houver .env.example
-        conteudo_env = f"""# Gerado por setup_projeto.py
+        conteudo_env = f"""# Gerado por configurar_projeto.py
 APP_NAME={nome_projeto}
 SECRET_KEY={secret_key}
 DATABASE_PATH=dados.db
@@ -272,7 +272,7 @@ Enum centralizado para perfis de usuário.
 Este módulo define o Enum Perfil que é a FONTE ÚNICA DA VERDADE
 para perfis de usuário no sistema.
 
-Gerado por setup_projeto.py. Edite conforme necessário.
+Gerado por configurar_projeto.py. Edite conforme necessário.
 """
 
 from util.enum_base import EnumEntidade

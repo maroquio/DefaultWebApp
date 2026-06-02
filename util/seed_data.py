@@ -9,7 +9,7 @@ from util.logger_config import logger
 from util.perfis import Perfil
 
 # Caminho do arquivo de seed de usuários (raiz_do_projeto/data/usuarios_seed.json).
-# Este arquivo é gerado/atualizado pelo scripts/setup_projeto.py.
+# Este arquivo é gerado/atualizado pelo scripts/configurar_projeto.py.
 CAMINHO_SEED_USUARIOS = Path(__file__).resolve().parent.parent / "data" / "usuarios_seed.json"
 
 
@@ -61,7 +61,7 @@ def carregar_usuarios_seed():
     Carrega usuários padrão no banco de dados.
 
     Prioriza os usuários definidos em data/usuarios_seed.json (gerado pelo
-    scripts/setup_projeto.py). Caso o arquivo não exista ou esteja vazio/inválido,
+    scripts/configurar_projeto.py). Caso o arquivo não exista ou esteja vazio/inválido,
     gera automaticamente 1 usuário para cada perfil do enum Perfil como fallback.
 
     Só insere usuários se não houver nenhum usuário cadastrado no banco.

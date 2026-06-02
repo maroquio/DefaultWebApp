@@ -4,7 +4,7 @@ Enum centralizado para perfis de usuário.
 Este módulo define o Enum Perfil que é a FONTE ÚNICA DA VERDADE
 para perfis de usuário no sistema.
 
-Gerado por setup_projeto.py. Edite conforme necessário.
+Gerado por configurar_projeto.py. Edite conforme necessário.
 """
 
 from util.enum_base import EnumEntidade
