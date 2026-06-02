@@ -283,6 +283,10 @@ class TestCadastroValidacaoEmail:
             senha="SenhaForte@123"
         )
 
+        # submeter() apenas clica e retorna; espera a resposta do POST renderizar
+        # (auto-wait) antes de ler o conteúdo, evitando ler o formulário anterior.
+        expect(e2e_page.locator("body")).to_contain_text("cadastrado")
+
         conteudo = e2e_page.content().lower()
         assert "e-mail" in conteudo and "cadastrado" in conteudo
 

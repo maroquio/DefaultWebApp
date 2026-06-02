@@ -68,31 +68,21 @@ def e2e_test_database():
 
     # Criar tabela configuracao e inserir rate limits usando SQL direto
     from sql.configuracao_sql import CRIAR_TABELA, INSERIR
-    from util.migrar_config import CONFIGS_PARA_MIGRAR
 
     conn = sqlite3.connect(test_db_path)
     cursor = conn.cursor()
     cursor.execute(CRIAR_TABELA)
 
-    # Eleva TODOS os limiters rate_limit_* para evitar bloqueios (429) durante a
-    # suite completa. Cobrir só cadastro/login deixava limiters como form_get e
-    # public estourarem ao longo dos testes, derrubando os subsequentes.
-    configs = {}
-    for chave in CONFIGS_PARA_MIGRAR:
-        if not chave.startswith('rate_limit_'):
-            continue
-        if chave.endswith('_minutos'):
-            configs[chave] = '1'           # janela curta
-        elif chave.endswith('_max'):
-            configs[chave] = '1000000'     # limite altíssimo
-    # Garante as chaves usadas diretamente, mesmo que ausentes do migrar_config
-    configs.setdefault('rate_limit_cadastro_max', '1000000')
-    configs.setdefault('rate_limit_cadastro_minutos', '1')
-    configs.setdefault('rate_limit_login_max', '1000000')
-    configs.setdefault('rate_limit_login_minutos', '1')
+    # Inserir rate limits muito altos para evitar bloqueios nos testes
+    configs = [
+        ('rate_limit_cadastro_max', '10000', 'Rate limit cadastro - maximo'),
+        ('rate_limit_cadastro_minutos', '1', 'Rate limit cadastro - janela'),
+        ('rate_limit_login_max', '10000', 'Rate limit login - maximo'),
+        ('rate_limit_login_minutos', '1', 'Rate limit login - janela'),
+    ]
 
-    for chave, valor in configs.items():
-        cursor.execute(INSERIR, (chave, valor, f'E2E: {chave}'))
+    for chave, valor, descricao in configs:
+        cursor.execute(INSERIR, (chave, valor, descricao))
 
     conn.commit()
     conn.close()
@@ -135,11 +125,23 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
     # sys.executable garante que o servidor use o MESMO interpretador do pytest
     # (ex.: o do .venv), evitando ModuleNotFoundError quando o 'python' do PATH
     # for outro ambiente sem as dependências instaladas.
+    #
+    # A saída do servidor é redirecionada para um arquivo, NÃO para PIPE: com
+    # stdout/stderr=PIPE e ninguém drenando os pipes durante a sessão, o buffer
+    # do SO enche com os logs e o processo do servidor TRAVA na próxima escrita,
+    # congelando o servidor e derrubando todos os testes seguintes por timeout.
+    log_tmp = tempfile.NamedTemporaryFile(
+        delete=False, suffix='_e2e_server.log', prefix='e2e_'
+    )
+    log_path = log_tmp.name
+    log_tmp.close()
+    log_handle = open(log_path, 'w', encoding='utf-8', errors='replace')
+
     process = subprocess.Popen(
         [sys.executable, 'main.py'],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
         cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     )
 
@@ -148,11 +150,15 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
     ):
         process.terminate()
         process.wait()
-        stdout, stderr = process.communicate()
+        log_handle.close()
+        try:
+            with open(log_path, encoding='utf-8', errors='replace') as fh:
+                saida = fh.read()
+        except OSError:
+            saida = '(sem saida capturada)'
         pytest.fail(
             f"Servidor nao iniciou em {E2E_SERVER_STARTUP_TIMEOUT}s.\n"
-            f"stdout: {stdout.decode()}\n"
-            f"stderr: {stderr.decode()}"
+            f"saida do servidor:\n{saida}"
         )
 
     yield E2E_BASE_URL
@@ -163,6 +169,11 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait()
+    log_handle.close()
+    try:
+        os.unlink(log_path)
+    except OSError:
+        pass
 
 
 @pytest.fixture(scope="session")
