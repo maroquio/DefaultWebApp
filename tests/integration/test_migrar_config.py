@@ -103,7 +103,8 @@ class TestConfigsParaMigrar:
         categorias_validas = {
             "Aplicação", "Fotos", "Interface",
             "Segurança - Autenticação", "Operações de Usuário",
-            "Chat", "Suporte", "Admin", "Páginas Públicas"
+            "Chat", "Suporte", "Admin", "Páginas Públicas",
+            "Pagamentos"
         }
 
         for chave, (_, _, categoria) in CONFIGS_PARA_MIGRAR.items():

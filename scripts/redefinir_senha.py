@@ -25,8 +25,8 @@ load_dotenv()
 DATABASE_PATH = os.getenv('DATABASE_PATH', 'dados.db')
 TIMEZONE = os.getenv('TIMEZONE', 'America/Sao_Paulo')
 
-# Importa funções de segurança
-sys.path.insert(0, str(Path(__file__).parent))
+# Importa funções de segurança (raiz do projeto = pasta pai de scripts/)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from util.security import criar_hash_senha
 from util.senha_util import validar_forca_senha
 from util.db_util import obter_conexao, adaptar_datetime

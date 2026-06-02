@@ -190,10 +190,12 @@ class TestSalvarFotoCropadaUsuario:
 
                     assert resultado is True
 
-                    # Verificar que foi salvo e redimensionado
-                    saved_img = Image.open(pasta_fotos / "000001.jpg")
-                    assert saved_img.width <= 50
-                    assert saved_img.height <= 50
+                    # Verificar que foi salvo e redimensionado.
+                    # with garante o fechamento do handle do arquivo; sem isso o
+                    # Windows não conseguiria remover o diretório temporário.
+                    with Image.open(pasta_fotos / "000001.jpg") as saved_img:
+                        assert saved_img.width <= 50
+                        assert saved_img.height <= 50
 
     def test_retorna_false_base64_invalido(self):
         """Deve retornar False para base64 inválido"""

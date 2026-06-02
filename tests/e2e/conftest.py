@@ -11,6 +11,7 @@ import os
 import socket
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import time
 from typing import Generator
@@ -67,21 +68,31 @@ def e2e_test_database():
 
     # Criar tabela configuracao e inserir rate limits usando SQL direto
     from sql.configuracao_sql import CRIAR_TABELA, INSERIR
+    from util.migrar_config import CONFIGS_PARA_MIGRAR
 
     conn = sqlite3.connect(test_db_path)
     cursor = conn.cursor()
     cursor.execute(CRIAR_TABELA)
 
-    # Inserir rate limits muito altos para evitar bloqueios nos testes
-    configs = [
-        ('rate_limit_cadastro_max', '10000', 'Rate limit cadastro - maximo'),
-        ('rate_limit_cadastro_minutos', '1', 'Rate limit cadastro - janela'),
-        ('rate_limit_login_max', '10000', 'Rate limit login - maximo'),
-        ('rate_limit_login_minutos', '1', 'Rate limit login - janela'),
-    ]
+    # Eleva TODOS os limiters rate_limit_* para evitar bloqueios (429) durante a
+    # suite completa. Cobrir só cadastro/login deixava limiters como form_get e
+    # public estourarem ao longo dos testes, derrubando os subsequentes.
+    configs = {}
+    for chave in CONFIGS_PARA_MIGRAR:
+        if not chave.startswith('rate_limit_'):
+            continue
+        if chave.endswith('_minutos'):
+            configs[chave] = '1'           # janela curta
+        elif chave.endswith('_max'):
+            configs[chave] = '1000000'     # limite altíssimo
+    # Garante as chaves usadas diretamente, mesmo que ausentes do migrar_config
+    configs.setdefault('rate_limit_cadastro_max', '1000000')
+    configs.setdefault('rate_limit_cadastro_minutos', '1')
+    configs.setdefault('rate_limit_login_max', '1000000')
+    configs.setdefault('rate_limit_login_minutos', '1')
 
-    for chave, valor, descricao in configs:
-        cursor.execute(INSERIR, (chave, valor, descricao))
+    for chave, valor in configs.items():
+        cursor.execute(INSERIR, (chave, valor, f'E2E: {chave}'))
 
     conn.commit()
     conn.close()
@@ -121,8 +132,11 @@ def e2e_server(e2e_test_database) -> Generator[str, None, None]:
         'RATE_LIMIT_LOGIN_MINUTOS': '1',
     })
 
+    # sys.executable garante que o servidor use o MESMO interpretador do pytest
+    # (ex.: o do .venv), evitando ModuleNotFoundError quando o 'python' do PATH
+    # for outro ambiente sem as dependências instaladas.
     process = subprocess.Popen(
-        ['python', 'main.py'],
+        [sys.executable, 'main.py'],
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

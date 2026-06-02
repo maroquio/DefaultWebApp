@@ -3,7 +3,7 @@ name = "defaultwebapp"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 dependencies = []
 
 [tool.pyright]
@@ -11,7 +11,7 @@ reportArgumentType = false
 reportAssignmentType = false
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.14"
 warn_return_any = false
 warn_unused_ignores = false
 ignore_missing_imports = true
