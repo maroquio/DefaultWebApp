@@ -26,6 +26,7 @@ from util.exceptions import ErroValidacaoFormulario
 from repo import (
     usuario_repo,
     configuracao_repo,
+    categoria_repo,
     chamado_repo,
     chamado_interacao_repo,
     indices_repo,
@@ -41,6 +42,7 @@ from routes.chamados_routes import router as chamados_router
 from routes.admin_usuarios_routes import router as admin_usuarios_router
 from routes.admin_configuracoes_routes import router as admin_config_router
 from routes.admin_backups_routes import router as admin_backups_router
+from routes.admin_categoria_routes import router as admin_categoria_router
 from routes.admin_chamados_routes import router as admin_chamados_router
 from routes.usuario_routes import router as usuario_router
 from routes.chat_routes import router as chat_router
@@ -83,6 +85,7 @@ if static_path.exists():
 TABELAS = [
     (usuario_repo, "usuario"),
     (configuracao_repo, "configuracao"),
+    (categoria_repo, "categoria"),
     (chamado_repo, "chamado"),
     (chamado_interacao_repo, "chamado_interacao"),
     (chat_sala_repo, "chat_sala"),
@@ -142,6 +145,7 @@ ROUTERS = [
     (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
     (admin_backups_router, ["Admin - Backups"], "admin de backups"),
     (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (admin_categoria_router, ["Admin - Categorias"], "admin de categorias"),
     (usuario_router, ["Usuário"], "usuário"),
     (chat_router, ["Chat"], "chat"),
     (notificacao_router, ["Notificações"], "notificações"),

@@ -194,4 +194,9 @@
     {% block scripts %}{% endblock %}
 </body>
 
-</html>
+</html<li class="nav-item">
+ <a class="nav-link {{ 'active' if '/admin/categorias/' in request.path else '' }}"
+ href="/admin/categorias/listar"
+ {{ 'aria-current=page' if '/admin/categorias/' in request.path else '' }}>Categorias</a>
+ </li>
+>
