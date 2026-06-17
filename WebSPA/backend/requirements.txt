@@ -1,0 +1,56 @@
+# Framework Web
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+
+# Templates
+jinja2==3.1.4
+
+# Validação
+# pydantic 2.9.2 (pydantic-core 2.23.4) não tem wheel para Python 3.14 (cp314) e
+# falha ao compilar do código-fonte. 2.11+ traz pydantic-core com wheels cp314.
+pydantic==2.13.4
+pydantic[email]==2.13.4
+pydantic-settings==2.14.1
+
+# Segurança
+passlib[bcrypt]==1.7.4
+bcrypt>=3.2.0,<4.0.0  # Versão 3.x é totalmente compatível com passlib 1.7.4
+python-multipart==0.0.12
+
+# Processamento de Imagens
+Pillow>=10.0.0
+
+# Sessões
+itsdangerous==2.2.0
+
+# HTTP Client
+requests==2.32.3
+
+# Email Service (Resend.com)
+resend==2.16.0
+
+# Variáveis de ambiente
+python-dotenv==1.0.1
+
+# Testes
+pytest==7.4.0
+pytest-asyncio==0.21.0
+# httpx 0.24.1 puxa httpcore antigo que quebra no Python 3.14
+# (typing.Union.__module__). 0.28.x é compatível com 3.14.
+httpx==0.28.1
+pytest-cov==7.0.0
+
+# Testes E2E com Playwright
+playwright==1.56.0
+pytest-playwright==0.7.2
+
+# Timezone Handling
+tzdata==2025.2
+
+# Exportação de Dados (Excel)
+openpyxl>=3.1.0
+
+# Pagamentos
+mercadopago>=2.2.0
+stripe>=7.0.0
+# PayPal usa requests (já incluso) via Orders API v2 — sem SDK adicional necessário

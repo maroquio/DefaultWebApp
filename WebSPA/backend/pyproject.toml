@@ -1,0 +1,36 @@
+[project]
+name = "defaultwebapp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = []
+
+[tool.pyright]
+reportArgumentType = false
+reportAssignmentType = false
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = false
+warn_unused_ignores = false
+ignore_missing_imports = true
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "index",
+    "return-value",
+    "var-annotated",
+]
+
+[tool.ruff]
+line-length = 120
+exclude = [".venv", "venv", "__pycache__", ".git", "*.egg-info", "build", "dist"]
+
+[tool.ruff.lint]
+ignore = [
+    "F403",    # star imports (usado para SQL constants)
+    "F405",    # may be undefined from star imports
+    "N805",    # primeiro argumento deve ser self (validators usam cls)
+    "ANN401",  # uso de Any em type hints
+]
