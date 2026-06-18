@@ -45,7 +45,9 @@ def _criar_chamado(usuario_id: int, *,
         prioridade=prioridade,
         usuario_id=usuario_id,
     )
-    return chamado_repo.inserir(chamado)
+    novo_id = chamado_repo.inserir(chamado)
+    assert novo_id is not None
+    return novo_id
 
 
 @pytest.fixture

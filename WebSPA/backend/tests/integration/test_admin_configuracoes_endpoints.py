@@ -26,8 +26,6 @@ Notas de isolamento:
 import pytest
 from fastapi import status
 
-from util.perfis import Perfil
-
 
 pytestmark = [pytest.mark.integration]
 
@@ -42,7 +40,7 @@ def _csrf(client):
 # =============================================================================
 
 @pytest.fixture(autouse=True)
-def _limpar_auditoria():
+def _limpar_auditoria():  # pyright: ignore
     """A tabela `auditoria` não está no cleanup do conftest; limpamos aqui."""
     from util.db_util import obter_conexao
 
@@ -182,7 +180,9 @@ class TestSalvarConfiguracoes:
 
         # Persistiu de fato
         from repo import configuracao_repo
-        assert configuracao_repo.obter_por_chave("app_name").valor == "Novo Nome"
+        config_persistida = configuracao_repo.obter_por_chave("app_name")
+        assert config_persistida is not None
+        assert config_persistida.valor == "Novo Nome"
 
     def test_chave_nao_encontrada_mensagem_parcial(self, admin_autenticado, semear_configs):
         """Chave existente é atualizada; chave inexistente vira não-encontrada."""

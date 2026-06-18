@@ -45,7 +45,7 @@ def _csrf(client):
 
 
 @pytest.fixture(autouse=True)
-def _limpar_pagamentos():
+def _limpar_pagamentos():  # pyright: ignore
     """A tabela `pagamento` não é limpa pelo conftest — isola cada teste.
 
     Garante também que a tabela exista no banco temporário do teste (o conftest
@@ -460,7 +460,9 @@ class TestWebhookMercadoPago:
 
         # Status efetivamente atualizado no banco
         from repo import pagamento_repo
-        assert pagamento_repo.obter_por_id(pid).status == StatusPagamento.APROVADO
+        pagamento_atualizado = pagamento_repo.obter_por_id(pid)
+        assert pagamento_atualizado is not None
+        assert pagamento_atualizado.status == StatusPagamento.APROVADO
 
     def test_webhook_payload_ignorado(self, client):
         """Adapter retorna None → resposta 'ignored' (HTTP 200)."""
@@ -553,7 +555,9 @@ class TestWebhookPaypal:
         assert resp.json() == {"status": "ok"}
 
         from repo import pagamento_repo
-        assert pagamento_repo.obter_por_id(pid).status == StatusPagamento.APROVADO
+        pagamento_atualizado = pagamento_repo.obter_por_id(pid)
+        assert pagamento_atualizado is not None
+        assert pagamento_atualizado.status == StatusPagamento.APROVADO
 
     def test_webhook_paypal_ignorado(self, client):
         adapter = MagicMock()

@@ -42,7 +42,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.crud]
 # =============================================================================
 
 @pytest.fixture(autouse=True)
-def _limpar_pagamentos():
+def _limpar_pagamentos():  # pyright: ignore
     from util.db_util import obter_conexao
 
     # Garante que a tabela existe no banco temporário de teste

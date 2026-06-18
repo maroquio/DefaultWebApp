@@ -43,7 +43,7 @@ def _csrf(client):
 # =============================================================================
 
 @pytest.fixture(autouse=True)
-def _limpar_tabelas_chat():
+def _limpar_tabelas_chat():  # pyright: ignore
     """Limpa as três tabelas de chat antes e depois de cada teste.
 
     Ordem respeitando FK: mensagem → participante → sala.
@@ -104,22 +104,117 @@ class TestStream:
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert resp.json()["type"] == "unauthorized"
 
-    @pytest.mark.skip(
-        reason="SSE happy-path trava o TestClient: o gerador chama "
-        "gerenciador_chat.conectar() criando uma Queue própria e bloqueia em "
-        "queue.get() esperando broadcast; o portal síncrono do TestClient só "
-        "retorna de __enter__ após o primeiro chunk do corpo, que nunca chega "
-        "sem um produtor concorrente. Mesmo client.stream() pendura aqui. "
-        "Cobertura do happy-path do conteúdo SSE fica fora do escopo deste "
-        "arquivo de integração síncrono; o gate de auth (401) e o wiring da "
-        "rota como text/event-stream são cobertos abaixo sem travar."
-    )
-    def test_autenticado_abre_stream_200(self, cliente_autenticado):  # pragma: no cover
-        with cliente_autenticado.stream("GET", "/api/chat/stream") as resp:
-            assert resp.status_code == status.HTTP_200_OK
-            assert "text/event-stream" in resp.headers["content-type"]
+    async def test_autenticado_recebe_evento_sse(self):
+        """Happy-path real do SSE, dirigindo a app ASGI diretamente.
 
-    def test_stream_registrado_como_sse(self, client):
+        O ``TestClient`` síncrono pendura no stream (o gerador bloqueia em
+        ``queue.get()`` sem produtor concorrente) e ``httpx.ASGITransport`` não
+        faz streaming incremental — coleta a resposta inteira e travaria no
+        gerador infinito. Então acionamos ``app(scope, receive, send)`` na mão:
+        injetamos o cookie de sessão (obtido por um login real), rodamos a app
+        como task, empurramos um evento para a fila do usuário conectado e
+        confirmamos que ele sai formatado como ``data: ...``. Cancelamos a task
+        após o primeiro chunk (o ``finally`` do gerador desconecta o usuário).
+        """
+        import asyncio
+
+        from fastapi.testclient import TestClient
+
+        from main import app
+        from model.usuario_model import Usuario
+        from repo import usuario_repo
+        from util.chat_manager import gerenciador_chat
+        from util.security import criar_hash_senha
+
+        # Usuário próprio (autouse já limpou a tabela usuario antes do teste)
+        uid = usuario_repo.inserir(
+            Usuario(
+                id=0,
+                nome="Usuario SSE",
+                email="sse@example.com",
+                senha=criar_hash_senha("Senha@123"),
+                perfil=Perfil.CLIENTE.value,
+            )
+        )
+
+        # Cookie de sessão assinado, via login real num TestClient síncrono.
+        with TestClient(app) as c:
+            tok = c.get("/api/csrf-token").json()["token"]
+            login = c.post(
+                "/api/login",
+                json={"email": "sse@example.com", "senha": "Senha@123"},
+                headers={"X-CSRF-Token": tok},
+            )
+            assert login.status_code == status.HTTP_200_OK
+            session_cookie = c.cookies.get("session")
+        assert session_cookie, "cookie de sessão não emitido no login"
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": "/api/chat/stream",
+            "raw_path": b"/api/chat/stream",
+            "query_string": b"",
+            "root_path": "",
+            "server": ("testserver", 80),
+            "client": ("testclient", 50000),
+            "headers": [
+                (b"host", b"testserver"),
+                (b"cookie", b"session=" + session_cookie.encode()),
+            ],
+        }
+
+        inicio: dict = {}
+        body_chunks: list[bytes] = []
+        primeiro_chunk = asyncio.Event()
+
+        async def receive():
+            # Mantém a "conexão" aberta; só liberamos via cancel da task.
+            await asyncio.sleep(3600)
+            return {"type": "http.disconnect"}
+
+        async def send(message):
+            if message["type"] == "http.response.start":
+                inicio["status"] = message["status"]
+                inicio["headers"] = dict(message.get("headers", []))
+            elif message["type"] == "http.response.body":
+                corpo = message.get("body") or b""
+                if corpo:
+                    body_chunks.append(corpo)
+                    primeiro_chunk.set()
+
+        app_task = asyncio.create_task(app(scope, receive, send))
+
+        # Espera a conexão ser registrada e injeta um evento na fila do usuário.
+        fila = None
+        for _ in range(500):
+            fila = gerenciador_chat._connections.get(uid)
+            if fila is not None:
+                fila.put_nowait({"tipo": "teste_sse", "conteudo": "ola"})
+                break
+            await asyncio.sleep(0.01)
+        assert fila is not None, "usuário não foi registrado no GerenciadorChat"
+
+        try:
+            await asyncio.wait_for(primeiro_chunk.wait(), timeout=5)
+        finally:
+            app_task.cancel()
+            try:
+                await app_task
+            except (asyncio.CancelledError, Exception):
+                pass
+            await gerenciador_chat.desconectar(uid)
+
+        assert inicio.get("status") == status.HTTP_200_OK
+        assert b"text/event-stream" in inicio["headers"].get(b"content-type", b"")
+        corpo = b"".join(body_chunks).decode()
+        assert "teste_sse" in corpo
+        assert "ola" in corpo
+
+    def test_stream_registrado_como_sse(self):
         """Verifica, sem abrir conexão viva, que a rota /api/chat/stream existe
         e é um StreamingResponse text/event-stream (inspeção da app, não request).
 
@@ -135,8 +230,8 @@ class TestStream:
         ]
         assert len(rotas_stream) == 1
         rota = rotas_stream[0]
-        assert "GET" in rota.methods
-        assert rota.endpoint.__name__ == "stream_mensagens"
+        assert "GET" in getattr(rota, "methods", set())
+        assert getattr(rota, "endpoint").__name__ == "stream_mensagens"
 
 
 # =============================================================================

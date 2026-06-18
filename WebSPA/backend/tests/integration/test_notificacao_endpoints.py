@@ -24,7 +24,6 @@ from fastapi import status
 
 from model.notificacao_model import TipoNotificacao
 from util.notificacao_util import criar_notificacao
-from util.perfis import Perfil
 
 
 pytestmark = [pytest.mark.integration, pytest.mark.crud]
@@ -36,7 +35,7 @@ def _csrf(client):
 
 
 @pytest.fixture(autouse=True)
-def _limpar_notificacoes():
+def _limpar_notificacoes():  # pyright: ignore
     """A tabela `notificacao` não é limpa pelo conftest; limpamos aqui."""
     from util.db_util import obter_conexao
 
@@ -124,7 +123,7 @@ class TestListar:
         assert len(corpo["items"]) == 1
 
     def test_isolamento_nao_ve_notificacao_de_outro(
-        self, cliente_autenticado, usuario_logado_id, criar_usuario_direto
+        self, cliente_autenticado, criar_usuario_direto
     ):
         outro_id = criar_usuario_direto("Outro", "outro@example.com", "Senha@123")
         _criar(outro_id, titulo="Do outro usuário")
@@ -173,7 +172,7 @@ class TestNaoLidas:
         assert corpo["total"] == 7  # contador total
         assert len(corpo["items"]) == 5  # resumo limitado a 5
 
-    def test_isolamento(self, cliente_autenticado, usuario_logado_id, criar_usuario_direto):
+    def test_isolamento(self, cliente_autenticado, criar_usuario_direto):
         outro_id = criar_usuario_direto("Outro", "outro@example.com", "Senha@123")
         _criar(outro_id, titulo="Do outro")
         resp = cliente_autenticado.get("/api/notificacoes/nao-lidas")
