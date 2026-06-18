@@ -750,10 +750,10 @@ class TestBackupErrosIO:
                 # Simular erro ao obter stat de um arquivo mas não de todos
                 original_stat = Path.stat
 
-                def stat_with_error(self):
+                def stat_with_error(self, *args, **kwargs):
                     if "error" in str(self):
                         raise OSError("stat error")
-                    return original_stat(self)
+                    return original_stat(self, *args, **kwargs)
 
                 # Criar arquivo que vai dar erro
                 (backup_dir / "backup_error_2025-01-16_10-00-00.db").touch()
