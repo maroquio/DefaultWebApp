@@ -1,8 +1,8 @@
 """
-Rotas administrativas para gerenciamento de pagamentos.
+Rotas administrativas de pagamentos (API JSON).
 
 Permite que administradores:
-- Listem todos os pagamentos do sistema com filtros por status
+- Listem todos os pagamentos do sistema (paginado, com filtro opcional por status)
 - Visualizem detalhes completos de qualquer pagamento, incluindo dados do provedor
 """
 
@@ -12,44 +12,47 @@ Permite que administradores:
 
 from typing import Optional
 
-from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, HTTPException, status
 
+from dtos.responses.comum import PaginaResponse
+from dtos.responses.pagamento_response import DadosProviderResponse, PagamentoResponse
 from model.pagamento_model import StatusPagamento
 from model.usuario_logado_model import UsuarioLogado
 from repo import pagamento_repo
 from util.auth_decorator import requer_autenticacao
 from util.logger_config import logger
+from util.paginacao_util import paginar
 from util.payment_service import PaymentService
 from util.perfis import Perfil
-from util.repository_helpers import obter_ou_404
-from util.template_util import criar_templates
 
 # =============================================================================
 # Configuração do Router
 # =============================================================================
 
 router = APIRouter(prefix="/admin/pagamentos")
-templates = criar_templates()
 
 
 # =============================================================================
-# Rotas
+# Rotas (admin-only)
 # =============================================================================
 
 
-@router.get("")
+@router.get("", response_model=PaginaResponse[PagamentoResponse])
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(
     request: Request,
     status_filtro: Optional[str] = None,
+    pagina: int = 1,
+    por_pagina: int = 10,
     usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
-    Lista todos os pagamentos do sistema com filtro opcional por status.
+    Lista todos os pagamentos do sistema (paginado), com filtro opcional por status.
 
     Query params:
-        status_filtro: Filtrar por status (ex: ?status_filtro=Aprovado)
+        status_filtro: Filtra por status (ex: ?status_filtro=Aprovado)
+        pagina: Página atual (1-based)
+        por_pagina: Itens por página
     """
     assert usuario_logado is not None
 
@@ -62,31 +65,18 @@ async def listar(
         pagamentos = todos_pagamentos
         status_filtro = None
 
-    # Calcular totais por status para o painel de resumo
-    totais: dict[str, int] = {}
-    for p in todos_pagamentos:
-        chave = p.status.value
-        totais[chave] = totais.get(chave, 0) + 1
+    paginacao = paginar(pagamentos, pagina, por_pagina)
 
     logger.info(
         f"Admin {usuario_logado.id} listou pagamentos "
-        f"(filtro={status_filtro}, total={len(pagamentos)})"
+        f"(filtro={status_filtro}, total={paginacao.total})"
     )
 
-    return templates.TemplateResponse(
-        "admin/pagamentos/listar.html",
-        {
-            "request": request,
-            "pagamentos": pagamentos,
-            "status_filtro": status_filtro,
-            "totais": totais,
-            "status_opcoes": StatusPagamento.valores(),
-            "usuario_logado": usuario_logado,
-        },
-    )
+    items = [PagamentoResponse.de_pagamento(p) for p in paginacao.items]
+    return PaginaResponse.de_paginacao(paginacao, items)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=DadosProviderResponse)
 @requer_autenticacao([Perfil.ADMIN.value])
 async def detalhes(
     request: Request,
@@ -96,18 +86,15 @@ async def detalhes(
     """Exibe detalhes completos de um pagamento, incluindo dados do provedor."""
     assert usuario_logado is not None
 
-    pagamento = obter_ou_404(
-        pagamento_repo.obter_por_id(id),
-        request,
-        "Pagamento não encontrado",
-        "/admin/pagamentos",
-    )
-    if isinstance(pagamento, RedirectResponse):
-        return pagamento
+    pagamento = pagamento_repo.obter_por_id(id)
+    if not pagamento:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pagamento não encontrado.",
+        )
 
-    # Buscar dados atualizados no provedor se houver payment_id confirmado
-    # Usa o adapter do provedor que criou o pagamento (campo provider),
-    # não o provedor ativo — preserva histórico ao trocar de provedor.
+    # Buscar dados atualizados no provedor que criou o pagamento (campo provider),
+    # não no provedor ativo — preserva histórico ao trocar de provedor.
     dados_provider = None
     if pagamento.payment_id:
         try:
@@ -119,16 +106,10 @@ async def detalhes(
                 f"para pagamento #{pagamento.id}: {e}"
             )
 
-    # Obter nome do provedor para exibição
     provider_nome = PaymentService.obter_provider_por_chave(pagamento.provider).nome
 
-    return templates.TemplateResponse(
-        "admin/pagamentos/detalhes.html",
-        {
-            "request": request,
-            "pagamento": pagamento,
-            "dados_provider": dados_provider,
-            "provider_nome": provider_nome,
-            "usuario_logado": usuario_logado,
-        },
+    return DadosProviderResponse(
+        pagamento=PagamentoResponse.de_pagamento(pagamento),
+        provider_nome=provider_nome,
+        dados_provider=dados_provider,
     )

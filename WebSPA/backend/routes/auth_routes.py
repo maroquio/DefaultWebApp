@@ -209,16 +209,21 @@ async def post_redefinir_senha(request: Request, dto: RedefinirSenhaDTO):
             detail="Token inválido ou expirado.",
         )
 
-    try:
-        data_token = datetime.fromisoformat(usuario.data_token)
-        if agora() > data_token:
+    # data_token pode vir como datetime (conversor do SQLite) ou string
+    data_token = usuario.data_token
+    if isinstance(data_token, str):
+        try:
+            data_token = datetime.fromisoformat(data_token)
+        except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token expirado. Solicite uma nova recuperação.",
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido."
             )
-    except (ValueError, TypeError):
+    if data_token.tzinfo is None:
+        data_token = data_token.replace(tzinfo=agora().tzinfo)
+    if agora() > data_token:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token expirado. Solicite uma nova recuperação.",
         )
 
     senha_hash = criar_hash_senha(dto.senha)

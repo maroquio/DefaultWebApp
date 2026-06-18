@@ -1,714 +1,450 @@
 """
-Testes para as rotas de chat (routes/chat_routes.py).
+Testes de integração das rotas de chat (contrato JSON puro / SPA).
 
-Testa todos os endpoints de chat incluindo criação de salas,
-envio de mensagens, listagem e busca de usuários.
+Todos os endpoints vivem sob ``/api/chat``. As mutações exigem o header
+``X-CSRF-Token`` obtido em ``GET /api/csrf-token``. Respostas seguem o
+contrato JSON: GET 200, POST 201, ações 200; erros como
+``{detail, type, errors}`` com 401/403/404/422.
+
+O endpoint SSE ``GET /api/chat/stream`` NÃO é exercido com o ``TestClient``:
+o ``StreamingResponse`` mantém um gerador infinito (loop ``while True`` sobre
+uma fila assíncrona) e consumir o corpo trava o cliente de teste. Cobrimos
+apenas o caso sem autenticação, garantindo o 401 SEM tocar no corpo da
+resposta (a autenticação é checada antes de o gerador começar a emitir).
 """
-
-import pytest
-from unittest.mock import patch, MagicMock
+from fastapi import status
 
 
-class TestChatRoutes:
-    """Testes para rotas de chat"""
+# ---------------------------------------------------------------------------
+# Helpers locais
+# ---------------------------------------------------------------------------
 
-    @pytest.fixture
-    def usuarios_chat(self, client, fazer_login, criar_usuario_direto):
-        """Fixture que cria dois usuários e loga o primeiro"""
-        # Criar usuário 1 e logar
-        usuario1_id = criar_usuario_direto(
-            nome="Usuario Chat 1",
-            email="chat1@teste.com",
-            senha="Teste@123",
-            perfil="Cliente"
+def _csrf(client):
+    """Obtém um token CSRF válido para a sessão atual."""
+    return client.get("/api/csrf-token").json()["token"]
+
+
+def _registrar(client, nome, email, senha="Senha@123"):
+    """Cadastra um usuário via API e retorna o ID criado."""
+    # O validador de nome exige no mínimo 2 palavras; garante sobrenome.
+    if len(nome.split()) < 2:
+        nome = f"{nome} Teste"
+    token = _csrf(client)
+    resp = client.post(
+        "/api/cadastrar",
+        json={
+            "perfil": "Cliente",
+            "nome": nome,
+            "email": email,
+            "senha": senha,
+            "confirmar_senha": senha,
+        },
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
+def _login(client, email, senha="Senha@123"):
+    """Faz login (troca a identidade da sessão no client compartilhado)."""
+    token = _csrf(client)
+    resp = client.post(
+        "/api/login",
+        json={"email": email, "senha": senha},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == status.HTTP_200_OK, resp.text
+    return resp
+
+
+def _criar_sala(client, outro_usuario_id):
+    """Cria/obtém uma sala com outro usuário; retorna o sala_id."""
+    token = _csrf(client)
+    resp = client.post(
+        "/api/chat/salas",
+        json={"outro_usuario_id": outro_usuario_id},
+        headers={"X-CSRF-Token": token},
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["sala_id"]
+
+
+def _enviar(client, sala_id, mensagem):
+    """Envia uma mensagem para a sala; retorna a resposta."""
+    token = _csrf(client)
+    return client.post(
+        "/api/chat/mensagens",
+        json={"sala_id": sala_id, "mensagem": mensagem},
+        headers={"X-CSRF-Token": token},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Autenticação obrigatória
+# ---------------------------------------------------------------------------
+
+class TestChatRequerAutenticacao:
+    """Endpoints protegidos devem retornar 401 sem sessão."""
+
+    def test_criar_sala_sem_auth(self, client):
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/salas",
+            json={"outro_usuario_id": 1},
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("chat1@teste.com", "Teste@123")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # Criar usuário 2 (destino)
-        usuario2_id = criar_usuario_direto(
-            nome="Usuario Chat 2",
-            email="chat2@teste.com",
-            senha="Teste@123",
-            perfil="Cliente"
+    def test_listar_conversas_sem_auth(self, client):
+        resp = client.get("/api/chat/conversas")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_listar_mensagens_sem_auth(self, client):
+        resp = client.get("/api/chat/mensagens/1_2")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_enviar_mensagem_sem_auth(self, client):
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/mensagens",
+            json={"sala_id": "1_2", "mensagem": "oi"},
+            headers={"X-CSRF-Token": token},
         )
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
-        return {
-            "client": client,
-            "usuario1_id": usuario1_id,
-            "outro_usuario_id": usuario2_id
-        }
-
-    # =========================================================================
-    # Testes de Health Check
-    # =========================================================================
-
-    def test_health_check(self, client):
-        """Health check do chat deve retornar status healthy"""
-        response = client.get("/chat/health")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "healthy"
-        assert "conexoes_ativas" in data
-        assert "timestamp" in data
-
-    # =========================================================================
-    # Testes de Criação de Sala
-    # =========================================================================
-
-    def test_criar_sala_requer_autenticacao(self, client):
-        """Criar sala deve requerer autenticação"""
-        response = client.post("/chat/salas", data={"outro_usuario_id": 1}, follow_redirects=False)
-
-        # Sem autenticação, deve redirecionar para login
-        assert response.status_code == 303
-
-    def test_criar_sala_sucesso(self, usuarios_chat):
-        """Deve criar sala entre dois usuários"""
-        client = usuarios_chat["client"]
-        outro_id = usuarios_chat["outro_usuario_id"]
-
-        response = client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "sala_id" in data
-
-    def test_criar_sala_consigo_mesmo_falha(self, client, fazer_login, criar_usuario_direto):
-        """Não pode criar sala consigo mesmo"""
-        usuario_id = criar_usuario_direto(
-            nome="Solo User",
-            email="solo@teste.com",
-            senha="Teste@123"
+    def test_marcar_lidas_sem_auth(self, client):
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/mensagens/lidas/1_2",
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("solo@teste.com", "Teste@123")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
-        response = client.post("/chat/salas", data={"outro_usuario_id": usuario_id}, follow_redirects=False)
+    def test_total_nao_lidas_sem_auth(self, client):
+        resp = client.get("/api/chat/mensagens/nao-lidas/total")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # Deve retornar erro 400 ou redirecionar (303)
-        assert response.status_code in [303, 400]
+    def test_buscar_usuarios_sem_auth(self, client):
+        resp = client.get("/api/chat/usuarios/buscar", params={"q": "us"})
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_criar_sala_usuario_inexistente(self, client, fazer_login, criar_usuario_direto):
-        """Não pode criar sala com usuário inexistente"""
-        criar_usuario_direto(
-            nome="User Criar",
-            email="criar@teste.com",
-            senha="Teste@123"
+    def test_stream_sem_auth(self, client):
+        """
+        SSE: sem autenticação deve dar 401. A checagem de auth ocorre ANTES
+        de o gerador começar a emitir, então a resposta nunca vira um stream
+        contínuo. Não consumimos um corpo de stream (em caso de erro não há).
+        """
+        resp = client.get("/api/chat/stream")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+# ---------------------------------------------------------------------------
+# Health (público)
+# ---------------------------------------------------------------------------
+
+class TestChatHealth:
+    """O health check do chat é público e retorna JSON estruturado."""
+
+    def test_health_200(self, client):
+        resp = client.get("/api/chat/health")
+        assert resp.status_code == status.HTTP_200_OK
+        body = resp.json()
+        assert body["status"] == "healthy"
+        assert body["conexoes_ativas"] == 0
+        assert "timestamp" in body
+
+
+# ---------------------------------------------------------------------------
+# Criação de sala
+# ---------------------------------------------------------------------------
+
+class TestCriarSala:
+    """POST /api/chat/salas — cria ou obtém a sala entre dois usuários."""
+
+    def test_criar_sala_entre_dois_usuarios(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+
+        _login(client, "alice@example.com")
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/salas",
+            json={"outro_usuario_id": bob_id},
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("criar@teste.com", "Teste@123")
+        assert resp.status_code == status.HTTP_201_CREATED
+        body = resp.json()
+        assert "sala_id" in body
+        assert body["sala_id"]
 
-        response = client.post("/chat/salas", data={"outro_usuario_id": 99999}, follow_redirects=False)
+    def test_criar_sala_idempotente(self, client):
+        """Criar a mesma sala duas vezes retorna o mesmo sala_id."""
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
 
-        # Deve retornar 404 ou redirecionar (303)
-        assert response.status_code in [303, 404]
+        _login(client, "alice@example.com")
+        primeiro = _criar_sala(client, bob_id)
+        segundo = _criar_sala(client, bob_id)
+        assert primeiro == segundo
 
-    # =========================================================================
-    # Testes de Listagem de Conversas
-    # =========================================================================
-
-    def test_listar_conversas_requer_autenticacao(self, client):
-        """Listar conversas deve requerer autenticação"""
-        response = client.get("/chat/conversas", follow_redirects=False)
-
-        assert response.status_code == 303
-
-    def test_listar_conversas_retorna_lista(self, usuarios_chat):
-        """Deve retornar lista de conversas"""
-        client = usuarios_chat["client"]
-        outro_id = usuarios_chat["outro_usuario_id"]
-
-        # Criar sala primeiro
-        client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-
-        response = client.get("/chat/conversas")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-    def test_listar_conversas_com_paginacao(self, usuarios_chat):
-        """Deve respeitar parâmetros de paginação"""
-        client = usuarios_chat["client"]
-
-        response = client.get("/chat/conversas?limit=5&offset=0")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data) <= 5
-
-    # =========================================================================
-    # Testes de Listagem de Mensagens
-    # =========================================================================
-
-    def test_listar_mensagens_requer_autenticacao(self, client):
-        """Listar mensagens deve requerer autenticação"""
-        response = client.get("/chat/mensagens/1_2", follow_redirects=False)
-
-        assert response.status_code == 303
-
-    def test_listar_mensagens_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
-        """Não pode listar mensagens de sala que não participa"""
-        criar_usuario_direto(
-            nome="Intruso",
-            email="intruso@teste.com",
-            senha="Teste@123"
+    def test_criar_sala_consigo_mesmo_400(self, client):
+        alice_id = _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/salas",
+            json={"outro_usuario_id": alice_id},
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("intruso@teste.com", "Teste@123")
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-        response = client.get("/chat/mensagens/outra_sala", follow_redirects=False)
-
-        # Deve retornar 403 ou redirecionar (303)
-        assert response.status_code in [303, 403]
-
-    def test_listar_mensagens_sala_participante(self, usuarios_chat):
-        """Deve listar mensagens de sala que participa"""
-        client = usuarios_chat["client"]
-        outro_id = usuarios_chat["outro_usuario_id"]
-
-        # Criar sala
-        resp = client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-        sala_id = resp.json()["sala_id"]
-
-        # Listar mensagens
-        response = client.get(f"/chat/mensagens/{sala_id}")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-    # =========================================================================
-    # Testes de Envio de Mensagem
-    # =========================================================================
-
-    def test_enviar_mensagem_requer_autenticacao(self, client):
-        """Enviar mensagem deve requerer autenticação"""
-        response = client.post(
-            "/chat/mensagens",
-            data={"sala_id": "1_2", "mensagem": "teste"},
-            follow_redirects=False
+    def test_criar_sala_usuario_inexistente_404(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/salas",
+            json={"outro_usuario_id": 999999},
+            headers={"X-CSRF-Token": token},
         )
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-        assert response.status_code == 303
-
-    def test_enviar_mensagem_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
-        """Não pode enviar mensagem em sala que não participa"""
-        criar_usuario_direto(
-            nome="Sender Intruso",
-            email="sender_intruso@teste.com",
-            senha="Teste@123"
+    def test_criar_sala_dto_invalido_422(self, client):
+        """ID não positivo viola o DTO -> 422."""
+        _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
+        token = _csrf(client)
+        resp = client.post(
+            "/api/chat/salas",
+            json={"outro_usuario_id": 0},
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("sender_intruso@teste.com", "Teste@123")
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = client.post(
-            "/chat/mensagens",
-            data={"sala_id": "outra_sala", "mensagem": "teste"},
-            follow_redirects=False
+
+# ---------------------------------------------------------------------------
+# Envio e listagem de mensagens
+# ---------------------------------------------------------------------------
+
+class TestMensagens:
+    """Fluxo de envio/listagem de mensagens entre dois usuários."""
+
+    def test_enviar_e_listar_mensagens(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+
+        resp = _enviar(client, sala_id, "Olá Bob!")
+        assert resp.status_code == status.HTTP_201_CREATED
+        msg = resp.json()
+        assert msg["mensagem"] == "Olá Bob!"
+        assert msg["sala_id"] == sala_id
+        assert msg["lida_em"] is None
+        assert "id" in msg
+
+        # Alice lista as mensagens da sala
+        lista = client.get(f"/api/chat/mensagens/{sala_id}")
+        assert lista.status_code == status.HTTP_200_OK
+        corpo = lista.json()
+        assert isinstance(corpo, list)
+        assert any(m["mensagem"] == "Olá Bob!" for m in corpo)
+
+    def test_listar_mensagens_paginacao(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+        for i in range(3):
+            assert _enviar(client, sala_id, f"msg {i}").status_code == 201
+
+        resp = client.get(
+            f"/api/chat/mensagens/{sala_id}", params={"limit": 2, "offset": 0}
         )
+        assert resp.status_code == status.HTTP_200_OK
+        assert len(resp.json()) <= 2
 
-        # Deve retornar 403 ou redirecionar (303)
-        assert response.status_code in [303, 403]
+    def test_enviar_mensagem_sala_sem_acesso_403(self, client):
+        """Usuário que não participa da sala não pode enviar mensagem."""
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+        _registrar(client, "Carol", "carol@example.com")
 
-    def test_enviar_mensagem_sucesso(self, usuarios_chat):
-        """Deve enviar mensagem com sucesso"""
-        client = usuarios_chat["client"]
-        outro_id = usuarios_chat["outro_usuario_id"]
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
 
-        # Criar sala
-        resp = client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-        sala_id = resp.json()["sala_id"]
+        # Carol tenta enviar na sala de Alice e Bob
+        _login(client, "carol@example.com")
+        resp = _enviar(client, sala_id, "intruso")
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
 
-        # Enviar mensagem
-        response = client.post(
-            "/chat/mensagens",
-            data={"sala_id": sala_id, "mensagem": "Olá, tudo bem?"}
+    def test_listar_mensagens_sala_sem_acesso_403(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+        _registrar(client, "Carol", "carol@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+
+        _login(client, "carol@example.com")
+        resp = client.get(f"/api/chat/mensagens/{sala_id}")
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_enviar_mensagem_vazia_422(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+        resp = _enviar(client, sala_id, "")
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+# ---------------------------------------------------------------------------
+# Marcar como lidas e contagem de não lidas
+# ---------------------------------------------------------------------------
+
+class TestNaoLidas:
+    """Contagem de não lidas e marcação de mensagens como lidas."""
+
+    def test_total_nao_lidas_apos_recebimento(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+
+        # Bob envia para Alice
+        _login(client, "bob@example.com")
+        assert _enviar(client, sala_id, "Oi Alice").status_code == 201
+
+        # Alice agora tem ao menos 1 não lida
+        _login(client, "alice@example.com")
+        resp = client.get("/api/chat/mensagens/nao-lidas/total")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["total"] >= 1
+
+    def test_marcar_como_lidas_zera_contador(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+
+        _login(client, "bob@example.com")
+        assert _enviar(client, sala_id, "Mensagem para Alice").status_code == 201
+
+        _login(client, "alice@example.com")
+        # Marca como lidas
+        token = _csrf(client)
+        marcar = client.post(
+            f"/api/chat/mensagens/lidas/{sala_id}",
+            headers={"X-CSRF-Token": token},
         )
+        assert marcar.status_code == status.HTTP_200_OK
+        assert "message" in marcar.json()
 
-        assert response.status_code == 200
-        data = response.json()
-        assert data["mensagem"] == "Olá, tudo bem?"
-        assert data["sala_id"] == sala_id
+        total = client.get("/api/chat/mensagens/nao-lidas/total")
+        assert total.status_code == status.HTTP_200_OK
+        assert total.json()["total"] == 0
 
-    def test_enviar_mensagem_sala_inexistente(self, client, fazer_login, criar_usuario_direto):
-        """Não pode enviar mensagem em sala inexistente"""
-        criar_usuario_direto(
-            nome="Sender Sem Sala",
-            email="sender_sem_sala@teste.com",
-            senha="Teste@123"
+    def test_marcar_lidas_sala_sem_acesso_403(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
+        _registrar(client, "Carol", "carol@example.com")
+
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+
+        _login(client, "carol@example.com")
+        token = _csrf(client)
+        resp = client.post(
+            f"/api/chat/mensagens/lidas/{sala_id}",
+            headers={"X-CSRF-Token": token},
         )
-        fazer_login("sender_sem_sala@teste.com", "Teste@123")
-
-        response = client.post(
-            "/chat/mensagens",
-            data={"sala_id": "sala_que_nao_existe", "mensagem": "teste"},
-            follow_redirects=False
-        )
-
-        # Deve retornar 403/404 ou redirecionar (303)
-        assert response.status_code in [303, 403, 404]
-
-    # =========================================================================
-    # Testes de Marcar como Lidas
-    # =========================================================================
-
-    def test_marcar_lidas_requer_autenticacao(self, client):
-        """Marcar como lidas deve requerer autenticação"""
-        response = client.post("/chat/mensagens/lidas/1_2", follow_redirects=False)
-
-        assert response.status_code == 303
-
-    def test_marcar_lidas_sala_nao_participante(self, client, fazer_login, criar_usuario_direto):
-        """Não pode marcar como lidas em sala que não participa"""
-        criar_usuario_direto(
-            nome="Reader Intruso",
-            email="reader_intruso@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("reader_intruso@teste.com", "Teste@123")
-
-        response = client.post("/chat/mensagens/lidas/outra_sala", follow_redirects=False)
-
-        # Deve retornar 403 ou redirecionar (303)
-        assert response.status_code in [303, 403]
-
-    def test_marcar_lidas_sucesso(self, usuarios_chat):
-        """Deve marcar mensagens como lidas"""
-        client = usuarios_chat["client"]
-        outro_id = usuarios_chat["outro_usuario_id"]
-
-        # Criar sala
-        resp = client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-        sala_id = resp.json()["sala_id"]
-
-        # Marcar como lidas
-        response = client.post(f"/chat/mensagens/lidas/{sala_id}")
-
-        assert response.status_code == 200
-        assert response.json()["sucesso"] is True
-
-    # =========================================================================
-    # Testes de Busca de Usuários
-    # =========================================================================
-
-    def test_buscar_usuarios_requer_autenticacao(self, client):
-        """Buscar usuários deve requerer autenticação"""
-        response = client.get("/chat/usuarios/buscar?q=teste", follow_redirects=False)
-
-        assert response.status_code == 303
-
-    def test_buscar_usuarios_termo_curto(self, client, fazer_login, criar_usuario_direto):
-        """Termo muito curto deve retornar lista vazia"""
-        criar_usuario_direto(
-            nome="Buscador",
-            email="buscador@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("buscador@teste.com", "Teste@123")
-
-        response = client.get("/chat/usuarios/buscar?q=a")
-
-        assert response.status_code == 200
-        assert response.json() == []
-
-    def test_buscar_usuarios_retorna_lista(self, client, fazer_login, criar_usuario_direto):
-        """Deve retornar lista de usuários encontrados"""
-        # Criar vários usuários
-        criar_usuario_direto(
-            nome="Pessoa Busca 1",
-            email="pessoa1@teste.com",
-            senha="Teste@123"
-        )
-        criar_usuario_direto(
-            nome="Pessoa Busca 2",
-            email="pessoa2@teste.com",
-            senha="Teste@123"
-        )
-
-        # Criar e logar buscador
-        criar_usuario_direto(
-            nome="Buscador Teste",
-            email="buscador_t@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("buscador_t@teste.com", "Teste@123")
-
-        response = client.get("/chat/usuarios/buscar?q=pessoa")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-    def test_buscar_usuarios_exclui_admin(self, client, admin_autenticado):
-        """Busca deve excluir administradores"""
-        response = admin_autenticado.get("/chat/usuarios/buscar?q=admin")
-
-        assert response.status_code == 200
-        data = response.json()
-        # Admins não devem aparecer nos resultados
-        for usuario in data:
-            assert usuario.get("perfil") != "Administrador"
-
-    # =========================================================================
-    # Testes de Contagem de Não Lidas
-    # =========================================================================
-
-    def test_contar_nao_lidas_requer_autenticacao(self, client):
-        """Contar não lidas deve requerer autenticação"""
-        response = client.get("/chat/mensagens/nao-lidas/total", follow_redirects=False)
-
-        assert response.status_code == 303
-
-    def test_contar_nao_lidas_retorna_total(self, usuarios_chat):
-        """Deve retornar total de não lidas"""
-        client = usuarios_chat["client"]
-
-        response = client.get("/chat/mensagens/nao-lidas/total")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "total" in data
-        assert isinstance(data["total"], int)
-        assert data["total"] >= 0
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
 
 
-class TestChatRateLimiting:
-    """Testes de rate limiting para rotas de chat"""
+# ---------------------------------------------------------------------------
+# Listagem de conversas
+# ---------------------------------------------------------------------------
 
-    def test_rate_limit_busca_usuarios(self, client, fazer_login, criar_usuario_direto):
-        """Rate limit deve bloquear após muitas buscas"""
-        criar_usuario_direto(
-            nome="Buscador Rate",
-            email="buscador_rate@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("buscador_rate@teste.com", "Teste@123")
+class TestConversas:
+    """GET /api/chat/conversas — lista as conversas do usuário logado."""
 
-        # Fazer muitas requisições
-        with patch('routes.chat_routes.busca_usuarios_limiter') as mock_limiter:
-            mock_limiter.verificar.return_value = False
+    def test_conversas_vazia(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
+        resp = client.get("/api/chat/conversas")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
 
-            response = client.get("/chat/usuarios/buscar?q=teste", follow_redirects=False)
+    def test_conversas_apos_mensagem(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        bob_id = _registrar(client, "Bob", "bob@example.com")
 
-            # Deve retornar 429 ou redirecionar (303)
-            assert response.status_code in [303, 429]
+        _login(client, "alice@example.com")
+        sala_id = _criar_sala(client, bob_id)
+        assert _enviar(client, sala_id, "Olá!").status_code == 201
 
-    def test_rate_limit_criar_sala(self, client, fazer_login, criar_usuario_direto):
-        """Rate limit deve bloquear criação excessiva de salas"""
-        criar_usuario_direto(
-            nome="Criador Rate",
-            email="criador_rate@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("criador_rate@teste.com", "Teste@123")
+        resp = client.get("/api/chat/conversas")
+        assert resp.status_code == status.HTTP_200_OK
+        conversas = resp.json()
+        assert len(conversas) == 1
+        conversa = conversas[0]
+        assert conversa["sala_id"] == sala_id
+        assert conversa["outro_usuario"]["nome"] == "Bob Teste"
+        assert conversa["ultima_mensagem"]["mensagem"] == "Olá!"
 
-        with patch('routes.chat_routes.chat_sala_limiter') as mock_limiter:
-            mock_limiter.verificar.return_value = False
 
-            response = client.post("/chat/salas", data={"outro_usuario_id": 999})
+# ---------------------------------------------------------------------------
+# Busca de usuários
+# ---------------------------------------------------------------------------
 
-            assert response.status_code == 429
+class TestBuscarUsuarios:
+    """GET /api/chat/usuarios/buscar — autocomplete de usuários."""
 
-    def test_rate_limit_enviar_mensagem(self, client, fazer_login, criar_usuario_direto):
-        """Rate limit deve bloquear envio excessivo de mensagens"""
-        criar_usuario_direto(
-            nome="Sender Rate",
-            email="sender_rate@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("sender_rate@teste.com", "Teste@123")
+    def test_buscar_usuarios_encontra(self, client):
+        _registrar(client, "Alice", "alice@example.com")
+        _registrar(client, "Bob Marley", "bob@example.com")
 
-        with patch('routes.chat_routes.chat_mensagem_limiter') as mock_limiter:
-            mock_limiter.verificar.return_value = False
+        _login(client, "alice@example.com")
+        resp = client.get("/api/chat/usuarios/buscar", params={"q": "Bob"})
+        assert resp.status_code == status.HTTP_200_OK
+        resultados = resp.json()
+        assert isinstance(resultados, list)
+        assert any(u["nome"] == "Bob Marley" for u in resultados)
+        # Não retorna o próprio usuário logado
+        assert all(u["email"] != "alice@example.com" for u in resultados)
 
-            response = client.post(
-                "/chat/mensagens",
-                data={"sala_id": "1_2", "mensagem": "teste"}
+    def test_buscar_usuarios_termo_curto_vazio(self, client):
+        """Termo com menos de 2 caracteres retorna lista vazia."""
+        _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
+        resp = client.get("/api/chat/usuarios/buscar", params={"q": "a"})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
+
+    def test_buscar_usuarios_exclui_admin(self, client):
+        """Administradores não aparecem nos resultados da busca."""
+        from repo import usuario_repo
+        from model.usuario_model import Usuario
+        from util.security import criar_hash_senha
+        from util.perfis import Perfil
+
+        usuario_repo.inserir(
+            Usuario(
+                id=0,
+                nome="Admin Buscavel",
+                email="adminbusca@example.com",
+                senha=criar_hash_senha("Admin@123"),
+                perfil=Perfil.ADMIN.value,
             )
-
-            assert response.status_code == 429
-
-    def test_rate_limit_listar_conversas(self, client, fazer_login, criar_usuario_direto):
-        """Rate limit deve bloquear listagem excessiva"""
-        criar_usuario_direto(
-            nome="Listador Rate",
-            email="listador_rate@teste.com",
-            senha="Teste@123"
         )
-        fazer_login("listador_rate@teste.com", "Teste@123")
+        _registrar(client, "Alice", "alice@example.com")
+        _login(client, "alice@example.com")
 
-        with patch('routes.chat_routes.chat_listagem_limiter') as mock_limiter:
-            mock_limiter.verificar.return_value = False
-
-            response = client.get("/chat/conversas")
-
-            assert response.status_code == 429
-
-    def test_rate_limit_listar_mensagens(self, client, fazer_login, criar_usuario_direto):
-        """Rate limit deve bloquear listagem excessiva de mensagens"""
-        criar_usuario_direto(
-            nome="Leitor Rate",
-            email="leitor_rate@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("leitor_rate@teste.com", "Teste@123")
-
-        with patch('routes.chat_routes.chat_listagem_limiter') as mock_limiter:
-            mock_limiter.verificar.return_value = False
-
-            response = client.get("/chat/mensagens/1_2")
-
-            assert response.status_code == 429
-
-
-class TestChatValidationErrors:
-    """Testes de erros de validação nas rotas de chat"""
-
-    def test_criar_sala_validation_error(self, client, fazer_login, criar_usuario_direto):
-        """Deve retornar erro quando validação do DTO falha"""
-        criar_usuario_direto(
-            nome="User Validation",
-            email="validation@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("validation@teste.com", "Teste@123")
-
-        # Enviar dado inválido - FastAPI valida como 422
-        response = client.post("/chat/salas", data={"outro_usuario_id": "invalid"})
-
-        # Deve retornar 422 Unprocessable Entity (validação do FastAPI)
-        assert response.status_code == 422
-
-    def test_enviar_mensagem_vazia_validation_error(self, client, fazer_login, criar_usuario_direto):
-        """Deve retornar erro quando mensagem está vazia"""
-        criar_usuario_direto(
-            nome="User Msg Validation",
-            email="msg_validation@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("msg_validation@teste.com", "Teste@123")
-
-        # Enviar mensagem vazia - deve falhar validação
-        response = client.post(
-            "/chat/mensagens",
-            data={"sala_id": "1_2", "mensagem": ""}
-        )
-
-        # Deve retornar erro de validação (400, 422 ou 429 se rate limit)
-        assert response.status_code in [400, 422, 429]
-
-    def test_enviar_mensagem_sala_nao_existe_apos_verificacao(self, client, fazer_login, criar_usuario_direto):
-        """Deve retornar 404 quando sala não existe após verificação de participante"""
-        usuario_id = criar_usuario_direto(
-            nome="User Sala Fantasma",
-            email="sala_fantasma@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("sala_fantasma@teste.com", "Teste@123")
-
-        # Mock: participante existe mas sala não
-        with patch('routes.chat_routes.chat_participante_repo.obter_por_sala_e_usuario') as mock_part:
-            mock_part.return_value = MagicMock(usuario_id=usuario_id, sala_id="sala_fantasma")
-
-            with patch('routes.chat_routes.chat_sala_repo.obter_por_id', return_value=None):
-                response = client.post(
-                    "/chat/mensagens",
-                    data={"sala_id": "sala_fantasma", "mensagem": "teste"}
-                )
-
-                # Deve retornar 404
-                assert response.status_code == 404
-
-
-class TestChatTotalNaoLidas:
-    """Testes para endpoint de total de mensagens não lidas"""
-
-    def test_total_nao_lidas_com_participacoes(self, client, fazer_login, criar_usuario_direto):
-        """Deve contar total de não lidas incluindo loop de participações"""
-        usuario_id = criar_usuario_direto(
-            nome="User Nao Lidas",
-            email="nao_lidas@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("nao_lidas@teste.com", "Teste@123")
-
-        # Criar outro usuário para chat
-        outro_id = criar_usuario_direto(
-            nome="Outro Nao Lidas",
-            email="outro_nao_lidas@teste.com",
-            senha="Teste@123"
-        )
-
-        # Criar sala e enviar mensagem
-        resp = client.post("/chat/salas", data={"outro_usuario_id": outro_id})
-
-        if resp.status_code == 200:
-            # Verificar total de não lidas (deve passar pelo loop de participações)
-            response = client.get("/chat/mensagens/nao-lidas/total")
-
-            assert response.status_code == 200
-            data = response.json()
-            assert "total" in data
-            assert isinstance(data["total"], int)
-
-
-class TestChatListarConversasEdgeCases:
-    """Testes de casos de borda para listagem de conversas"""
-
-    def test_listar_conversas_sala_inexistente(self, client, fazer_login, criar_usuario_direto):
-        """Deve tratar quando sala não existe mais (continue no loop)"""
-        usuario_id = criar_usuario_direto(
-            nome="User Sala Inexistente",
-            email="sala_inexistente@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("sala_inexistente@teste.com", "Teste@123")
-
-        # Mock para simular participação em sala que não existe
-        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_part:
-            mock_participacao = MagicMock()
-            mock_participacao.sala_id = "sala_que_nao_existe"
-            mock_part.return_value = [mock_participacao]
-
-            with patch('routes.chat_routes.chat_sala_repo.obter_por_id', return_value=None):
-                response = client.get("/chat/conversas")
-
-                assert response.status_code == 200
-                # Lista deve estar vazia (sala inexistente é ignorada)
-                assert response.json() == []
-
-    def test_listar_conversas_outro_participante_inexistente(self, client, fazer_login, criar_usuario_direto):
-        """Deve tratar quando não encontra outro participante na sala"""
-        usuario_id = criar_usuario_direto(
-            nome="User Sem Outro",
-            email="sem_outro@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("sem_outro@teste.com", "Teste@123")
-
-        # Mock para simular sala sem outro participante
-        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_list_user:
-            mock_participacao = MagicMock()
-            mock_participacao.sala_id = "sala_teste"
-            mock_list_user.return_value = [mock_participacao]
-
-            with patch('routes.chat_routes.chat_sala_repo.obter_por_id') as mock_sala:
-                mock_sala_obj = MagicMock()
-                mock_sala_obj.id = "sala_teste"
-                mock_sala.return_value = mock_sala_obj
-
-                # Simular lista de participantes com apenas o próprio usuário
-                with patch('routes.chat_routes.chat_participante_repo.listar_por_sala') as mock_list_sala:
-                    mock_part_proprio = MagicMock()
-                    mock_part_proprio.usuario_id = usuario_id
-                    mock_list_sala.return_value = [mock_part_proprio]
-
-                    response = client.get("/chat/conversas")
-
-                    assert response.status_code == 200
-                    # Lista deve estar vazia (sem outro participante)
-                    assert response.json() == []
-
-    def test_listar_conversas_outro_usuario_excluido(self, client, fazer_login, criar_usuario_direto):
-        """Deve tratar quando outro usuário foi excluído do sistema"""
-        usuario_id = criar_usuario_direto(
-            nome="User Outro Excluido",
-            email="outro_excluido@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("outro_excluido@teste.com", "Teste@123")
-
-        # Mock para simular sala com participante cujo usuário foi excluído
-        with patch('routes.chat_routes.chat_participante_repo.listar_por_usuario') as mock_list_user:
-            mock_participacao = MagicMock()
-            mock_participacao.sala_id = "sala_teste"
-            mock_list_user.return_value = [mock_participacao]
-
-            with patch('routes.chat_routes.chat_sala_repo.obter_por_id') as mock_sala:
-                mock_sala_obj = MagicMock()
-                mock_sala_obj.id = "sala_teste"
-                mock_sala.return_value = mock_sala_obj
-
-                with patch('routes.chat_routes.chat_participante_repo.listar_por_sala') as mock_list_sala:
-                    mock_part_proprio = MagicMock()
-                    mock_part_proprio.usuario_id = usuario_id
-                    mock_part_outro = MagicMock()
-                    mock_part_outro.usuario_id = 99999  # Usuário que foi excluído
-                    mock_list_sala.return_value = [mock_part_proprio, mock_part_outro]
-
-                    # Usuário excluído - retorna None
-                    with patch('routes.chat_routes.usuario_repo.obter_por_id', return_value=None):
-                        response = client.get("/chat/conversas")
-
-                        assert response.status_code == 200
-                        # Lista deve estar vazia (outro usuário foi excluído)
-                        assert response.json() == []
-
-
-class TestChatEnviarMensagemEdgeCases:
-    """Testes de casos de borda para envio de mensagem"""
-
-    def test_enviar_mensagem_dto_validation_error(self, client, fazer_login, criar_usuario_direto):
-        """Deve tratar ValidationError do DTO corretamente"""
-        criar_usuario_direto(
-            nome="User Msg DTO",
-            email="msg_dto@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("msg_dto@teste.com", "Teste@123")
-
-        # Tentar enviar mensagem com dados que falham validação do DTO
-        with patch('routes.chat_routes.EnviarMensagemDTO') as mock_dto:
-            from pydantic import ValidationError as PydanticValidationError
-            from pydantic import BaseModel, field_validator
-
-            class TestModel(BaseModel):
-                campo: str
-
-                @field_validator('campo')
-                @classmethod
-                def validar(cls, v):
-                    raise ValueError("Valor inválido")
-
-            try:
-                TestModel(campo="abc")
-            except PydanticValidationError as e:
-                mock_dto.side_effect = e
-
-            response = client.post(
-                "/chat/mensagens",
-                data={"sala_id": "sala_teste", "mensagem": "teste"}
-            )
-
-            # Deve retornar 400 Bad Request
-            assert response.status_code == 400
-
-    def test_criar_sala_dto_validation_error(self, client, fazer_login, criar_usuario_direto):
-        """Deve tratar ValidationError do CriarSalaDTO corretamente"""
-        criar_usuario_direto(
-            nome="User Sala DTO",
-            email="sala_dto@teste.com",
-            senha="Teste@123"
-        )
-        fazer_login("sala_dto@teste.com", "Teste@123")
-
-        # Tentar criar sala com dados que falham validação do DTO
-        with patch('routes.chat_routes.CriarSalaDTO') as mock_dto:
-            from pydantic import ValidationError as PydanticValidationError
-            from pydantic import BaseModel, field_validator
-
-            class TestModel(BaseModel):
-                campo: int
-
-                @field_validator('campo')
-                @classmethod
-                def validar(cls, v):
-                    raise ValueError("Valor inválido")
-
-            try:
-                TestModel(campo=1)
-            except PydanticValidationError as e:
-                mock_dto.side_effect = e
-
-            response = client.post("/chat/salas", data={"outro_usuario_id": 1})
-
-            # Deve retornar 400 Bad Request
-            assert response.status_code == 400
+        resp = client.get("/api/chat/usuarios/buscar", params={"q": "Admin"})
+        assert resp.status_code == status.HTTP_200_OK
+        assert all(u["nome"] != "Admin Buscavel" for u in resp.json())

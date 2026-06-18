@@ -91,8 +91,8 @@ async def put_salvar_configuracoes(
     """
     Atualiza múltiplas configurações de uma vez (salvamento em lote).
 
-    Após salvar, invalida o cache de configurações e regenera o CSS de toast,
-    preservando o comportamento da versão original.
+    Após salvar, invalida o cache de configurações (aplicação imediata).
+    A estilização de toast é responsabilidade do frontend no SPA.
     """
     assert usuario_logado is not None
     checar_rate_limit(admin_config_limiter, request)
@@ -104,10 +104,6 @@ async def put_salvar_configuracoes(
 
         # Invalidar cache de configurações (alterações aplicadas imediatamente)
         config.limpar()
-
-        # Regenerar CSS de toast caso configurações de posição/margem tenham mudado
-        from util.toast_css_util import aplicar_css_toast
-        aplicar_css_toast()
 
         logger.info(
             f"Atualização em lote de configurações por admin {usuario_logado.id} - "

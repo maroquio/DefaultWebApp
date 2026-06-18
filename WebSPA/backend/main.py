@@ -35,15 +35,27 @@ from repo import (
 )
 from repo import chat_sala_repo, chat_participante_repo, chat_mensagem_repo
 
-# Rotas convertidas para JSON (módulo de referência: auth + usuário)
+# Rotas (API JSON)
 from routes.auth_routes import router as auth_router
 from routes.usuario_routes import router as usuario_router
+from routes.chamados_routes import router as chamados_router
+from routes.admin_chamados_routes import router as admin_chamados_router
+from routes.chat_routes import router as chat_router
+from routes.notificacao_routes import router as notificacao_router
+from routes.admin_configuracoes_routes import router as admin_config_router
+from routes.pagamento_routes import router as pagamento_router
+from routes.admin_pagamentos_routes import router as admin_pagamentos_router
+from routes.admin_backups_routes import router as admin_backups_router
+from routes.admin_usuarios_routes import router as admin_usuarios_router
 
 # Seeds
 from util.seed_data import inicializar_dados
 
 # CSRF Protection
 from util.csrf_protection import MiddlewareProtecaoCSRF
+
+# Security headers
+from util.security_headers import MiddlewareSegurancaHeaders
 
 # Prefixo único da API
 API_PREFIX = "/api"
@@ -58,7 +70,9 @@ app = FastAPI(title=APP_NAME, version=VERSION)
 # ---------------------------------------------------------------------------
 app.add_middleware(MiddlewareProtecaoCSRF)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
-logger.info("Middlewares (Session + CSRF) habilitados")
+# Headers de segurança: mais externo, aplica a todas as respostas (inclusive erros)
+app.add_middleware(MiddlewareSegurancaHeaders)
+logger.info("Middlewares (Segurança + Session + CSRF) habilitados")
 
 # ---------------------------------------------------------------------------
 # Exception Handlers (todos retornam JSON no contrato padronizado)
@@ -125,6 +139,15 @@ except sqlite3.Error as e:
 ROUTERS = [
     (auth_router, ["Autenticação"], "autenticação"),
     (usuario_router, ["Usuário"], "usuário"),
+    (chamados_router, ["Chamados"], "chamados"),
+    (admin_chamados_router, ["Admin - Chamados"], "admin de chamados"),
+    (chat_router, ["Chat"], "chat"),
+    (notificacao_router, ["Notificações"], "notificações"),
+    (admin_config_router, ["Admin - Configurações"], "admin de configurações"),
+    (pagamento_router, ["Pagamentos"], "pagamentos"),
+    (admin_pagamentos_router, ["Admin - Pagamentos"], "admin de pagamentos"),
+    (admin_backups_router, ["Admin - Backups"], "admin de backups"),
+    (admin_usuarios_router, ["Admin - Usuários"], "admin de usuários"),
 ]
 
 for router, tags, nome in ROUTERS:

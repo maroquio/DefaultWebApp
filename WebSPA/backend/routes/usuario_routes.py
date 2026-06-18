@@ -201,14 +201,15 @@ async def put_foto(
             detail="Imagem muito grande. O tamanho máximo é 10MB.",
         )
 
+    # salvar_foto_cropada_usuario captura erros de imagem internamente e
+    # retorna False — tratamos isso como entrada inválida (imagem corrompida).
     try:
-        if not salvar_foto_cropada_usuario(usuario_id, dto.foto_base64):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao salvar a foto. Tente novamente.",
-            )
+        sucesso = salvar_foto_cropada_usuario(usuario_id, dto.foto_base64)
     except (ValueError, IOError, OSError) as e:
         logger.error(f"Erro no upload de foto - Usuário ID {usuario_id}: {e}")
+        sucesso = False
+
+    if not sucesso:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Imagem inválida. Verifique o arquivo e tente novamente.",

@@ -1,782 +1,359 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este arquivo orienta o Claude Code (claude.ai/code) ao trabalhar **neste backend**.
 
-## Project Overview
+## Visão Geral do Projeto
 
-**DefaultWebApp** is a FastAPI-based web application boilerplate for rapid development of web applications in Portuguese. It's a complete educational template with authentication, user management, profile photos with crop functionality, reusable validation system, exception handling, support ticket system (chamados), real-time chat via SSE, database backup management, CSRF protection, and example CRUD implementations using Python 3.10+, FastAPI, Jinja2 templates, Bootstrap 5.3.8, and SQLite without ORM (pure SQL).
+**WebSPA / backend** é uma **API JSON pura** em FastAPI, derivada do boilerplate
+`WebStandard` (FastAPI + Jinja) e convertida para servir um **frontend SPA em React**
+(que será construído **depois** — **ainda não existe** neste repositório).
 
-## Running the Application
+A API expõe todos os endpoints sob o prefixo **`/api`**, autentica por **cookie de
+sessão** e segue um **contrato REST idiomático** com schemas Pydantic de resposta.
+A pilha é: Python 3.11+, FastAPI, Pydantic 2, SQLite **sem ORM** (SQL puro).
 
-### Development Mode (with hot reload)
+> A fonte da verdade das decisões de arquitetura é
+> [`../docs/PLANO_BACKEND.md`](../docs/PLANO_BACKEND.md). Leia-o antes de mudanças
+> estruturais.
+
+**Não existe mais** (foi removido na conversão para SPA): templates Jinja, flash
+messages, redirect-after-post (PRG), troca de tema Bootswatch, assets de página
+(CSS/JS), Cropper.js, `ErroValidacaoFormulario`, rotas públicas/exemplos e testes
+e2e (Playwright).
+
+## Executando a Aplicação
+
+### Desenvolvimento (hot reload)
 ```bash
 python main.py
 ```
+Sobe em `http://{HOST}:{PORT}` (default `localhost:8000`). Em dev, o SPA roda
+separado pelo Vite, que faz proxy de `/api` para o backend (same-origin).
+Documentação OpenAPI interativa em `/docs`.
 
-The application will start on the configured HOST and PORT (default: http://localhost:8400)
-
-### Running Tests
+### Testes
 ```bash
-pytest                              # Run all tests with verbose output
-pytest tests/unit/                  # Run unit tests
-pytest tests/integration/           # Run integration tests
-pytest tests/e2e/                   # Run end-to-end tests
-pytest tests/e2e/test_auth.py       # Run specific test file
-pytest -k test_login                # Run tests matching pattern
-pytest -m auth                      # Run tests with specific marker
+pytest                              # Todos os testes
+pytest tests/unit/                  # Unitários
+pytest tests/integration/           # Integração (asserem JSON/status)
+pytest -k test_login                # Por padrão de nome
+pytest -m auth                      # Por marcador
 ```
+Não há `tests/e2e/` — os testes Playwright foram removidos e voltarão com o front.
 
-### Type Checking
+### Banco de Dados
 ```bash
-python3 -m mypy .
+sqlite3 dados.db ".tables"
+sqlite3 dados.db "SELECT * FROM usuario;"
 ```
 
-### Database Operations
-```bash
-sqlite3 dados.db       # Access database directly
-sqlite3 dados.db ".tables"  # List tables
-sqlite3 dados.db "SELECT * FROM usuario;"  # Query data
-```
+## Arquitetura
 
-## Architecture
-
-This project follows a **layered architecture** with clear separation of concerns:
+Camadas (mantidas do boilerplate, sem a parte de view):
 
 ```
-Routes (HTTP) → DTOs (Validation) → Repositories → SQL → Database
-                        ↓
-              Templates ← Flash Messages
-                        ↓
-              Static Assets (CSS/JS)
+Routes (JSON) → DTOs (entrada) → Repositories → SQL → SQLite
+       ↓
+Response Schemas (dtos/responses/) → JSON de saída
 ```
 
-### Core Layers
+1. **Routes** (`routes/`): handlers HTTP que recebem DTO no body e retornam schema de resposta.
+2. **DTOs de entrada** (`dtos/`): modelos Pydantic de validação (body/query).
+3. **Models** (`model/`): dataclasses de domínio.
+4. **Repositories** (`repo/`): acesso ao banco (CRUD).
+5. **SQL** (`sql/`): queries como constantes (prepared statements com `?`).
+6. **Response Schemas** (`dtos/responses/`): modelos Pydantic de **saída** (`response_model=`).
+7. **Utilities** (`util/`): auth, CSRF, rate limit, e-mail, fotos, datetime, etc.
 
-1. **Routes** (`routes/`): Handle HTTP requests/responses, use decorators for auth and rate limiting
-2. **DTOs** (`dtos/`): Pydantic models for input validation using Field() and field_validator
-3. **Models** (`model/`): Python dataclasses representing domain entities
-4. **Repositories** (`repo/`): Database access layer with CRUD operations
-5. **SQL** (`sql/`): Isolated SQL query definitions as constants (prepared statements with `?` placeholders)
-6. **Templates** (`templates/`): Jinja2 HTML templates with Bootstrap 5.3.8
-7. **Utilities** (`util/`): Cross-cutting concerns (auth, logging, email, photos, CSRF, rate limiting, etc.)
-8. **Static Assets** (`static/`): CSS, JavaScript, images
+### Contrato da API (resumo — detalhe em `../docs/PLANO_BACKEND.md`)
 
-### Important Patterns
+**Sucesso:** recurso puro com status correto.
+- `GET` único → `200` + schema do recurso.
+- `GET` lista → `200` + `PaginaResponse[T]`.
+- `POST` criação → `201` + recurso criado.
+- `PUT/PATCH` → `200` + recurso atualizado.
+- `DELETE` → `204` sem corpo.
+- Ação sem recurso (ex: logout) → `200` + `MensagemResponse` (`{message}`).
 
-**Authentication Flow:**
-- Session-based authentication using FastAPI's SessionMiddleware
-- The `@requer_autenticacao()` decorator protects routes and automatically injects `usuario_logado: UsuarioLogado` into kwargs
-- Use `@requer_autenticacao([Perfil.ADMIN.value])` to restrict by profile
-- Session management functions in `util/auth_decorator.py`: `criar_sessao()`, `destruir_sessao()`, `obter_usuario_logado()`, `esta_logado()`
-- **ALWAYS use `UsuarioLogado` dataclass** for type hints of `usuario_logado` parameter (see below)
+**Erro (formato único):** todos os handlers em `util/exception_handlers.py` retornam
+```json
+{ "detail": "mensagem", "type": "validation_error|not_found|unauthorized|forbidden|conflict|rate_limited|internal_error", "errors": { "campo": ["msg"] } }
+```
+- `errors` é preenchido em erros de validação (422); nos demais vem `null`.
+- Status usados: `400, 401, 403, 404, 409, 422, 429, 500`.
+- Para devolver erro com `errors` de uma rota, lance
+  `HTTPException(status_code=..., detail={"detail":..., "type":..., "errors":{...}})`
+  — o `http_exception_handler` reconhece `detail` como dict (ver `auth_routes.post_cadastrar`).
 
-**Database Connection:**
-- Always use `with obter_conexao() as conn:` context manager from `util/db_util.py`
-- Connection automatically commits on success, rolls back on exception, and closes
-- `conn.row_factory = sqlite3.Row` is set for dict-like access to results
-- Use `cursor.lastrowid` to get inserted ID, `cursor.rowcount` to check affected rows
+**Entrada:**
+- JSON body via DTO Pydantic como parâmetro da rota (não mais `Form()`).
+- Upload de imagem (foto de perfil) vai como **base64 dentro do JSON** (`AtualizarFotoDTO.foto_base64`), não multipart.
 
-**User Profiles (Roles):**
-- **NEVER use string literals** for profiles (e.g., "admin", "cliente")
-- **ALWAYS use** `Perfil` enum from `util/perfis.py`: `Perfil.ADMIN.value`, `Perfil.CLIENTE.value`, `Perfil.VENDEDOR.value`
-- `Perfil` inherits from `EnumEntidade` base class (`util/enum_base.py`)
-- To add new profiles: edit only `util/perfis.py` Enum definition
-- Helper methods: `Perfil.valores()`, `Perfil.nomes()`, `Perfil.existe(valor)`, `Perfil.from_valor(valor)`, `Perfil.validar(valor)`, `Perfil.obter_por_nome(nome)`, `Perfil.para_opcoes_select()`
+**Saída:**
+- Sempre via `response_model=` apontando para um schema de `dtos/responses/`.
+- Enums serializados como **string do valor** (ex: `"Aberto"`), nunca índice.
+- Datetime em **ISO 8601 com timezone** do app.
+- Foto: schema expõe `foto_url` (URL relativa em `/static/...`) via `obter_caminho_foto_usuario`.
 
-**EnumEntidade Base Class** (`util/enum_base.py`):
-- Base class for all domain enums (`Perfil`, `StatusChamado`, `PrioridadeChamado`, etc.)
-- Inherits from `str, Enum` for direct string comparison
-- Provides reusable methods: `valores()`, `nomes()`, `existe()`, `from_valor()`, `validar()`, `obter_por_nome()`, `para_opcoes_select()`
-- When creating new domain enums, always inherit from `EnumEntidade`
+**Paginação:** `PaginaResponse[T] = {items, pagina, por_pagina, total, total_paginas}`
+(`dtos/responses/comum.py`). Use `PaginaResponse.de_paginacao(paginacao, items)` com os
+`items` já convertidos para o schema de resposta. Filtros/página via query string.
 
-**UsuarioLogado Dataclass:**
-- **ALWAYS use** `UsuarioLogado` dataclass for `usuario_logado` parameter in routes
-- Import from `model.usuario_logado_model`: `from model.usuario_logado_model import UsuarioLogado`
-- **NEVER use dict access** like `usuario_logado["id"]` - use attribute access `usuario_logado.id`
-- Immutable dataclass (`frozen=True`) with fields: `id`, `nome`, `email`, `perfil`
-- Helper methods:
-  - `is_admin()`: Check if user is admin
-  - `is_cliente()`: Check if user is cliente
-  - `is_vendedor()`: Check if user is vendedor
-  - `tem_perfil(*perfis)`: Check if user has any of the given profiles
-- Session serialization: stored as dict in session, reconstructed on retrieval
-- Example route pattern:
-  ```python
-  from model.usuario_logado_model import UsuarioLogado
+### Autenticação (cookie de sessão)
 
-  @router.get("/rota")
-  @requer_autenticacao()
-  async def minha_rota(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-      assert usuario_logado is not None
-      usuario_id = usuario_logado.id  # Correct
-      if usuario_logado.is_admin():   # Correct
-          ...
-  ```
+- `SessionMiddleware` (`SameSite=Lax`) guarda a sessão; o React usa
+  `fetch(..., { credentials: 'include' })`.
+- `@requer_autenticacao()` (`util/auth_decorator.py`) injeta
+  `usuario_logado: UsuarioLogado` nos kwargs e lança:
+  - **401** (`HTTPException`) se não houver sessão;
+  - **403** se o perfil não estiver em `perfis_permitidos`.
+- `@requer_autenticacao([Perfil.ADMIN.value])` restringe por perfil.
+- Helpers: `criar_sessao()`, `destruir_sessao()`, `obter_usuario_logado()`, `esta_logado()`.
+- Handshake do front: `GET /api/csrf-token` → `{token}`; `POST /api/login` cria a
+  sessão; `GET /api/me` (em `auth_routes`) retorna o usuário atual ou 401;
+  `POST /api/logout` limpa a sessão.
 
-**Timezone e Data/Hora:**
-- **NEVER use `datetime.now()` directly** - always use `agora()` from `util/datetime_util.py`
-- **CRITICAL: NEVER use `.strftime()` when storing to database** - pass datetime object directly
-  - WRONG: `cursor.execute("INSERT INTO table (data) VALUES (?)", (agora().strftime('%Y-%m-%d %H:%M:%S'),))`
-  - CORRECT: `cursor.execute("INSERT INTO table (data) VALUES (?)", (agora(),))`
-  - `.strftime()` should be used ONLY for display purposes
-- System timezone configured in `.env` via `TIMEZONE` (default: `America/Sao_Paulo`)
-- Import with `from util.datetime_util import agora, hoje`
-- Available functions:
-  - `agora()`: Returns current datetime with timezone (replaces `datetime.now()`)
-  - `hoje()`: Returns current date in timezone (replaces `date.today()`)
-  - `converter_para_timezone(dt, tz)`: Convert datetime between timezones
-  - `datetime_para_string_iso(dt)`: Convert to ISO 8601 string
-  - `string_iso_para_datetime(iso_string)`: Parse ISO 8601 string
+### CSRF (header X-CSRF-Token)
 
-**How Timezone Works (Database Storage):**
-- **Storage Strategy**: Datetime values are stored in the database as **UTC naive** (without timezone offset)
-  - Example in DB: `2025-10-28 00:40:35.685153` (no -03:00 suffix)
-  - This is the standard approach used by Django, Rails, and other frameworks
-- **Write Process** (`adapt_datetime` in `util/db_util.py`):
-  1. Receives datetime object with timezone from Python code
-  2. Converts to UTC
-  3. Removes timezone info (stores as "naive")
-  4. Format: `YYYY-MM-DD HH:MM:SS.mmmmmm`
-- **Read Process** (`convert_datetime` in `util/db_util.py`):
-  1. Reads naive UTC datetime from database
-  2. Adds UTC timezone
-  3. Converts to application timezone (America/Sao_Paulo)
-  4. Returns timezone-aware datetime to Python code
-- **Result**: Application code ALWAYS works with timezone-aware datetime objects, but database stores simple UTC values
-- **Benefits**: Simple database format, easy timezone changes, compatible with external SQLite tools
-- SQLite TIMESTAMP columns are automatically converted when annotated with `[timestamp]` syntax
-- Templates use filters `formatar_data`, `formatar_data_hora`, `formatar_data_as_hora`, `formatar_hora` for display
+- `MiddlewareProtecaoCSRF` (`util/csrf_protection.py`) valida o header
+  **`X-CSRF-Token`** em `POST/PUT/PATCH/DELETE`.
+- O token vem de `GET /api/csrf-token` e fica na sessão.
+- `GET` (inclusive o SSE `EventSource`) é isento de CSRF.
+- `CSRF_EXEMPT_PATHS` isenta `/health` e os webhooks de pagamento
+  (`/api/pagamentos/webhook` cobre, por prefixo, `mercadopago`/`stripe`/`paypal`).
+  **Não** isente `/api/` inteiro — as mutações da API são protegidas pelo header.
 
-**Flash Messages:**
-- Use `informar_sucesso(request, "message")` and `informar_erro(request, "message")` from `util/flash_messages.py`
-- Messages are automatically displayed in templates via base template
-- Also available: `informar_aviso()` and `informar_info()`
+### Rate Limiting
 
-**Logging:**
-- Logger is pre-configured in `util/logger_config.py` with daily rotation
-- Import with `from util.logger_config import logger`
-- Use `logger.info()`, `logger.warning()`, `logger.error()`, `logger.debug()`
-- Log files are created with date in the name from the start: `logs/app.YYYY.MM.DD.log` (e.g., `logs/app.2025.10.16.log`)
-- Each day gets its own log file automatically at midnight
-- Retention period configurable via `LOG_RETENTION_DAYS` (default: 30 days)
-- Old logs are automatically deleted after retention period
+- `DynamicRateLimiter` (`util/rate_limiter.py`): lê limites do `config_cache` a cada
+  checagem (ajustável em runtime, sem reiniciar). **Preferir** sobre `RateLimiter` estático.
+- Nas rotas, chame `checar_rate_limit(limiter, request)` de `util/api_helpers.py`:
+  lança **429** com header `Retry-After` quando excedido.
+- `RegistroLimiters` em `rate_limiter.py` para monitoramento.
 
-**Exception Handling:**
-- Centralized exception handlers in `util/exception_handlers.py`
-- Four handlers registered in `main.py`:
-  1. `http_exception_handler`: HTTP exceptions (401, 403, 404, 500)
-  2. `validation_exception_handler`: Pydantic RequestValidationError (422)
-  3. `form_validation_exception_handler`: Custom `ErroValidacaoFormulario`
-  4. `generic_exception_handler`: All uncaught exceptions
-- Custom error pages: `templates/errors/404.html`, `templates/errors/429.html`, `templates/errors/500.html`
-- Development mode (`RUNNING_MODE=Development`) shows detailed error info
-- Production mode shows user-friendly messages and logs details
-- Use `IS_DEVELOPMENT` from `util/config` to check current mode
+### Tempo real (SSE) e polling
 
-**Form Validation Errors (ErroValidacaoFormulario):**
-- **ALWAYS use** `ErroValidacaoFormulario` for DTO validation errors in routes that render templates
-- This exception centralizes error handling and eliminates code duplication
-- Import from `util.exceptions`: `from util.exceptions import ErroValidacaoFormulario`
-- Pattern for routes with form validation:
-  ```python
-  from util.exceptions import ErroValidacaoFormulario
+- Chat: `GET /api/chat/stream` é um `StreamingResponse` `text/event-stream`
+  consumido por `EventSource` (cookie enviado automaticamente; GET isento de CSRF).
+  Envio de mensagem é POST com header CSRF. Gerenciado por
+  `GerenciadorChat` (`util/chat_manager.py`).
+- Notificações: polling do front em `GET /api/notificacoes/nao-lidas` (~30s).
 
-  @router.post("/cadastrar")
-  async def post_cadastrar(request: Request, campo: str = Form()):
-      # Armazena dados do formulario
-      dados_formulario = {"campo": campo}
+## Banco de Dados
 
-      try:
-          dto = AlgumaDTO(campo=campo)
-          # logica de negocio...
-      except ValidationError as e:
-          raise ErroValidacaoFormulario(
-              validation_error=e,
-              template_path="pasta/template.html",  # Caminho relativo a templates/
-              dados_formulario=dados_formulario,    # Dados para reexibir
-              campo_padrao="campo",                 # Para erros de @model_validator
-              mensagem_flash="Mensagem customizada" # Opcional
-          )
-  ```
-- The global handler (`form_validation_exception_handler`) automatically:
-  - Processes validation errors using `processar_erros_validacao()`
-  - Displays flash message to user
-  - Renders template with `dados` and `erros` in context
-  - Logs the validation error for debugging
-- For templates that need extra context (like select options), add to `dados_formulario`:
-  ```python
-  dados_formulario["perfis"] = Perfil.valores()  # For select dropdowns
-  dados_formulario["usuario"] = usuario          # For displaying user info
-  ```
+- Use sempre `with obter_conexao() as conn:` (`util/db_util.py`): commit no sucesso,
+  rollback em exceção, fecha ao final. `conn.row_factory = sqlite3.Row`.
+- `cursor.lastrowid` para o ID inserido; `cursor.rowcount` para linhas afetadas.
+- **SQL injection:** SEMPRE `?` como placeholder, NUNCA concatenação.
+- **Boolean em SQLite:** armazene INTEGER (0/1); leia com `bool(row["campo"])`.
 
-**CSRF Protection:**
-- Implemented via `MiddlewareProtecaoCSRF` middleware in `util/csrf_protection.py`
-- Session-based token generation and validation
-- Protected methods: POST, PUT, PATCH, DELETE
-- Exempt paths: `/health`, `/api/`
-- Constant-time token comparison to prevent timing attacks
-- Template usage: `{{ csrf_input(request) }}` generates hidden input field
-- Token functions: `gerar_token_csrf()`, `obter_token_csrf(request)`, `validar_token_csrf(request, token)`
+## Data/Hora e Timezone
 
-**Rate Limiting:**
-- Two rate limiter classes in `util/rate_limiter.py`:
-  - `RateLimiter`: Static (values fixed at initialization)
-  - `DynamicRateLimiter`: **Recommended** - Reads values from `config_cache` on each check, no server restart needed
-- Decorator `@com_rate_limit(limiter, mensagem_erro)` in `util/rate_limiter.py` - Raises HTTPException 429
-- Decorator `@aplicar_rate_limit(limiter, mensagem_erro, redirect_url)` in `util/rate_limit_decorator.py` - Redirects or returns JSON
-- Helper `obter_identificador_cliente(request)` exists in **two** modules with **different** behavior:
-  - `util/rate_limiter.py`: returns only `request.client.host` (NO proxy header support) — used by `@com_rate_limit` and by the admin CRUD routes
-  - `util/rate_limit_decorator.py`: proxy-aware (tries `X-Forwarded-For`, then `X-Real-IP`, then `request.client.host`) — used by `@aplicar_rate_limit`
-- Global registry: `RegistroLimiters` for monitoring all limiters
+- **NUNCA** `datetime.now()` — use `agora()` de `util/datetime_util.py` (e `hoje()`).
+- **NUNCA** use `.strftime()` ao gravar no banco — passe o objeto datetime direto.
+  `.strftime()` só para exibição.
+- Estratégia de armazenamento: datetimes são gravados como **UTC naive**;
+  na leitura, `convert_datetime` (`util/db_util.py`) reanexa UTC e converte para
+  `TIMEZONE` (`America/Sao_Paulo` por padrão). O código sempre trabalha com datetime
+  *aware*. Na resposta JSON sai como ISO 8601 com offset.
 
-**Permission Helpers** (`util/permission_helpers.py`):
-- `verificar_propriedade(entity, usuario_id, request)`: Check if user owns an entity
-- `verificar_propriedade_ou_admin(entity, usuario_logado, request)`: Check ownership OR admin
-- `verificar_perfil(usuario_perfil, perfis_permitidos, request)`: Check profile-based access
-- `verificar_multiplas_condicoes(condicoes, request, operador="AND")`: Complex permission logic
+## Perfis (Roles)
 
-**Repository Helpers** (`util/repository_helpers.py`):
-- `obter_ou_404(entity, request, mensagem, redirect_url)`: Returns entity or RedirectResponse if None
-- `obter_lista_ou_vazia(lista, request)`: Guarantees list (never None)
-- `validar_inteiro_positivo(valor, request, nome_campo)`: Validates positive integer (for IDs)
-- `executar_operacao_repo(operacao, request, mensagem_erro)`: Wraps repo operations with error handling
+- **NUNCA** strings literais de perfil. Use o enum `Perfil` de `util/perfis.py`:
+  `Perfil.ADMIN.value`, `Perfil.CLIENTE.value`, `Perfil.VENDEDOR.value`.
+- `Perfil` herda de `EnumEntidade` (`util/enum_base.py`).
+- Para adicionar perfis, edite **somente** `util/perfis.py`.
+- Helpers: `Perfil.valores()`, `Perfil.nomes()`, `Perfil.existe()`, `Perfil.from_valor()`,
+  `Perfil.validar()`, `Perfil.obter_por_nome()`, `Perfil.para_opcoes_select()`.
 
-**Validation Helpers** (`util/validation_helpers.py`):
-- `verificar_email_disponivel(email, usuario_id_atual)`: Check email availability (returns tuple)
-- `email_existe(email)`: Simple email existence check (returns bool)
+## UsuarioLogado (dataclass)
 
-**PRG Pattern (Post-Redirect-Get):**
-- After POST operations, always return `RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)`
-- This prevents duplicate submissions on browser refresh
+- **SEMPRE** tipe o parâmetro `usuario_logado` como `UsuarioLogado`
+  (`from model.usuario_logado_model import UsuarioLogado`).
+- **NUNCA** acesse como dict (`usuario_logado["id"]`) — use atributos (`usuario_logado.id`).
+- Dataclass imutável (`frozen=True`): `id`, `nome`, `email`, `perfil`.
+- Helpers: `is_admin()`, `is_cliente()`, `is_vendedor()`, `tem_perfil(*perfis)`.
+- Construído na sessão a partir de `UsuarioLogado.from_usuario(usuario)`.
 
-## DTO Validation System
+Padrão de rota:
+```python
+from typing import Optional
+from fastapi import APIRouter, Request, status
+from model.usuario_logado_model import UsuarioLogado
+from util.auth_decorator import requer_autenticacao
 
-**Reusable Validators** (`dtos/validators.py`):
-- Import validators: `from dtos.validators import validar_email, validar_senha_forte, validar_cpf, etc.`
-- Use with `field_validator` decorator in Pydantic models
-- Available validators:
-  - **Text**: `validar_string_obrigatoria()`, `validar_comprimento()`, `validar_texto_minimo_palavras()`, `validar_nome_pessoa()`
-  - **Email**: `validar_email()`
-  - **Password**: `validar_senha_forte()`, `validar_senhas_coincidem()`
-  - **Brazilian**: `validar_cpf()`, `validar_cnpj()`, `validar_telefone_br()`, `validar_cep()`
-  - **Dates**: `validar_data()`, `validar_data_futura()`, `validar_data_passada()`
-  - **Numbers**: `validar_inteiro_positivo()`, `validar_decimal_positivo()`
-  - **Files**: `validar_extensao_arquivo()`, `validar_tamanho_arquivo()`
-  - **Enums**: `validar_tipo()` (validates against `EnumEntidade` subclasses)
+router = APIRouter(prefix="/usuario")
 
-**Example Usage:**
+@router.get("/perfil", response_model=UsuarioResponse)
+@requer_autenticacao()
+async def get_perfil(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
+    assert usuario_logado is not None
+    ...
+```
+
+## Sistema de Validação (DTOs de entrada)
+
+- DTO de entrada é o **body** da rota (Pydantic). Validações cross-field
+  (ex: senhas coincidem) via `@model_validator` sobem como `ValidationError` →
+  **422 nativo** do FastAPI, reformatado pelo `validation_exception_handler`
+  usando `processar_erros_validacao_lista` (`util/validation_util.py`).
+- **NÃO** existe mais `ErroValidacaoFormulario` (era do fluxo Jinja).
+- Validadores reutilizáveis em `dtos/validators.py` (use com `field_validator`):
+  - Texto: `validar_string_obrigatoria()`, `validar_comprimento()`, `validar_nome_pessoa()`.
+  - E-mail: `validar_email()`. Senha: `validar_senha_forte()`, `validar_senhas_coincidem()`.
+  - BR: `validar_cpf()`, `validar_cnpj()`, `validar_telefone_br()`, `validar_cep()`.
+  - Datas/números/arquivos/enums: ver o arquivo.
+
 ```python
 from pydantic import BaseModel, field_validator
 from dtos.validators import validar_email, validar_senha_forte
 
-class UsuarioDTO(BaseModel):
+class LoginDTO(BaseModel):
     email: str
     senha: str
-
-    _validar_email = field_validator('email')(validar_email())
-    _validar_senha = field_validator('senha')(validar_senha_forte())
+    _v_email = field_validator("email")(validar_email())
+    _v_senha = field_validator("senha")(validar_senha_forte())
 ```
 
-## Profile Photo System
+## Como Criar um Novo Módulo JSON
 
-**Photo Management** (`util/foto_util.py`):
-- User photos stored in `static/img/usuarios/` with format `{id:06d}.jpg`
-- Automatic photo creation on user registration (copies from `static/img/user.jpg`)
-- Functions available:
-  - `obter_caminho_foto_usuario(id)`: Get photo URL for templates
-  - `obter_path_absoluto_foto(id)`: Get absolute filesystem path
-  - `criar_foto_padrao_usuario(id)`: Create default photo for new user
-  - `salvar_foto_cropada_usuario(id, base64_data)`: Save cropped photo from frontend
-  - `foto_existe(id)`: Check if user photo exists
-  - `obter_tamanho_foto(id)`: Get photo file size
+Sequência (espelha `auth_routes.py` / `usuario_routes.py`):
 
-**Frontend Integration:**
-- JavaScript module: `static/js/cortador-imagem.js` (uses Cropper.js)
-- Handler: `static/js/manipulador-foto-perfil.js`
-- Modal component: `templates/components/modal_corte_imagem.html`
-- Images automatically resized to `FOTO_PERFIL_TAMANHO_MAX` (default: 256px)
-- Supports drag & drop, file selection, and crop with preview
+1. **Model** (`model/entidade_model.py`): dataclass; enums de domínio herdam `EnumEntidade`.
+2. **SQL** (`sql/entidade_sql.py`): constantes UPPERCASE (CRIAR_TABELA, INSERIR, OBTER_*, ATUALIZAR, EXCLUIR), com `?`.
+3. **Repository** (`repo/entidade_repo.py`): funções CRUD + `_row_to_entidade()`.
+4. **DTO de entrada** (`dtos/entidade_dto.py`): `CriarDTO`/`AlterarDTO` com validadores de `dtos/validators.py`.
+5. **Response schema** (`dtos/responses/entidade_response.py`): modelo de saída + classmethod
+   `de_entidade(...)`; para listas, monte `PaginaResponse[EntidadeResponse]`.
+6. **Route** (`routes/entidade_routes.py`): `APIRouter(prefix="/entidade")`;
+   `@requer_autenticacao()`; DTO como body; `response_model=`/`status_code=`;
+   `checar_rate_limit(...)` onde fizer sentido; checagens de propriedade → 403/404.
+7. **Registrar em `main.py`**: importar o repo e adicioná-lo a `TABELAS` (criação da
+   tabela) e importar o router adicionando-o a `ROUTERS` (incluído sob `/api`).
 
-## Support Ticket System (Chamados)
+Regras de conversão (caso porte algo do estilo Jinja):
+`Form()` → DTO body • `RedirectResponse(303)` → recurso (200/201) ou 204 •
+flash → some (o status + corpo é o feedback) • `TemplateResponse(erros)` → 422 nativo •
+listagens → `PaginaResponse[T]`.
 
-Complete support ticket system for user-admin communication:
+## Configuração
 
-**Models** (`model/chamado_model.py`, `model/chamado_interacao_model.py`):
-- `Chamado`: Support ticket with title, status, priority, user ownership
-- `ChamadoInteracao`: Ticket response/interaction messages
-- `StatusChamado` enum: `Aberto`, `Em Analise`, `Resolvido`, `Fechado`
-- `PrioridadeChamado` enum: `Baixa`, `Media`, `Alta`, `Urgente`
+Carregada por `util/config.py` (python-dotenv). Veja `.env.example`. Chaves principais:
 
-**User Routes** (`routes/chamados_routes.py`, prefix: `/chamados`):
-- Users can create, view, respond to, and delete their own tickets
-- Ownership verification via `verificar_propriedade()`
+- `DATABASE_PATH`, `SECRET_KEY` (≥32 chars e ≠ default fora de dev — validado no startup),
+  `HOST`, `PORT` (default **8000** no contexto SPA), `RELOAD`, `RUNNING_MODE`
+  (`Development`/`Production` → `IS_DEVELOPMENT`), `TIMEZONE`.
+- `BASE_URL`: base usada em links de e-mail (redefinição de senha aponta para o SPA) e
+  nas `back_urls`/`webhook_url` de pagamento.
+- `SPA_DIST_PATH`: caminho do build do React em produção (default `../frontend/dist`).
+  Lido em `main.py`; quando existe e `not IS_DEVELOPMENT`, o catch-all serve o `index.html`.
+- E-mail: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`.
+- Pagamento: `MERCADOPAGO_*`, `STRIPE_*`, `PAYPAL_*`.
+- Foto: `FOTO_PERFIL_TAMANHO_MAX`, `FOTO_MAX_UPLOAD_BYTES`. Senha: `PASSWORD_MIN/MAX_LENGTH`.
+- Rate limits: dezenas de `RATE_LIMIT_*_MAX` / `RATE_LIMIT_*_MINUTOS`.
 
-**Admin Routes** (`routes/admin_chamados_routes.py`, prefix: `/admin/chamados`):
-- Admins can list all tickets, respond, and change status
-- Admin-only access via `@requer_autenticacao([Perfil.ADMIN.value])`
+**Configuração híbrida:** Database (tabela `configuracao`) → `.env` → default hardcoded.
+Editável em runtime via `PUT /api/admin/configuracoes`; cacheada em `util/config_cache.py`
+(`ConfigCache`, thread-safe). `util/migrar_config.py` semeia o banco a partir do `.env` no startup.
 
-## Real-Time Chat System
+## Servir o SPA (produção) e estáticos
 
-Private 1-to-1 messaging system using Server-Sent Events (SSE):
-
-**Models** (`model/chat_sala_model.py`, `model/chat_participante_model.py`, `model/chat_mensagem_model.py`):
-- `ChatSala`: Chat room (private, identified by `menor_id_maior_id` format)
-- `ChatParticipante`: Room participant
-- `ChatMensagem`: Individual message
-
-**Chat Manager** (`util/chat_manager.py`):
-- `GerenciadorChat` class manages SSE connections
-- Singleton instance: `gerenciador_chat`
-- Methods: `conectar()`, `desconectar()`, `broadcast_para_sala()`, `esta_conectado()`, `obter_estatisticas()`
-
-**Routes** (`routes/chat_routes.py`, prefix: `/chat`):
-- `GET /chat/stream`: SSE event stream
-- `GET /chat/salas`: List chat rooms
-- `POST /chat/salas`: Create chat room
-- `POST /chat/enviar`: Send message
-- `GET /chat/buscar-usuarios`: Search users for new conversations
-- `GET /chat/conversas`: List conversations
-
-**Frontend**:
-- Widget: `templates/components/chat_widget.html`
-- JavaScript: `static/js/widget-chat.js`
-- CSS: `static/css/widget-chat.css`
-
-## Database Backup System
-
-**Backup Utilities** (`util/backup_util.py`):
-- `criar_backup(automatico=False)`: Create database backup
-- `listar_backups()`: List all available backups (returns `BackupInfo` objects)
-- `restaurar_backup(nome_arquivo)`: Restore from backup with integrity validation and automatic rollback
-- `excluir_backup(nome_arquivo)`: Delete a backup file
-- `obter_info_backup(nome_arquivo)`: Get backup details
-- Path traversal protection and filename validation
-- Automatic pre-restore safety backup
-
-**Admin Routes** (`routes/admin_backups_routes.py`, prefix: `/admin/backups`):
-- Create, list, download, restore, and delete backups
-- Admin-only access
-
-## Templates and Frontend
-
-### Template Structure
-
-**Base Templates:**
-- `base_publica.html`: Base for public pages (marketing, landing pages)
-- `base_privada.html`: Base for authenticated user pages
-
-**Public Pages:**
-- `index.html`: Landing page
-- `sobre.html`: About page
-- `dashboard.html`: Authenticated user dashboard
-
-**Error Pages:**
-- `errors/404.html`: Not found error page
-- `errors/429.html`: Rate limit exceeded error page
-- `errors/500.html`: Server error page
-
-**Auth Pages:**
-- `auth/login.html`, `auth/cadastro.html`, `auth/esqueci_senha.html`, `auth/redefinir_senha.html`
-
-**User Profile Pages:**
-- `perfil/visualizar.html`, `perfil/editar.html`, `perfil/alterar-senha.html`
-
-**Support Ticket Pages:**
-- `chamados/listar.html`, `chamados/cadastrar.html`, `chamados/visualizar.html`
-
-**Admin Pages:**
-- `admin/usuarios/listar.html`, `admin/usuarios/cadastro.html`, `admin/usuarios/editar.html`: User management
-- `admin/configuracoes/listar.html`: System configuration (4 tabs)
-- `admin/backups/listar.html`: Database backup management
-- `admin/chamados/listar.html`, `admin/chamados/responder.html`: Ticket management
-- `admin/tema.html`: Theme selector
-- `admin/auditoria.html`: Log viewer
-
-**Components** (Reusable UI components - use `{% include %}`):
-- `components/modal_confirmacao.html`: Confirmation modal for delete operations
-  - Use `abrirModalConfirmacao({url, mensagem, detalhes})` function
-  - Automatically displays confirmation dialog with optional details
-- `components/modal_alerta.html`: Alert modal for messages (replaces alert())
-  - Use: `window.App.Modal.show(mensagem, tipo, titulo, detalhes)`
-  - Shortcuts: `window.App.Modal.showError()`, `window.App.Modal.showWarning()`, `window.App.Modal.showInfo()`, `window.App.Modal.showSuccess()`
-  - Types: 'danger', 'warning', 'info', 'success'
-- `components/modal_corte_imagem.html`: Image crop modal with Cropper.js
-- `components/galeria_fotos.html`: Photo gallery macro with thumbnails
-  - Use macro: `{% from 'components/galeria_fotos.html' import galeria_fotos %}`
-  - Call with: `{{ galeria_fotos(images, gallery_id='myGallery') }}`
-- `components/chat_widget.html`: Real-time chat interface widget
-- `components/navbar_user_dropdown.html`: User menu dropdown in navbar
-- `components/indicador_senha.html`: Password strength indicator
-- `components/alerta_erro.html`: Error display component
-- `components/rate_limit_field.html`: Rate limit config fields (paired max/minutos with live preview)
-
-**Macros** (Reusable template functions - use `{% from ... import ... %}`):
-- `macros/form_fields.html`: Complete form field macro library
-  - `input_text()`, `input_email()`, `input_password()`, `input_date()`, `input_decimal()`
-  - `textarea()`, `select()`, `checkbox()`, `radio()`
-  - All macros support: label, help text, error messages, Bootstrap styling
-- `macros/action_buttons.html`: Action button macros (edit, delete, view, etc.)
-- `macros/badges.html`: Badge/status indicator macros
-- `macros/empty_states.html`: Empty state display macros
-
-### Example Pages
-
-Complete working examples at `/exemplos`:
-
-- **`exemplos/index.html`**: Examples gallery homepage
-- **`exemplos/demo_campos_formulario.html`**: Form fields macro demonstration
-- **`exemplos/grade_cartoes.html`**: Responsive card grid
-- **`exemplos/lista_tabela.html`**: Data table with actions
-- **`exemplos/bootswatch.html`**: Theme selector with 28+ themes
-- **`exemplos/detalhes_produto.html`**: E-commerce product page
-- **`exemplos/detalhes_servico.html`**: Professional service page
-- **`exemplos/detalhes_perfil.html`**: User profile page
-- **`exemplos/detalhes_imovel.html`**: Real estate property page
-
-### JavaScript Modules
-
-All JavaScript modules are fully documented and production-ready:
-
-**`static/js/toasts.js`** - Toast Notification System:
-- Automatic display of flash messages from backend
-- Bootstrap 5 toast components
-- Functions: `window.App.Toasts.show(mensagem, tipo)`
-- Types: `success`, `danger`, `warning`, `info`
-- Auto-dismiss after configurable delay
-
-**`static/js/modal-alerta.js`** - Modal Alert System (replaces alert()):
-- Modern replacement for JavaScript `alert()` and `confirm()`
-- Functions:
-  - `window.App.Modal.show(mensagem, tipo, titulo, detalhes)`: Main function
-  - `window.App.Modal.showError()`, `window.App.Modal.showWarning()`, `window.App.Modal.showInfo()`, `window.App.Modal.showSuccess()`
-- **NEVER use native `alert()`, `confirm()` or `prompt()` - always use modals**
-
-**`static/js/mascara-input.js`** - Input Masking System:
-- **MascaraInput Class**: Pattern-based input masking
-  - Pattern syntax: `0` = digit, `A` = uppercase letter, `a` = lowercase letter, any other = literal
-  - Pre-defined masks in `MascaraInput.MASKS`: CPF, CNPJ, TELEFONE, TELEFONE_FIXO, CEP, DATA, HORA, DATA_HORA, PLACA_ANTIGA, PLACA_MERCOSUL, CARTAO, CVV, CVV4, VALIDADE_CARTAO
-  - Usage: `<input data-mask="CPF" data-unmask="true">`
-- **MascaraDecimal Class**: Decimal/monetary value formatting (Brazilian format)
-  - Usage: `<input data-decimal data-decimal-places="2" data-decimal-prefix="R$ ">`
-  - On submit, appends a hidden `{name}_unmasked` field with the parsed numeric value (e.g. `1234.56`)
-  - Static methods: `MascaraDecimal.format(value, options)`, `MascaraDecimal.parse(value, options)`
-
-**`static/js/validador-senha.js`** - Password Strength Feedback (Visual Only):
-- **IMPORTANT**: Provides ONLY visual feedback, does NOT validate or block form submission
-- Visual strength indicator with progress bar
-- Color-coded strength levels (weak, medium, strong)
-- **Validation is done server-side via Pydantic DTOs**
-
-**`static/js/cortador-imagem.js`** - Image Crop System:
-- Powered by Cropper.js library
-- Features: drag & drop, file selection, interactive crop, zoom, rotate, aspect ratio lock (1:1)
-- Returns base64 encoded cropped image
-
-**`static/js/manipulador-foto-perfil.js`** - Profile Photo Handler:
-- Integration between image cropper and profile photo system
-- Handles photo upload flow, AJAX save, success/error feedback
-
-**`static/js/auxiliares-exclusao.js`** - Delete Confirmation Helpers:
-- Helper functions for delete operations with modal confirmation
-
-**`static/js/widget-chat.js`** - Chat Widget:
-- SSE connection management and real-time message display
-- Chat room navigation and message sending
-
-### CSS Assets
-
-**Bootstrap 5.3.8:**
-- `static/css/bootstrap.min.css`: Core Bootstrap framework (local copy)
-
-**Bootswatch Themes** (`static/css/bootswatch/`):
-- Complete collection of 28+ free Bootstrap themes
-- Preview at `/exemplos/bootswatch`
-
-**Custom Styles:**
-- `static/css/custom.css`: Project-specific custom styles
-- `static/css/widget-chat.css`: Chat widget styles
-
-## Creating a New CRUD
-
-Follow this exact sequence (detailed guide in `docs/CRIAR_CRUD.md`):
-
-1. **Model** (`model/entidade_model.py`): Create dataclass with type hints. Use `EnumEntidade` for status/type enums.
-2. **SQL** (`sql/entidade_sql.py`): Define SQL queries as constants (CRIAR_TABELA, INSERIR, OBTER_TODOS, OBTER_POR_ID, ATUALIZAR, EXCLUIR)
-3. **Repository** (`repo/entidade_repo.py`): Implement CRUD functions, include `_row_to_entidade()` converter
-4. **DTOs** (`dtos/entidade_dto.py`):
-   - Create Pydantic models for validation (CriarDTO and AlterarDTO)
-   - Use validators from `dtos/validators.py` when possible
-5. **Routes** (`routes/entidade_routes.py`):
-   - Create APIRouter with prefix
-   - Implement GET/POST pairs: listar, cadastrar, alterar, excluir
-   - Use `@requer_autenticacao()` decorator
-   - Use `ErroValidacaoFormulario` for validation errors
-   - Use `DynamicRateLimiter` for rate limiting
-   - Use permission helpers for ownership checks
-6. **Templates** (`templates/entidade/`):
-   - Create listar.html, cadastrar.html, alterar.html, excluir.html
-   - Use form field macros from `macros/form_fields.html`
-   - Use `components/modal_confirmacao.html` for delete operations
-   - Include `{{ csrf_input(request) }}` in all forms
-7. **Register in main.py**:
-   - Import repository
-   - Add to `TABELAS` list for table creation
-   - Import and add router to `ROUTERS` list
-
-## Configuration
-
-**Environment Variables (.env):**
-- `DATABASE_PATH`: SQLite database file path (default: dados.db)
-- `APP_NAME`: Application name shown in UI and logs
-- `SECRET_KEY`: Session secret (MUST change in production, min 32 chars)
-- `HOST`, `PORT`: Server configuration (default: localhost:8400)
-- `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`: Email service (Resend.com)
-- `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
-- `LOG_RETENTION_DAYS`: Number of days to keep log files (default: 30)
-- `BASE_URL`: Application base URL for emails
-- `FOTO_PERFIL_TAMANHO_MAX`: Max photo size in pixels (default: 256)
-- `FOTO_MAX_UPLOAD_BYTES`: Max upload file size (default: 5MB)
-- `RUNNING_MODE`: Development or Production (affects error display)
-- `TIMEZONE`: Application timezone (default: America/Sao_Paulo)
-- `VERSION`: Application version (default: 1.0.0)
-- `PASSWORD_MIN_LENGTH`, `PASSWORD_MAX_LENGTH`: Password constraints
-- `TOAST_AUTO_HIDE_DELAY_MS`: Toast auto-dismiss delay (default: 5000ms)
-
-All configuration is loaded via `util/config.py` using python-dotenv.
-
-**Hybrid Configuration System:**
-- Configuration cascade: Database (if exists) -> .env file -> Hardcoded default
-- Runtime-editable configs stored in `configuracao` table
-- Managed via admin interface at `/admin/configuracoes` with **4 organized tabs**:
-  - **Frequencia de Requisicoes**: All rate limiting configs grouped
-  - **Interface**: UI configs (toast delay, etc)
-  - **Aplicacao**: App name, email settings
-  - **Fotos**: Photo upload and size configs
-- Cached for performance using `util/config_cache.py` (`ConfigCache` class)
-  - Thread-safe with `threading.RLock()`
-  - Methods: `obter()`, `obter_int()`, `obter_bool()`, `obter_float()`, `obter_multiplos()`, `limpar()`, `limpar_chave()`
-- **Rate limiters are DYNAMIC**: Changes apply immediately without server restart via `DynamicRateLimiter`
-- Config migration: `util/migrar_config.py` migrates .env values to database on startup
+- `/static` é montado se a pasta existir (serve uploads/fotos).
+- Em produção (`not IS_DEVELOPMENT`), se `SPA_DIST_PATH` existir, `main.py` monta
+  `/assets` e registra um catch-all `GET /{caminho_spa:path}` que devolve `index.html`.
+  O catch-all é registrado **por último** e nunca captura `/api` nem `/static`.
+- Em dev, **não** há catch-all: o SPA é servido pelo Vite com proxy de `/api`.
 
 ## Seed Data
 
-- Seed data files in JSON format in `data/` directory
-- Loaded automatically on startup via `util/seed_data.py`
-- Default users created from `data/usuarios_seed.json`:
-  - admin@sistema.com / Admin@123 (Administrador)
-  - joao@email.com / Joao@123 (Cliente)
-  - maria@email.com / Maria@123 (Cliente)
+- JSON em `data/`, carregado no startup por `util/seed_data.py`.
+- Admin padrão de `data/usuarios_seed.json` (ex: `admin@sistema.com` / `Admin@123`).
 
-## Testing
+## Testes
 
-**Test Structure (organized by type):**
-- `tests/conftest.py`: Global fixtures
-- `tests/unit/`: Unit tests (config_cache, DTOs, datetime, enums, rate limiter, validators, etc.)
-- `tests/integration/`: Integration tests (chat manager, config system, CSRF, migrations)
-- `tests/e2e/`: End-to-end tests (auth flows with Playwright)
-- `tests/helpers/`: Test helper functions (permission, repository, validation helpers)
+- `tests/conftest.py`: fixtures globais (`client` TestClient com sessão limpa,
+  `cliente_autenticado`, `admin_autenticado`, helpers `criar_usuario`/`fazer_login`,
+  banco temporário).
+- `tests/unit/`: unitários. `tests/integration/`: aferem JSON/status da API.
+- `tests/helpers/`: helpers de teste.
+- Marcadores: `@pytest.mark.auth`, `@pytest.mark.crud`, `@pytest.mark.integration`, `@pytest.mark.unit`.
 
-**Fixtures in `tests/conftest.py`:**
-- `client`: TestClient with clean session per test
-- `usuario_teste`, `admin_teste`: Test user data
-- `cliente_autenticado`, `admin_autenticado`: Pre-authenticated clients
-- `criar_usuario`, `fazer_login`: Helper functions
-- Test database automatically uses temporary file
+## Grupos de Endpoints (todos sob `/api`)
 
-**Test markers:** `@pytest.mark.auth`, `@pytest.mark.crud`, `@pytest.mark.integration`, `@pytest.mark.unit`
+| Router (`routes/`) | Prefixo | Endpoints principais |
+|--------------------|---------|----------------------|
+| `auth_routes.py` | `/api` | `GET /csrf-token`, `GET /me`, `POST /login`, `POST /logout`, `POST /cadastrar`, `POST /esqueci-senha`, `POST /redefinir-senha` |
+| `usuario_routes.py` | `/api/usuario` | `GET /dashboard`, `GET/PUT /perfil`, `PUT /senha`, `PUT /foto` (base64) |
+| `admin_usuarios_routes.py` | `/api/admin/usuarios` | CRUD admin (lista paginada), guard 403 |
+| `admin_configuracoes_routes.py` | `/api/admin` | `GET/PUT /configuracoes`, `GET /auditoria/logs`, `GET /auditoria/registros` |
+| `chamados_routes.py` | `/api/chamados` | `GET /` (paginado), `POST`, `GET /{id}`, responder, `DELETE /{id}` |
+| `admin_chamados_routes.py` | `/api/admin/chamados` | lista, `GET /{id}`, responder, `PATCH /{id}/status` |
+| `chat_routes.py` | `/api/chat` | `GET /stream` (SSE), `POST /salas`, `GET /conversas`, `GET /mensagens/{sala_id}`, `POST /mensagens`, `POST /mensagens/lidas/{sala_id}`, `GET /mensagens/nao-lidas/total`, `GET /usuarios/buscar` |
+| `notificacao_routes.py` | `/api/notificacoes` | `GET /`, `GET /nao-lidas`, `PATCH /marcar-todas`, `PATCH /{id}/lida`, `DELETE /lidas`, `DELETE /{id}` |
+| `pagamento_routes.py` | `/api/pagamentos` | `GET`, `POST` (→ `{init_point}`), `GET /{id}`, `POST /{id}/paypal/capturar`, `POST /webhook/{mercadopago\|stripe\|paypal}` (isento CSRF/auth) |
+| `admin_pagamentos_routes.py` | `/api/admin/pagamentos` | lista paginada, `GET /{id}` (dados do provider) |
+| `admin_backups_routes.py` | `/api/admin/backups` | listar, criar, `GET /{nome}/download`, restaurar, excluir |
 
-## Important Files
+## Arquivos Importantes
 
-### Core Application
-- `main.py`: Application entry point, router/middleware registration, table creation, exception handlers
+### Núcleo
+- `main.py`: middlewares (Session + CSRF), handlers JSON, criação de tabelas/seed,
+  registro de routers sob `/api`, `/static`, catch-all SPA (prod), `/health`.
 
 ### Utilities
-- `util/auth_decorator.py`: Authentication/authorization logic
-- `util/perfis.py`: **Single source of truth** for user profiles (inherits `EnumEntidade`)
-- `util/enum_base.py`: **Base class** for all domain enums (`EnumEntidade`)
-- `util/db_util.py`: Database connection management
-- `util/security.py`: Password hashing with bcrypt
-- `util/senha_util.py`: Password strength validation
-- `util/email_service.py`: Email sending via Resend.com API
-- `util/template_util.py`: Template rendering helpers with auto-injected context (filters, globals, CSRF)
-- `util/foto_util.py`: Profile photo management (create, save, crop)
-- `util/exceptions.py`: **Custom exceptions** including `ErroValidacaoFormulario` for centralized error handling
-- `util/exception_handlers.py`: **Global exception handlers** for HTTP, validation, form, and generic errors
-- `util/validation_util.py`: **Error processing utilities** for DTO validation errors
-- `util/csrf_protection.py`: **CSRF middleware** and token management
-- `util/security_headers.py`: Security headers middleware
-- `util/flash_messages.py`: Flash message helpers
-- `util/logger_config.py`: Logging configuration with rotation
-- `util/config.py`: Configuration loading from .env with security validation
-- `util/config_cache.py`: Runtime configuration caching (thread-safe `ConfigCache`)
-- `util/seed_data.py`: Automatic seed data loading
-- `util/migrar_config.py`: Migration of .env configs to database
-- `util/rate_limiter.py`: **Rate limiting** with `RateLimiter`, `DynamicRateLimiter`, `RegistroLimiters`, `@com_rate_limit`
-- `util/rate_limit_decorator.py`: **Rate limit decorator** `@aplicar_rate_limit` with proxy-aware IP detection
-- `util/permission_helpers.py`: **Permission checking** (ownership, profile, multi-condition)
-- `util/repository_helpers.py`: **Repository helpers** (obter_ou_404, validation, error handling)
-- `util/validation_helpers.py`: **Validation helpers** (email availability checking)
-- `util/backup_util.py`: **Database backup** management (create, restore, validate, delete)
-- `util/chat_manager.py`: **SSE connection manager** for real-time chat (`GerenciadorChat`)
-- `util/datetime_util.py`: Timezone-aware datetime handling
+- `util/auth_decorator.py`: `@requer_autenticacao` (401/403) + sessão.
+- `util/csrf_protection.py`: `MiddlewareProtecaoCSRF` (header `X-CSRF-Token`) + `obter_token_csrf`.
+- `util/exception_handlers.py`: handlers JSON do contrato de erro (`resposta_erro`).
+- `util/validation_util.py`: processamento de erros de validação para o campo `errors`.
+- `util/api_helpers.py`: `checar_rate_limit` (429 + `Retry-After`).
+- `util/rate_limiter.py`: `RateLimiter`, `DynamicRateLimiter`, `RegistroLimiters`, `obter_identificador_cliente`.
+- `util/perfis.py`: fonte única de perfis (`EnumEntidade`).
+- `util/enum_base.py`: base de todos os enums de domínio.
+- `util/db_util.py`: conexão + adaptação de datetime (UTC naive).
+- `util/datetime_util.py`: `agora()`, `hoje()`, conversões ISO.
+- `util/security.py`: hash bcrypt; `util/senha_util.py`: força de senha.
+- `util/email_service.py`: envio via Resend; links de e-mail usam `BASE_URL` (SPA).
+- `util/foto_util.py`: fotos de perfil; `obter_caminho_foto_usuario` devolve URL para os schemas.
+- `util/config.py` / `util/config_cache.py` / `util/migrar_config.py`: config híbrida.
+- `util/seed_data.py`, `util/logger_config.py`, `util/security_headers.py`.
+- `util/chat_manager.py`: `GerenciadorChat` (SSE). `util/notificacao_util.py`,
+  `util/auditoria_decorator.py`, `util/backup_util.py`, `util/upload_util.py`, `util/paginacao_util.py`.
+- `util/mercadopago_util.py`, `util/payment_service.py`, `util/payment_provider.py`, `util/payment_adapters/`.
+- `util/validation_helpers.py`: disponibilidade de e-mail.
 
-### DTOs
-- `dtos/validators.py`: **Reusable validation functions** for all DTOs
-- `dtos/auth_dto.py`: Login, register, password reset validation
-- `dtos/usuario_dto.py`: User creation/update validation
-- `dtos/perfil_dto.py`: Profile validation
-- `dtos/chamado_dto.py`: Support ticket validation
-- `dtos/chamado_interacao_dto.py`: Ticket interaction validation
-- `dtos/chat_dto.py`: Chat room and message validation
-- `dtos/configuracao_dto.py`: Configuration validation
+### DTOs (entrada)
+- `dtos/validators.py`, `dtos/auth_dto.py`, `dtos/usuario_dto.py`, `dtos/perfil_dto.py`
+  (inclui `AtualizarFotoDTO.foto_base64`), `dtos/chamado_dto.py`,
+  `dtos/chamado_interacao_dto.py`, `dtos/chat_dto.py`, `dtos/configuracao_dto.py`,
+  `dtos/pagamento_dto.py`.
 
-### Models
-- `model/usuario_model.py`: User entity
-- `model/usuario_logado_model.py`: **UsuarioLogado dataclass** (frozen, immutable)
-- `model/chamado_model.py`: Support ticket with `StatusChamado` and `PrioridadeChamado` enums
-- `model/chamado_interacao_model.py`: Ticket interaction
-- `model/chat_sala_model.py`: Chat room
-- `model/chat_participante_model.py`: Chat participant
-- `model/chat_mensagem_model.py`: Chat message
-- `model/configuracao_model.py`: System configuration
+### Response Schemas (`dtos/responses/`)
+- `comum.py`: `ErroResponse`, `MensagemResponse`, `TokenCsrfResponse`, `PaginaResponse[T]`.
+- `usuario_response.py` (`UsuarioResponse`, `DashboardResponse`), `chamado_response.py`,
+  `chat_response.py`, `notificacao_response.py`, `pagamento_response.py`,
+  `config_response.py`, `auditoria_response.py`, `backup_response.py`.
 
-### SQL
-- `sql/usuario_sql.py`, `sql/configuracao_sql.py`, `sql/chamado_sql.py`, `sql/chamado_interacao_sql.py`
-- `sql/chat_sala_sql.py`, `sql/chat_participante_sql.py`, `sql/chat_mensagem_sql.py`
-- `sql/indices_sql.py`: Database index definitions for performance optimization
+### Models / SQL / Repos
+- `model/`: `usuario_model.py`, `usuario_logado_model.py`, `chamado*`, `chat_*`,
+  `notificacao_model.py`, `auditoria_model.py`, `pagamento_model.py`, `configuracao_model.py`.
+- `sql/` e `repo/`: um por entidade + `indices_*` para índices de performance.
 
-### Repositories
-- `repo/usuario_repo.py`, `repo/configuracao_repo.py`, `repo/chamado_repo.py`, `repo/chamado_interacao_repo.py`
-- `repo/chat_sala_repo.py`, `repo/chat_participante_repo.py`, `repo/chat_mensagem_repo.py`
-- `repo/indices_repo.py`: Database index management
+## Estilo de Código
 
-### Routes
-- `routes/auth_routes.py`: Login, register, password recovery
-- `routes/usuario_routes.py`: User dashboard, profile management, photo upload, password change
-- `routes/chamados_routes.py`: User support tickets (prefix: `/chamados`)
-- `routes/chat_routes.py`: Real-time chat system (prefix: `/chat`)
-- `routes/admin_usuarios_routes.py`: Admin user management (prefix: `/admin/usuarios`)
-- `routes/admin_configuracoes_routes.py`: Admin system configuration (prefix: `/admin`)
-- `routes/admin_backups_routes.py`: Admin database backups (prefix: `/admin/backups`)
-- `routes/admin_chamados_routes.py`: Admin ticket management (prefix: `/admin/chamados`)
-- `routes/public_routes.py`: Public pages (/, /index, /sobre)
-- `routes/examples_routes.py`: Example pages showcase (prefix: `/exemplos`)
+- Dataclasses para models; type hints em tudo; constantes SQL UPPERCASE.
+- Docstrings (especialmente em repos); funções privadas com `_` (ex: `_row_to_entidade`).
+- Ordem de import: stdlib → terceiros → local (DTOs → Models → Repos → Utils).
+- Validadores de `dtos/validators.py`; enums de domínio herdam `EnumEntidade`.
 
-## Reusable Components Quick Reference
+## Notas de Segurança
 
-### Backend (Python)
-- **Validators**: `from dtos.validators import validar_email, validar_cpf`
-- **Form Validation Errors**: `from util.exceptions import ErroValidacaoFormulario`
-- **Flash Messages**: `from util.flash_messages import informar_sucesso, informar_erro`
-- **Photos**: `from util.foto_util import obter_caminho_foto_usuario`
-- **Auth**: `from util.auth_decorator import requer_autenticacao`
-- **Profiles**: `from util.perfis import Perfil`
-- **Logged User**: `from model.usuario_logado_model import UsuarioLogado`
-- **Rate Limiting**: `from util.rate_limiter import DynamicRateLimiter, com_rate_limit`
-- **Permissions**: `from util.permission_helpers import verificar_propriedade, verificar_propriedade_ou_admin`
-- **Repo Helpers**: `from util.repository_helpers import obter_ou_404, validar_inteiro_positivo`
-- **Email Check**: `from util.validation_helpers import verificar_email_disponivel`
-- **Enums**: `from util.enum_base import EnumEntidade`
-- **CSRF**: `{{ csrf_input(request) }}` in templates
-- **Config Cache**: `from util.config_cache import config`
-
-### Frontend (Templates)
-- **Form Fields**: `{% from 'macros/form_fields.html' import input_text %}`
-- **Action Buttons**: `{% from 'macros/action_buttons.html' import ... %}`
-- **Badges**: `{% from 'macros/badges.html' import ... %}`
-- **Empty States**: `{% from 'macros/empty_states.html' import ... %}`
-- **Rate Limit Fields**: `{% from 'components/rate_limit_field.html' import rate_limit_field %}`
-- **Confirmation Modal**: `{% include 'components/modal_confirmacao.html' %}`
-- **Photo Gallery**: `{% from 'components/galeria_fotos.html' import galeria_fotos %}`
-- **Chat Widget**: `{% include 'components/chat_widget.html' %}`
-
-### Frontend (JavaScript)
-- **Toasts**: `window.App.Toasts.show('Mensagem', 'success')`
-- **Modals**: `window.App.Modal.showError('Mensagem')`, `window.App.Modal.showWarning()`, `window.App.Modal.showInfo()`, `window.App.Modal.showSuccess()`
-- **Input Masks**: `<input data-mask="CPF">`
-- **Decimal Masks**: `<input data-decimal data-decimal-prefix="R$ ">`
-- **Photo Cropper**: Use `modal_corte_imagem.html` component
-
-## Common Gotchas
-
-1. **Router Registration Order**: In `main.py`, register `public_router` and `examples_router` LAST to avoid catching all routes with "/"
-2. **SQL Injection Prevention**: ALWAYS use `?` placeholders in SQL, NEVER string concatenation
-3. **Boolean in SQLite**: Store as INTEGER (0/1), convert with `bool(row["campo"])` and `1 if valor else 0`
-4. **Profile Constants**: Import and use `Perfil` enum from `util/perfis.py`, never hardcode strings
-5. **Session Serialization**: Session data must be JSON-serializable (no complex objects)
-6. **DTO Validation Errors**: **ALWAYS use** `ErroValidacaoFormulario` for form validation errors in routes. This centralizes error handling and eliminates code duplication. Example:
-   ```python
-   from util.exceptions import ErroValidacaoFormulario
-
-   try:
-       dto = CadastroDTO(...)
-   except ValidationError as e:
-       raise ErroValidacaoFormulario(
-           validation_error=e,
-           template_path="auth/cadastro.html",
-           dados_formulario={"email": email, "nome": nome},
-           campo_padrao="confirmar_senha"
-       )
-   ```
-   **Why:** The global `form_validation_exception_handler` automatically processes errors using `processar_erros_validacao()`, displays flash messages, and renders templates with proper error context.
-7. **Template Rendering**: Use `criar_templates()` from `util/template_util.py`
-8. **Photo Paths**: Use `obter_caminho_foto_usuario(id)` for templates, `obter_path_absoluto_foto(id)` for filesystem
-9. **Validators Import**: Always import from `dtos/validators.py`, don't reimplement common validations
-10. **Development vs Production**: Check `IS_DEVELOPMENT` to conditionally show/hide debug info
-11. **Client-Side Validation**: **NEVER validate forms with JavaScript alerts or prevent submission**. Use server-side validation via DTOs and display errors in fields. JavaScript should provide ONLY visual feedback.
-12. **User Messages**: **NEVER use** `alert()`, `confirm()`, or `prompt()`. Always use:
-    - `window.App.Modal.show()` / `window.App.Modal.showError()` / `window.App.Modal.showWarning()` / `window.App.Modal.showInfo()` for user messages
-    - `abrirModalConfirmacao()` for confirmations (delete, etc.)
-    - `window.App.Toasts.show()` for non-critical notifications
-13. **Input Masks**: Use `data-mask` attribute for automatic initialization, or `MascaraInput.MASKS` constants programmatically
-14. **Decimal Formatting**: `MascaraDecimal` uses Brazilian format (comma decimal, dot thousands) by default
-15. **CSRF Tokens**: Always include `{{ csrf_input(request) }}` in all POST/PUT/DELETE forms
-16. **Domain Enums**: Always inherit from `EnumEntidade` (from `util/enum_base.py`), never use plain `Enum`
-17. **Lazy Imports**: Used in `chamado_repo` to avoid circular dependencies with `chamado_interacao_repo`
-
-## Code Style
-
-- Python dataclasses for models (use `@dataclass` decorator)
-- Type hints everywhere (from `typing` import Optional, List, etc.)
-- SQL constant names in UPPERCASE
-- Docstrings for all functions (especially in repositories)
-- Private functions prefixed with `_` (e.g., `_row_to_entidade`)
-- Import order: stdlib -> third-party -> local (DTOs -> Models -> Repos -> Utils)
-- Use reusable validators from `dtos/validators.py`
-- Use form field macros from `templates/macros/form_fields.html`
-- Use reusable components from `templates/components/`
-- Domain enums inherit from `EnumEntidade`
-
-## Security Notes
-
-- Passwords hashed with bcrypt via `util/security.py`
-- Password validation rules in `util/senha_util.py`
-- Rate limiting applied via `DynamicRateLimiter` on all routes
-- Security headers configured via `util/security_headers.py`
-- SQL injection protected via prepared statements
-- XSS protection via Jinja2 auto-escaping
-- CSRF protection via `MiddlewareProtecaoCSRF` middleware with session-based tokens
-- SECRET_KEY validated on startup (minimum 32 chars in production)
-- User photos stored with predictable names (consider adding access control in production)
-- Path traversal protection in backup system
+- Senhas com bcrypt (`util/security.py`); regras em `util/senha_util.py`.
+- Rate limiting via `DynamicRateLimiter` + `checar_rate_limit`.
+- Security headers em `util/security_headers.py`.
+- SQL injection: prepared statements. CSRF: header `X-CSRF-Token`.
+- `SECRET_KEY` validada no startup (mín. 32 chars fora de dev).
+- Path traversal protegido no sistema de backups.
 
 ## Health Check
 
-The application includes a health check endpoint at `/health` that returns:
-```json
-{"status": "healthy"}
-```
-
-Use this for monitoring, load balancers, or container orchestration.
-
-## Learning Resources
-
-Browse working examples at `/exemplos` to see:
-- Complete form implementations
-- Responsive layouts
-- Data tables with actions
-- Detail pages for different entities
-- Theme customization
-- All reusable components in action
-
-Each example page includes code snippets and implementation notes.
+`GET /health` → `{"status": "healthy"}` (fora de `/api`; isento de CSRF).

@@ -1,17 +1,17 @@
 # =============================================================================
-# Imports
+# Rotas de Administração de Usuários (API JSON) — CRUD admin-only
 # =============================================================================
 
-# Standard library
 from typing import Optional
 
-# Third-party
-from fastapi import APIRouter, Form, Request, status
-from fastapi.responses import RedirectResponse
-from pydantic import ValidationError
+from fastapi import APIRouter, HTTPException, Request, Response, status
 
-# DTOs
+# DTOs (entrada)
 from dtos.usuario_dto import CriarUsuarioDTO, AlterarUsuarioDTO
+
+# Schemas (saída)
+from dtos.responses.comum import PaginaResponse
+from dtos.responses.usuario_response import UsuarioResponse
 
 # Models
 from model.usuario_model import Usuario
@@ -21,15 +21,13 @@ from model.usuario_logado_model import UsuarioLogado
 from repo import usuario_repo
 
 # Utilities
+from util.api_helpers import checar_rate_limit
 from util.auth_decorator import requer_autenticacao
-from util.exceptions import ErroValidacaoFormulario
-from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
+from util.paginacao_util import paginar
 from util.perfis import Perfil
-from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
-from util.repository_helpers import obter_ou_404
+from util.rate_limiter import DynamicRateLimiter
 from util.security import criar_hash_senha
-from util.template_util import criar_templates
 from util.validation_helpers import verificar_email_disponivel
 
 # =============================================================================
@@ -37,7 +35,6 @@ from util.validation_helpers import verificar_email_disponivel
 # =============================================================================
 
 router = APIRouter(prefix="/admin/usuarios")
-templates = criar_templates()
 
 # =============================================================================
 # Rate Limiters
@@ -52,265 +49,199 @@ admin_usuarios_limiter = DynamicRateLimiter(
 )
 
 
-@router.get("/")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def index(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """Redireciona para lista de usuários"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+# =============================================================================
+# Helpers
+# =============================================================================
+
+def _obter_usuario_ou_404(id: int) -> Usuario:
+    """Carrega a entidade do usuário ou lança 404."""
+    usuario = usuario_repo.obter_por_id(id)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado."
+        )
+    return usuario
 
 
-@router.get("/listar")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """Lista todos os usuários do sistema"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    usuarios = usuario_repo.obter_todos()
-    return templates.TemplateResponse(
-        "admin/usuarios/listar.html",
-        {"request": request, "usuarios": usuarios, "usuario_logado": usuario_logado}
+def _conflito_email(mensagem_erro: str) -> HTTPException:
+    """Monta a HTTPException 409 padronizada para e-mail já em uso."""
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "detail": mensagem_erro,
+            "type": "conflict",
+            "errors": {"email": [mensagem_erro]},
+        },
     )
 
 
-@router.get("/cadastrar")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def get_cadastrar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """Exibe formulário de cadastro de usuário"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    perfis = Perfil.valores()
-    return templates.TemplateResponse(
-        "admin/usuarios/cadastro.html",
-        {"request": request, "perfis": perfis, "usuario_logado": usuario_logado}
-    )
+# =============================================================================
+# Listagem
+# =============================================================================
 
-
-@router.post("/cadastrar")
+@router.get("/", response_model=PaginaResponse[UsuarioResponse])
 @requer_autenticacao([Perfil.ADMIN.value])
-async def post_cadastrar(
+async def listar(
     request: Request,
-    nome: str = Form(...),
-    email: str = Form(...),
-    senha: str = Form(...),
-    perfil: str = Form(...),
-    usuario_logado: Optional[UsuarioLogado] = None
+    pagina: int = 1,
+    por_pagina: int = 10,
+    perfil: Optional[str] = None,
+    q: Optional[str] = None,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
-    """Cadastra um novo usuário"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    """Lista usuários de forma paginada, com filtros opcionais por perfil e termo (q)."""
+    assert usuario_logado is not None
 
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_usuarios_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    termo = (q or "").strip()
+    if termo:
+        # Busca por nome/email (limite alto para permitir paginação em memória)
+        usuarios = usuario_repo.buscar_por_termo(termo, limit=1000)
+        if perfil:
+            usuarios = [u for u in usuarios if u.perfil == perfil]
+    elif perfil:
+        usuarios = usuario_repo.obter_todos_por_perfil(perfil)
+    else:
+        usuarios = usuario_repo.obter_todos()
 
-    # Armazena os dados do formulário para reexibição em caso de erro
-    dados_formulario: dict = {"nome": nome, "email": email, "perfil": perfil}
-
-    try:
-        # Validar com DTO
-        dto = CriarUsuarioDTO(
-            nome=nome,
-            email=email,
-            senha=senha,
-            perfil=perfil
-        )
-
-        # Verificar se e-mail já existe
-        disponivel, mensagem_erro = verificar_email_disponivel(dto.email)
-        if not disponivel:
-            informar_erro(request, mensagem_erro)
-            perfis = Perfil.valores()
-            return templates.TemplateResponse(
-                "admin/usuarios/cadastro.html",
-                {
-                    "request": request,
-                    "perfis": perfis,
-                    "dados": {"nome": nome, "email": email, "perfil": perfil},
-                    "usuario_logado": usuario_logado,
-                }
-            )
-
-        # Criar hash da senha
-        senha_hash = criar_hash_senha(dto.senha)
-
-        # Criar usuário
-        usuario = Usuario(
-            id=0,
-            nome=dto.nome,
-            email=dto.email,
-            senha=senha_hash,
-            perfil=dto.perfil
-        )
-
-        usuario_repo.inserir(usuario)
-        logger.info(f"Usuário '{dto.email}' cadastrado por admin {usuario_logado.id}")
-
-        informar_sucesso(request, "Usuário cadastrado com sucesso!")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    except ValidationError as e:
-        # Adicionar perfis aos dados para renderizar o select no template
-        dados_formulario["perfis"] = Perfil.valores()
-        raise ErroValidacaoFormulario(
-            validation_error=e,
-            template_path="admin/usuarios/cadastro.html",
-            dados_formulario=dados_formulario,
-            campo_padrao="senha",
-        )
+    paginacao = paginar(usuarios, pagina=pagina, por_pagina=por_pagina)
+    items = [UsuarioResponse.de_usuario(u) for u in paginacao.items]
+    return PaginaResponse.de_paginacao(paginacao, items)
 
 
-@router.get("/editar/{id}")
+# =============================================================================
+# Detalhe
+# =============================================================================
+
+@router.get("/{id}", response_model=UsuarioResponse)
 @requer_autenticacao([Perfil.ADMIN.value])
-async def get_editar(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
-    """Exibe formulário de alteração de usuário"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    # Obter usuário ou retornar 404
-    usuario = obter_ou_404(
-        usuario_repo.obter_por_id(id),
-        request,
-        "Usuário não encontrado",
-        "/admin/usuarios/listar"
-    )
-    if isinstance(usuario, RedirectResponse):
-        return usuario
-
-    # Criar cópia dos dados do usuário sem o campo senha (para não expor hash no HTML)
-    dados_usuario = usuario.__dict__.copy()
-    dados_usuario.pop('senha', None)
-
-    perfis = Perfil.valores()
-    return templates.TemplateResponse(
-        "admin/usuarios/editar.html",
-        {
-            "request": request,
-            "usuario": usuario,
-            "dados": dados_usuario,
-            "perfis": perfis,
-            "usuario_logado": usuario_logado,
-        }
-    )
+async def obter(
+    request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None
+):
+    """Retorna os dados de um usuário específico (404 se não existir)."""
+    assert usuario_logado is not None
+    return UsuarioResponse.de_usuario(_obter_usuario_ou_404(id))
 
 
-@router.post("/editar/{id}")
+# =============================================================================
+# Criação
+# =============================================================================
+
+@router.post(
+    "/",
+    response_model=UsuarioResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 @requer_autenticacao([Perfil.ADMIN.value])
-async def post_editar(
+async def criar(
+    request: Request,
+    dto: CriarUsuarioDTO,
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Cria um novo usuário. Valida disponibilidade de e-mail (409)."""
+    assert usuario_logado is not None
+    checar_rate_limit(admin_usuarios_limiter, request)
+
+    disponivel, mensagem_erro = verificar_email_disponivel(dto.email)
+    if not disponivel:
+        raise _conflito_email(mensagem_erro)
+
+    usuario = Usuario(
+        id=0,
+        nome=dto.nome,
+        email=dto.email,
+        senha=criar_hash_senha(dto.senha),
+        perfil=dto.perfil,
+    )
+    # usuario_repo.inserir cria também a foto padrão do usuário.
+    usuario_id = usuario_repo.inserir(usuario)
+    if not usuario_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao cadastrar usuário. Tente novamente.",
+        )
+
+    logger.info(f"Usuário '{dto.email}' cadastrado por admin {usuario_logado.id}")
+    return UsuarioResponse.de_usuario(_obter_usuario_ou_404(usuario_id))
+
+
+# =============================================================================
+# Alteração
+# =============================================================================
+
+@router.put("/{id}", response_model=UsuarioResponse)
+@requer_autenticacao([Perfil.ADMIN.value])
+async def alterar(
     request: Request,
     id: int,
-    nome: str = Form(...),
-    email: str = Form(...),
-    perfil: str = Form(...),
-    usuario_logado: Optional[UsuarioLogado] = None
+    dto: AlterarUsuarioDTO,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
-    """Altera dados de um usuário"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    """Altera nome, e-mail e perfil de um usuário. Valida e-mail para outro id (409)."""
+    assert usuario_logado is not None
+    checar_rate_limit(admin_usuarios_limiter, request)
 
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_usuarios_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    if dto.id != id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "detail": "O id do corpo não corresponde ao id da URL.",
+                "type": "bad_request",
+                "errors": {"id": ["O id do corpo não corresponde ao id da URL."]},
+            },
+        )
 
-    # Obter usuário ou retornar 404
-    usuario_atual = obter_ou_404(
-        usuario_repo.obter_por_id(id),
-        request,
-        "Usuário não encontrado",
-        "/admin/usuarios/listar"
+    usuario_atual = _obter_usuario_ou_404(id)
+
+    disponivel, mensagem_erro = verificar_email_disponivel(dto.email, id)
+    if not disponivel:
+        raise _conflito_email(mensagem_erro)
+
+    usuario_atualizado = Usuario(
+        id=id,
+        nome=dto.nome,
+        email=dto.email,
+        senha=usuario_atual.senha,  # Mantém senha existente
+        perfil=dto.perfil,
     )
-    if isinstance(usuario_atual, RedirectResponse):
-        return usuario_atual
-
-    # Armazena os dados do formulário para reexibição em caso de erro
-    dados_formulario: dict = {"id": id, "nome": nome, "email": email, "perfil": perfil}
-
-    try:
-        # Validar com DTO
-        dto = AlterarUsuarioDTO(
-            id=id,
-            nome=nome,
-            email=email,
-            perfil=perfil
+    if not usuario_repo.alterar(usuario_atualizado):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao alterar usuário. Tente novamente.",
         )
 
-        # Verificar se e-mail já existe em outro usuário
-        disponivel, mensagem_erro = verificar_email_disponivel(dto.email, id)
-        if not disponivel:
-            informar_erro(request, mensagem_erro)
-            perfis = Perfil.valores()
-            return templates.TemplateResponse(
-                "admin/usuarios/editar.html",
-                {
-                    "request": request,
-                    "usuario": usuario_atual,
-                    "perfis": perfis,
-                    "dados": {"id": id, "nome": nome, "email": email, "perfil": perfil},
-                    "usuario_logado": usuario_logado,
-                }
-            )
-
-        # Atualizar usuário
-        usuario_atualizado = Usuario(
-            id=id,
-            nome=dto.nome,
-            email=dto.email,
-            senha=usuario_atual.senha,  # Mantém senha existente
-            perfil=dto.perfil
-        )
-
-        usuario_repo.alterar(usuario_atualizado)
-        logger.info(f"Usuário {id} alterado por admin {usuario_logado.id}")
-
-        informar_sucesso(request, "Usuário alterado com sucesso!")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    except ValidationError as e:
-        # Adicionar perfis e usuario aos dados para renderizar o template
-        dados_formulario["perfis"] = Perfil.valores()
-        dados_formulario["usuario"] = usuario_repo.obter_por_id(id)
-        raise ErroValidacaoFormulario(
-            validation_error=e,
-            template_path="admin/usuarios/editar.html",
-            dados_formulario=dados_formulario,
-            campo_padrao="email",
-        )
+    logger.info(f"Usuário {id} alterado por admin {usuario_logado.id}")
+    return UsuarioResponse.de_usuario(_obter_usuario_ou_404(id))
 
 
-@router.post("/excluir/{id}")
+# =============================================================================
+# Exclusão
+# =============================================================================
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 @requer_autenticacao([Perfil.ADMIN.value])
-async def post_excluir(request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None):
-    """Exclui um usuário"""
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+async def excluir(
+    request: Request, id: int, usuario_logado: Optional[UsuarioLogado] = None
+):
+    """Exclui um usuário. Impede que o admin exclua a si mesmo (403)."""
+    assert usuario_logado is not None
+    checar_rate_limit(admin_usuarios_limiter, request)
 
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_usuarios_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações. Aguarde um momento e tente novamente.")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    usuario = _obter_usuario_ou_404(id)
 
-    # Obter usuário ou retornar 404
-    usuario = obter_ou_404(
-        usuario_repo.obter_por_id(id),
-        request,
-        "Usuário não encontrado",
-        "/admin/usuarios/listar"
-    )
-    if isinstance(usuario, RedirectResponse):
-        return usuario
-
-    # Impedir exclusão do próprio usuário
     if usuario.id == usuario_logado.id:
-        informar_erro(request, "Você não pode excluir seu próprio usuário")
         logger.warning(f"Admin {usuario_logado.id} tentou excluir a si mesmo")
-        return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não pode excluir seu próprio usuário.",
+        )
 
-    usuario_repo.excluir(id)
-    logger.info(f"Usuário {id} ({usuario.email}) excluído por admin {usuario_logado.id}")
-    informar_sucesso(request, "Usuário excluído com sucesso!")
-    return RedirectResponse("/admin/usuarios/listar", status_code=status.HTTP_303_SEE_OTHER)
+    if not usuario_repo.excluir(id):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao excluir usuário. Tente novamente.",
+        )
+
+    logger.info(
+        f"Usuário {id} ({usuario.email}) excluído por admin {usuario_logado.id}"
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

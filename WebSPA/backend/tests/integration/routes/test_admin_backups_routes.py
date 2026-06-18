@@ -1,393 +1,223 @@
 """
-Testes de gerenciamento de backups
-Testa criação, listagem, restauração, exclusão e download de backups
+Testes de integração das rotas administrativas de backups (contrato JSON / SPA).
+
+Endpoints sob ``/api/admin/backups`` (admin-only):
+- ``GET    /api/admin/backups``                      -> 200, lista de BackupInfoResponse
+- ``POST   /api/admin/backups``                      -> 201, BackupInfoResponse
+- ``GET    /api/admin/backups/{nome}/download``      -> 200, FileResponse binário
+- ``POST   /api/admin/backups/{nome}/restaurar``     -> 200, MensagemResponse
+- ``DELETE /api/admin/backups/{nome}``               -> 204, sem corpo
+
+Acesso restrito a ``Perfil.ADMIN``: não-admin recebe 403, sem sessão 401.
+Mutações exigem ``X-CSRF-Token`` (de ``GET /api/csrf-token``).
 """
+import pytest
 from fastapi import status
 
 
-class TestListarBackups:
-    """Testes de listagem de backups"""
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    def test_listar_backups_requer_admin(self, cliente_autenticado):
-        """Cliente não deve acessar listagem de backups"""
-        response = cliente_autenticado.get("/admin/backups/listar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+def _csrf(client):
+    """Obtém um token CSRF válido para a sessão atual."""
+    return client.get("/api/csrf-token").json()["token"]
 
-    def test_listar_backups_admin_acessa(self, admin_autenticado):
-        """Admin deve acessar listagem de backups"""
-        response = admin_autenticado.get("/admin/backups/listar")
-        assert response.status_code == status.HTTP_200_OK
 
-    def test_listar_backups_exibe_lista(self, admin_autenticado):
-        """Deve exibir lista de backups (mesmo que vazia)"""
-        response = admin_autenticado.get("/admin/backups/listar")
-        assert response.status_code == status.HTTP_200_OK
-        assert "backup" in response.text.lower()
+def _criar_backup_via_api(client):
+    """Cria um backup pela API (admin autenticado) e retorna o nome do arquivo."""
+    token = _csrf(client)
+    resp = client.post("/api/admin/backups", headers={"X-CSRF-Token": token})
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["nome_arquivo"]
 
-    def test_listar_backups_sem_autenticacao(self, client):
-        """Não autenticado deve ser redirecionado"""
-        response = client.get("/admin/backups/listar", follow_redirects=False)
-        assert response.status_code == status.HTTP_303_SEE_OTHER
 
-    def test_vendedor_nao_acessa_listagem(self, vendedor_autenticado):
-        """Vendedor não deve acessar listagem de backups"""
-        response = vendedor_autenticado.get("/admin/backups/listar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+@pytest.fixture(autouse=True)
+def _limpar_backups():
+    """
+    Garante diretório de backups limpo antes/depois de cada teste, para
+    isolar os cenários (criação/listagem/exclusão contam arquivos).
+    """
+    from util import backup_util
 
+    def _limpar():
+        for b in backup_util.listar_backups():
+            backup_util.excluir_backup(b.nome_arquivo)
+        # Remover também backups automáticos de segurança (pré-restauração)
+        for arquivo in backup_util.BACKUP_DIR.glob("backup_auto_*.db"):
+            try:
+                arquivo.unlink()
+            except OSError:
+                pass
+
+    _limpar()
+    yield
+    _limpar()
+
+
+# ---------------------------------------------------------------------------
+# Controle de acesso
+# ---------------------------------------------------------------------------
+
+class TestAcessoBackups:
+    """Apenas administradores acessam o módulo de backups."""
+
+    def test_listar_sem_auth_401(self, client):
+        resp = client.get("/api/admin/backups")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_listar_nao_admin_403(self, cliente_autenticado):
+        resp = cliente_autenticado.get("/api/admin/backups")
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_criar_nao_admin_403(self, cliente_autenticado):
+        token = _csrf(cliente_autenticado)
+        resp = cliente_autenticado.post(
+            "/api/admin/backups", headers={"X-CSRF-Token": token}
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_excluir_nao_admin_403(self, cliente_autenticado):
+        token = _csrf(cliente_autenticado)
+        resp = cliente_autenticado.delete(
+            "/api/admin/backups/backup_qualquer.db",
+            headers={"X-CSRF-Token": token},
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_download_nao_admin_403(self, cliente_autenticado):
+        resp = cliente_autenticado.get(
+            "/api/admin/backups/backup_qualquer.db/download"
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_restaurar_nao_admin_403(self, cliente_autenticado):
+        token = _csrf(cliente_autenticado)
+        resp = cliente_autenticado.post(
+            "/api/admin/backups/backup_qualquer.db/restaurar",
+            headers={"X-CSRF-Token": token},
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
+# ---------------------------------------------------------------------------
+# Criação
+# ---------------------------------------------------------------------------
 
 class TestCriarBackup:
-    """Testes de criação de backup"""
+    """POST /api/admin/backups — cria backup manual."""
 
-    def test_criar_backup_por_admin(self, admin_autenticado):
-        """Admin deve poder criar backup"""
-        response = admin_autenticado.post("/admin/backups/criar", follow_redirects=False)
-
-        # Deve redirecionar para listagem
-        assert response.status_code == status.HTTP_303_SEE_OTHER
-        assert response.headers["location"] == "/admin/backups/listar"
-
-    def test_criar_backup_cria_arquivo(self, admin_autenticado):
-        """Criar backup deve gerar arquivo em backups/"""
-        from util import backup_util
-
-        # Criar backup
-        admin_autenticado.post("/admin/backups/criar")
-
-        # Verificar que existe pelo menos um backup
-        backups = backup_util.listar_backups()
-        assert len(backups) > 0
-
-    def test_criar_backup_nome_com_timestamp(self, admin_autenticado):
-        """Backup deve ter nome com timestamp"""
-        from util import backup_util
-
-        # Criar backup
-        admin_autenticado.post("/admin/backups/criar")
-
-        # Verificar formato do nome
-        backups = backup_util.listar_backups()
-        assert len(backups) > 0
-        # Nome deve conter data/hora: backup_YYYYMMDD_HHMMSS.db
-        assert "backup_" in backups[0].nome_arquivo
-        assert ".db" in backups[0].nome_arquivo
-
-    def test_cliente_nao_pode_criar_backup(self, cliente_autenticado):
-        """Cliente não deve poder criar backup"""
-        response = cliente_autenticado.post("/admin/backups/criar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
-
-    def test_vendedor_nao_pode_criar_backup(self, vendedor_autenticado):
-        """Vendedor não deve poder criar backup"""
-        response = vendedor_autenticado.post("/admin/backups/criar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
-
-
-class TestRestaurarBackup:
-    """Testes de restauração de backup"""
-
-    def test_restaurar_backup_valido(self, admin_autenticado, criar_backup):
-        """Admin deve poder restaurar backup válido"""
-        # Criar backup primeiro
-        sucesso, mensagem = criar_backup()
-        assert sucesso
-
-        # Obter nome do backup criado
-        from util import backup_util
-        backups = backup_util.listar_backups()
-        assert len(backups) > 0
-        nome_backup = backups[0].nome_arquivo
-
-        # Restaurar backup
-        response = admin_autenticado.post(
-            f"/admin/backups/restaurar/{nome_backup}",
-            follow_redirects=False
+    def test_criar_backup_201(self, admin_autenticado):
+        token = _csrf(admin_autenticado)
+        resp = admin_autenticado.post(
+            "/api/admin/backups", headers={"X-CSRF-Token": token}
         )
-
-        # Deve redirecionar
-        assert response.status_code == status.HTTP_303_SEE_OTHER
-
-    def test_restaurar_backup_cria_backup_automatico(self, admin_autenticado, criar_backup):
-        """Restaurar deve criar backup automático antes"""
-        from util import backup_util
-
-        # Criar backup para restaurar
-        criar_backup()
-        backups_antes = backup_util.listar_backups()
-        nome_backup = backups_antes[0].nome_arquivo
-
-        # Restaurar
-        admin_autenticado.post(f"/admin/backups/restaurar/{nome_backup}")
-
-        # Deve ter criado um backup adicional (backup de segurança)
-        backups_depois = backup_util.listar_backups()
-        assert len(backups_depois) >= len(backups_antes)
-
-    def test_restaurar_backup_inexistente(self, admin_autenticado):
-        """Deve tratar restauração de backup inexistente"""
-        response = admin_autenticado.post(
-            "/admin/backups/restaurar/backup_inexistente.db",
-            follow_redirects=False
-        )
-
-        # Deve redirecionar (com mensagem de erro)
-        assert response.status_code == status.HTTP_303_SEE_OTHER
-
-    def test_cliente_nao_pode_restaurar_backup(self, cliente_autenticado, criar_backup):
-        """Cliente não deve poder restaurar backup"""
-        criar_backup()
-        from util import backup_util
-        backups = backup_util.listar_backups()
-
-        if len(backups) > 0:
-            response = cliente_autenticado.post(
-                f"/admin/backups/restaurar/{backups[0].nome_arquivo}",
-                follow_redirects=False
-            )
-            assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+        assert resp.status_code == status.HTTP_201_CREATED
+        body = resp.json()
+        assert body["nome_arquivo"].startswith("backup_")
+        assert body["nome_arquivo"].endswith(".db")
+        assert body["tipo"] == "manual"
+        assert body["tamanho_bytes"] >= 0
+        assert "tamanho_formatado" in body
+        assert "data_criacao" in body
 
 
-class TestExcluirBackup:
-    """Testes de exclusão de backup"""
+# ---------------------------------------------------------------------------
+# Listagem
+# ---------------------------------------------------------------------------
 
-    def test_excluir_backup_existente(self, admin_autenticado, criar_backup):
-        """Admin deve poder excluir backup"""
-        # Criar backup
-        criar_backup()
+class TestListarBackups:
+    """GET /api/admin/backups — lista backups disponíveis."""
 
-        from util import backup_util
-        backups_antes = backup_util.listar_backups()
-        assert len(backups_antes) > 0
-        nome_backup = backups_antes[0].nome_arquivo
+    def test_listar_vazio_200(self, admin_autenticado):
+        resp = admin_autenticado.get("/api/admin/backups")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
 
-        # Excluir
-        response = admin_autenticado.post(
-            f"/admin/backups/excluir/{nome_backup}",
-            follow_redirects=False
-        )
+    def test_listar_apos_criar(self, admin_autenticado):
+        nome = _criar_backup_via_api(admin_autenticado)
+        resp = admin_autenticado.get("/api/admin/backups")
+        assert resp.status_code == status.HTTP_200_OK
+        backups = resp.json()
+        assert isinstance(backups, list)
+        assert any(b["nome_arquivo"] == nome for b in backups)
 
-        # Deve redirecionar
-        assert response.status_code == status.HTTP_303_SEE_OTHER
 
-        # Verificar que foi excluído
-        backups_depois = backup_util.listar_backups()
-        nomes_depois = [b.nome_arquivo for b in backups_depois]
-        assert nome_backup not in nomes_depois
-
-    def test_excluir_backup_inexistente(self, admin_autenticado):
-        """Deve tratar exclusão de backup inexistente"""
-        response = admin_autenticado.post(
-            "/admin/backups/excluir/backup_inexistente.db",
-            follow_redirects=False
-        )
-
-        # Deve redirecionar (com mensagem de erro)
-        assert response.status_code == status.HTTP_303_SEE_OTHER
-
-    def test_cliente_nao_pode_excluir_backup(self, cliente_autenticado, criar_backup):
-        """Cliente não deve poder excluir backup"""
-        criar_backup()
-        from util import backup_util
-        backups = backup_util.listar_backups()
-
-        if len(backups) > 0:
-            response = cliente_autenticado.post(
-                f"/admin/backups/excluir/{backups[0].nome_arquivo}",
-                follow_redirects=False
-            )
-            assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
-
+# ---------------------------------------------------------------------------
+# Download
+# ---------------------------------------------------------------------------
 
 class TestDownloadBackup:
-    """Testes de download de backup"""
+    """GET /api/admin/backups/{nome}/download — download binário."""
 
-    def test_download_backup_existente(self, admin_autenticado, criar_backup):
-        """Admin deve poder fazer download de backup"""
-        # Criar backup
-        criar_backup()
+    def test_download_200_binario(self, admin_autenticado):
+        nome = _criar_backup_via_api(admin_autenticado)
+        resp = admin_autenticado.get(f"/api/admin/backups/{nome}/download")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.headers["content-type"] == "application/octet-stream"
+        # Conteúdo binário deve estar presente
+        assert isinstance(resp.content, bytes)
+        assert len(resp.content) > 0
+        # SQLite files começam com a assinatura "SQLite format 3\x00"
+        assert resp.content[:16] == b"SQLite format 3\x00"
 
-        from util import backup_util
-        backups = backup_util.listar_backups()
-        assert len(backups) > 0
-        nome_backup = backups[0].nome_arquivo
-
-        # Download
-        response = admin_autenticado.get(f"/admin/backups/download/{nome_backup}")
-
-        # Deve retornar arquivo
-        assert response.status_code == status.HTTP_200_OK
-        assert "application/octet-stream" in response.headers.get("content-type", "")
-
-    def test_download_backup_inexistente(self, admin_autenticado):
-        """Deve tratar download de backup inexistente"""
-        response = admin_autenticado.get(
-            "/admin/backups/download/backup_inexistente.db",
-            follow_redirects=False
+    def test_download_inexistente_404(self, admin_autenticado):
+        resp = admin_autenticado.get(
+            "/api/admin/backups/backup_2099-01-01_00-00-00.db/download"
         )
-
-        # Deve redirecionar ou retornar 404
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_404_NOT_FOUND]
-
-    def test_cliente_nao_pode_baixar_backup(self, cliente_autenticado, criar_backup):
-        """Cliente não deve poder baixar backup"""
-        criar_backup()
-        from util import backup_util
-        backups = backup_util.listar_backups()
-
-        if len(backups) > 0:
-            response = cliente_autenticado.get(
-                f"/admin/backups/download/{backups[0].nome_arquivo}",
-                follow_redirects=False
-            )
-            assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
-
-    def test_vendedor_nao_pode_baixar_backup(self, vendedor_autenticado, criar_backup):
-        """Vendedor não deve poder baixar backup"""
-        criar_backup()
-        from util import backup_util
-        backups = backup_util.listar_backups()
-
-        if len(backups) > 0:
-            response = vendedor_autenticado.get(
-                f"/admin/backups/download/{backups[0].nome_arquivo}",
-                follow_redirects=False
-            )
-            assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-class TestRateLimitBackups:
-    """Testes de rate limiting para operações de backup"""
+# ---------------------------------------------------------------------------
+# Restauração
+# ---------------------------------------------------------------------------
 
-    def test_rate_limit_criar_backup(self, admin_autenticado):
-        """Deve bloquear quando rate limit de criar backup é excedido"""
-        from unittest.mock import patch
+class TestRestaurarBackup:
+    """POST /api/admin/backups/{nome}/restaurar — restaura o banco."""
 
-        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
-            response = admin_autenticado.post("/admin/backups/criar", follow_redirects=True)
-
-            assert response.status_code == status.HTTP_200_OK
-            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
-
-    def test_rate_limit_restaurar_backup(self, admin_autenticado, criar_backup):
-        """Deve bloquear quando rate limit de restaurar backup é excedido"""
-        from unittest.mock import patch
-        from util import backup_util
-
-        # Criar backup para restaurar
-        criar_backup()
-        backups = backup_util.listar_backups()
-        nome_backup = backups[0].nome_arquivo if backups else "test.db"
-
-        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
-            response = admin_autenticado.post(
-                f"/admin/backups/restaurar/{nome_backup}",
-                follow_redirects=True
-            )
-
-            assert response.status_code == status.HTTP_200_OK
-            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
-
-    def test_rate_limit_excluir_backup(self, admin_autenticado, criar_backup):
-        """Deve bloquear quando rate limit de excluir backup é excedido"""
-        from unittest.mock import patch
-        from util import backup_util
-
-        # Criar backup para excluir
-        criar_backup()
-        backups = backup_util.listar_backups()
-        nome_backup = backups[0].nome_arquivo if backups else "test.db"
-
-        with patch('routes.admin_backups_routes.admin_backups_limiter.verificar', return_value=False):
-            response = admin_autenticado.post(
-                f"/admin/backups/excluir/{nome_backup}",
-                follow_redirects=True
-            )
-
-            assert response.status_code == status.HTTP_200_OK
-            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
-
-    def test_rate_limit_download_backup(self, admin_autenticado, criar_backup):
-        """Deve bloquear quando rate limit de download é excedido"""
-        from unittest.mock import patch
-        from util import backup_util
-
-        # Criar backup para download
-        criar_backup()
-        backups = backup_util.listar_backups()
-        nome_backup = backups[0].nome_arquivo if backups else "test.db"
-
-        with patch('routes.admin_backups_routes.backup_download_limiter.verificar', return_value=False):
-            response = admin_autenticado.get(
-                f"/admin/backups/download/{nome_backup}",
-                follow_redirects=True
-            )
-
-            assert response.status_code == status.HTTP_200_OK
-            assert "muitas" in response.text.lower() or "aguarde" in response.text.lower()
-
-
-class TestErroCriarBackup:
-    """Testes de erro ao criar backup"""
-
-    def test_erro_criar_backup(self, admin_autenticado):
-        """Deve mostrar mensagem de erro quando criação falha"""
-        from unittest.mock import patch
-
-        with patch('routes.admin_backups_routes.backup_util.criar_backup', return_value=(False, "Erro ao criar backup")):
-            response = admin_autenticado.post("/admin/backups/criar", follow_redirects=True)
-
-            assert response.status_code == status.HTTP_200_OK
-
-
-class TestFluxoCompletoBackup:
-    """Testes de fluxo completo de backup"""
-
-    def test_fluxo_criar_listar_restaurar_excluir(self, admin_autenticado):
-        """Testar fluxo completo: criar -> listar -> restaurar -> excluir"""
-        from util import backup_util
-
-        # 1. Criar backup
-        admin_autenticado.post("/admin/backups/criar")
-
-        # 2. Listar e verificar
-        backups = backup_util.listar_backups()
-        assert len(backups) > 0
-        nome_backup = backups[0].nome_arquivo
-
-        # 3. Restaurar
-        response_restaurar = admin_autenticado.post(
-            f"/admin/backups/restaurar/{nome_backup}",
-            follow_redirects=False
+    def test_restaurar_200(self, admin_autenticado):
+        nome = _criar_backup_via_api(admin_autenticado)
+        token = _csrf(admin_autenticado)
+        resp = admin_autenticado.post(
+            f"/api/admin/backups/{nome}/restaurar",
+            headers={"X-CSRF-Token": token},
         )
-        assert response_restaurar.status_code == status.HTTP_303_SEE_OTHER
+        assert resp.status_code == status.HTTP_200_OK
+        assert "message" in resp.json()
 
-        # 4. Listar novamente (deve ter backup adicional criado na restauração)
-        backups_apos_restaurar = backup_util.listar_backups()
-        assert len(backups_apos_restaurar) >= len(backups)
+    def test_restaurar_inexistente_404(self, admin_autenticado):
+        token = _csrf(admin_autenticado)
+        resp = admin_autenticado.post(
+            "/api/admin/backups/backup_2099-01-01_00-00-00.db/restaurar",
+            headers={"X-CSRF-Token": token},
+        )
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-        # 5. Excluir um backup
-        if len(backups_apos_restaurar) > 0:
-            nome_para_excluir = backups_apos_restaurar[0].nome_arquivo
-            response_excluir = admin_autenticado.post(
-                f"/admin/backups/excluir/{nome_para_excluir}",
-                follow_redirects=False
-            )
-            assert response_excluir.status_code == status.HTTP_303_SEE_OTHER
 
-    def test_multiplos_backups(self, admin_autenticado):
-        """Deve permitir criar múltiplos backups"""
-        from util import backup_util
-        import time
+# ---------------------------------------------------------------------------
+# Exclusão
+# ---------------------------------------------------------------------------
 
-        # Criar primeiro backup
-        admin_autenticado.post("/admin/backups/criar")
-        backups_1 = backup_util.listar_backups()
+class TestExcluirBackup:
+    """DELETE /api/admin/backups/{nome} — exclui um backup."""
 
-        # Aguardar um pouco para garantir timestamp diferente
-        time.sleep(1)
+    def test_excluir_204(self, admin_autenticado):
+        nome = _criar_backup_via_api(admin_autenticado)
+        token = _csrf(admin_autenticado)
+        resp = admin_autenticado.delete(
+            f"/api/admin/backups/{nome}", headers={"X-CSRF-Token": token}
+        )
+        assert resp.status_code == status.HTTP_204_NO_CONTENT
+        assert resp.content == b""
 
-        # Criar segundo backup
-        admin_autenticado.post("/admin/backups/criar")
-        backups_2 = backup_util.listar_backups()
+        # Backup não deve mais aparecer na listagem
+        lista = admin_autenticado.get("/api/admin/backups").json()
+        assert all(b["nome_arquivo"] != nome for b in lista)
 
-        # Deve ter mais backups
-        assert len(backups_2) > len(backups_1)
+    def test_excluir_inexistente_404(self, admin_autenticado):
+        token = _csrf(admin_autenticado)
+        resp = admin_autenticado.delete(
+            "/api/admin/backups/backup_2099-01-01_00-00-00.db",
+            headers={"X-CSRF-Token": token},
+        )
+        assert resp.status_code == status.HTTP_404_NOT_FOUND

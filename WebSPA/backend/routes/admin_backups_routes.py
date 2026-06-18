@@ -1,26 +1,34 @@
-"""
-Rotas administrativas para gerenciamento de backups do banco de dados.
+# =============================================================================
+# Rotas administrativas de Backups (API JSON) — gerenciamento de backups do banco
+# =============================================================================
 
-Permite ao administrador criar, listar, restaurar e excluir backups do banco SQLite.
-"""
-from typing import Optional
-from fastapi import APIRouter, Request, status
-from fastapi.responses import RedirectResponse, FileResponse
+from typing import List, Optional
 
+from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi.responses import FileResponse
+
+# Schemas (saída)
+from dtos.responses.backup_response import BackupInfoResponse
+from dtos.responses.comum import MensagemResponse
+
+# Models
 from model.usuario_logado_model import UsuarioLogado
+
+# Utilities
+from util import backup_util
+from util.api_helpers import checar_rate_limit
 from util.auth_decorator import requer_autenticacao
-from util.template_util import criar_templates
-from util.flash_messages import informar_sucesso, informar_erro
 from util.logger_config import logger
 from util.perfis import Perfil
-from util import backup_util
-from util.rate_limiter import DynamicRateLimiter, obter_identificador_cliente
-
+from util.rate_limiter import DynamicRateLimiter
 
 router = APIRouter(prefix="/admin/backups")
-templates = criar_templates()
 
-# Rate limiter para operações de backup (MUITO restritivo - operações perigosas)
+# =============================================================================
+# Rate Limiters
+# =============================================================================
+
+# Operações de backup (MUITO restritivo - operações perigosas)
 admin_backups_limiter = DynamicRateLimiter(
     chave_max="rate_limit_admin_backups_max",
     chave_minutos="rate_limit_admin_backups_minutos",
@@ -29,7 +37,7 @@ admin_backups_limiter = DynamicRateLimiter(
     nome="admin_backups",
 )
 
-# Rate limiter específico para download de backups
+# Download de backups
 backup_download_limiter = DynamicRateLimiter(
     chave_max="rate_limit_backup_download_max",
     chave_minutos="rate_limit_backup_download_minutos",
@@ -39,216 +47,183 @@ backup_download_limiter = DynamicRateLimiter(
 )
 
 
-@router.get("/listar")
+# =============================================================================
+# Listagem
+# =============================================================================
+
+@router.get("", response_model=List[BackupInfoResponse])
 @requer_autenticacao([Perfil.ADMIN.value])
-async def get_listar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """
-    Exibe lista de backups disponíveis
-
-    Lista todos os backups existentes com informações de data/hora e tamanho.
-    """
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
-    # Obter lista de backups
+async def listar_backups(
+    request: Request, usuario_logado: Optional[UsuarioLogado] = None
+):
+    """Lista todos os backups disponíveis (mais recentes primeiro)."""
+    assert usuario_logado is not None
     backups = backup_util.listar_backups()
-
-    logger.debug(f"Admin {usuario_logado.id} acessou página de backups - {len(backups)} backup(s) encontrado(s)")
-
-    return templates.TemplateResponse(
-        "admin/backups/listar.html",
-        {
-            "request": request,
-            "backups": backups,
-            "usuario_logado": usuario_logado,
-        }
+    logger.debug(
+        f"Admin {usuario_logado.id} listou backups - "
+        f"{len(backups)} backup(s) encontrado(s)"
     )
+    return [BackupInfoResponse.de_backup_info(b) for b in backups]
 
 
-@router.post("/criar")
+# =============================================================================
+# Criação
+# =============================================================================
+
+@router.post(
+    "", response_model=BackupInfoResponse, status_code=status.HTTP_201_CREATED
+)
 @requer_autenticacao([Perfil.ADMIN.value])
-async def post_criar(request: Request, usuario_logado: Optional[UsuarioLogado] = None):
-    """
-    Cria um novo backup do banco de dados
+async def criar_backup(
+    request: Request, usuario_logado: Optional[UsuarioLogado] = None
+):
+    """Cria um novo backup manual do banco de dados."""
+    assert usuario_logado is not None
+    checar_rate_limit(admin_backups_limiter, request)
 
-    Copia o arquivo dados.db para backups/ com timestamp no nome.
-    """
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_backups_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações de backup. Aguarde alguns minutos e tente novamente.")
-        return RedirectResponse("/admin/backups/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Criar backup
     sucesso, mensagem = backup_util.criar_backup()
+    if not sucesso:
+        logger.error(
+            f"Erro ao criar backup por admin {usuario_logado.id}: {mensagem}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=mensagem
+        )
 
-    if sucesso:
-        logger.info(f"Backup criado por admin {usuario_logado.id}: {mensagem}")
-        informar_sucesso(request, mensagem)
-    else:
-        logger.error(f"Erro ao criar backup por admin {usuario_logado.id}: {mensagem}")
-        informar_erro(request, mensagem)
+    logger.info(f"Backup criado por admin {usuario_logado.id}: {mensagem}")
 
-    return RedirectResponse(
-        "/admin/backups/listar",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
+    # Recuperar o backup recém-criado (o mais recente do tipo manual)
+    backups = backup_util.listar_backups()
+    criado = next((b for b in backups if b.tipo == "manual"), None)
+    if criado is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Backup criado, mas não foi possível recuperar suas informações.",
+        )
+
+    return BackupInfoResponse.de_backup_info(criado)
 
 
-@router.post("/restaurar/{nome_arquivo}")
+# =============================================================================
+# Download
+# =============================================================================
+
+@router.get("/{nome_arquivo}/download")
 @requer_autenticacao([Perfil.ADMIN.value])
-async def post_restaurar(
+async def download_backup(
     request: Request,
     nome_arquivo: str,
-    usuario_logado: Optional[UsuarioLogado] = None
+    usuario_logado: Optional[UsuarioLogado] = None,
+):
+    """Faz o download binário de um arquivo de backup."""
+    assert usuario_logado is not None
+    checar_rate_limit(backup_download_limiter, request)
+
+    # O util valida o nome (proteção contra path traversal) e a existência
+    caminho_backup = backup_util.obter_caminho_backup(nome_arquivo)
+    if caminho_backup is None or not caminho_backup.exists():
+        logger.error(
+            f"Tentativa de download de backup inexistente por admin "
+            f"{usuario_logado.id}: {nome_arquivo}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Backup não encontrado.",
+        )
+
+    logger.info(
+        f"Download de backup por admin {usuario_logado.id}: {nome_arquivo}"
+    )
+    return FileResponse(
+        path=str(caminho_backup),
+        filename=nome_arquivo,
+        media_type="application/octet-stream",
+    )
+
+
+# =============================================================================
+# Restauração
+# =============================================================================
+
+@router.post("/{nome_arquivo}/restaurar", response_model=MensagemResponse)
+@requer_autenticacao([Perfil.ADMIN.value])
+async def restaurar_backup(
+    request: Request,
+    nome_arquivo: str,
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
     """
-    Restaura um backup do banco de dados
+    Restaura o banco de dados a partir de um backup.
 
-    IMPORTANTE: Esta operação sobrescreve o banco de dados atual!
-    Um backup automático do estado atual é criado antes da restauração.
-
-    Args:
-        nome_arquivo: Nome do arquivo de backup a restaurar
+    A operação sobrescreve o banco atual. Um backup automático de segurança é
+    criado antes da restauração e o util valida integridade com rollback.
     """
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    assert usuario_logado is not None
+    checar_rate_limit(admin_backups_limiter, request)
 
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_backups_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações de backup. Aguarde alguns minutos e tente novamente.")
-        return RedirectResponse("/admin/backups/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Log da tentativa de restauração
     logger.warning(
         f"Admin {usuario_logado.id} iniciou restauração de backup: {nome_arquivo}"
     )
 
-    # Restaurar backup (com backup automático do estado atual)
     sucesso, mensagem, nome_backup_automatico = backup_util.restaurar_backup(
-        nome_arquivo,
-        criar_backup_antes=True
+        nome_arquivo, criar_backup_antes=True
     )
 
-    if sucesso:
-        logger.info(
-            f"Backup restaurado com sucesso por admin {usuario_logado.id}: {nome_arquivo}"
-        )
-
-        # Mensagem com informação sobre o backup automático criado
-        if nome_backup_automatico:
-            mensagem_completa = (
-                f"{mensagem}. "
-                f"✓ Backup de segurança criado automaticamente: {nome_backup_automatico}"
-            )
-        else:
-            mensagem_completa = f"{mensagem} (Aviso: Não foi possível criar backup de segurança)"
-
-        informar_sucesso(request, mensagem_completa)
-    else:
+    if not sucesso:
         logger.error(
             f"Erro ao restaurar backup por admin {usuario_logado.id}: {mensagem}"
         )
-        informar_erro(request, mensagem)
+        # Nome inválido / backup inexistente vs. falha de integridade/rollback
+        status_code = (
+            status.HTTP_404_NOT_FOUND
+            if "não encontrado" in mensagem or "inválido" in mensagem
+            else status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        raise HTTPException(status_code=status_code, detail=mensagem)
 
-    return RedirectResponse(
-        "/admin/backups/listar",
-        status_code=status.HTTP_303_SEE_OTHER
+    logger.info(
+        f"Backup restaurado com sucesso por admin {usuario_logado.id}: {nome_arquivo}"
     )
 
-
-@router.post("/excluir/{nome_arquivo}")
-@requer_autenticacao([Perfil.ADMIN.value])
-async def post_excluir(
-    request: Request,
-    nome_arquivo: str,
-    usuario_logado: Optional[UsuarioLogado] = None
-):
-    """
-    Exclui um arquivo de backup
-
-    Args:
-        nome_arquivo: Nome do arquivo de backup a excluir
-    """
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
-    # Rate limiting
-    ip = obter_identificador_cliente(request)
-    if not admin_backups_limiter.verificar(ip):
-        informar_erro(request, "Muitas operações de backup. Aguarde alguns minutos e tente novamente.")
-        return RedirectResponse("/admin/backups/listar", status_code=status.HTTP_303_SEE_OTHER)
-
-    # Excluir backup
-    sucesso, mensagem = backup_util.excluir_backup(nome_arquivo)
-
-    if sucesso:
-        logger.info(f"Backup excluído por admin {usuario_logado.id}: {nome_arquivo}")
-        informar_sucesso(request, mensagem)
+    if nome_backup_automatico:
+        mensagem_completa = (
+            f"{mensagem}. Backup de segurança criado automaticamente: "
+            f"{nome_backup_automatico}"
+        )
     else:
-        logger.error(f"Erro ao excluir backup por admin {usuario_logado.id}: {mensagem}")
-        informar_erro(request, mensagem)
+        mensagem_completa = (
+            f"{mensagem} (Aviso: não foi possível criar backup de segurança)"
+        )
 
-    return RedirectResponse(
-        "/admin/backups/listar",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
+    return MensagemResponse(message=mensagem_completa)
 
 
-@router.get("/download/{nome_arquivo}")
+# =============================================================================
+# Exclusão
+# =============================================================================
+
+@router.delete("/{nome_arquivo}", status_code=status.HTTP_204_NO_CONTENT)
 @requer_autenticacao([Perfil.ADMIN.value])
-async def get_download(
+async def excluir_backup(
     request: Request,
     nome_arquivo: str,
-    usuario_logado: Optional[UsuarioLogado] = None
+    usuario_logado: Optional[UsuarioLogado] = None,
 ):
-    """
-    Faz download de um arquivo de backup
+    """Exclui um arquivo de backup."""
+    assert usuario_logado is not None
+    checar_rate_limit(admin_backups_limiter, request)
 
-    Args:
-        nome_arquivo: Nome do arquivo de backup para download
-
-    Returns:
-        FileResponse com o arquivo de backup
-    """
-    if not usuario_logado:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
-    # Rate limiting por IP
-    ip = obter_identificador_cliente(request)
-    if not backup_download_limiter.verificar(ip):
-        informar_erro(
-            request,
-            "Muitas tentativas de download. Aguarde alguns minutos.",
-        )
-        logger.warning(f"Rate limit excedido para download de backup - IP: {ip}")
-        return RedirectResponse(
-            "/admin/backups/listar",
-            status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    # Obter caminho do backup
-    caminho_backup = backup_util.obter_caminho_backup(nome_arquivo)
-
-    if caminho_backup is None or not caminho_backup.exists():
+    sucesso, mensagem = backup_util.excluir_backup(nome_arquivo)
+    if not sucesso:
         logger.error(
-            f"Tentativa de download de backup inexistente por admin {usuario_logado.id}: {nome_arquivo}"
+            f"Erro ao excluir backup por admin {usuario_logado.id}: {mensagem}"
         )
-        # Não é possível usar flash message aqui pois é um download
-        # Retornar 404 ou redirecionar
-        return RedirectResponse(
-            "/admin/backups/listar",
-            status_code=status.HTTP_303_SEE_OTHER
+        status_code = (
+            status.HTTP_404_NOT_FOUND
+            if "não encontrado" in mensagem or "inválido" in mensagem
+            else status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+        raise HTTPException(status_code=status_code, detail=mensagem)
 
-    logger.info(f"Download de backup por admin {usuario_logado.id}: {nome_arquivo}")
-
-    return FileResponse(
-        path=str(caminho_backup),
-        filename=nome_arquivo,
-        media_type="application/octet-stream"
-    )
+    logger.info(f"Backup excluído por admin {usuario_logado.id}: {nome_arquivo}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

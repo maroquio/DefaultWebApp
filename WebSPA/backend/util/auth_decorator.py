@@ -1,3 +1,4 @@
+import inspect
 from fastapi import Request, status, HTTPException
 from functools import wraps
 from typing import List, Optional
@@ -79,6 +80,22 @@ def requer_autenticacao(perfis_permitidos: Optional[List[str]] = None):
             # Injetar usuario_logado nos kwargs
             kwargs['usuario_logado'] = usuario
             return await func(*args, **kwargs)
+
+        # Esconder 'usuario_logado' da assinatura que o FastAPI inspeciona.
+        # Caso contrário, como UsuarioLogado é uma dataclass, o FastAPI o
+        # interpretaria como um SEGUNDO corpo de requisição (exigindo
+        # {"dto": {...}, "usuario_logado": {...}}). O parâmetro é injetado
+        # pelo wrapper, não pelo FastAPI.
+        try:
+            sig = inspect.signature(func)
+            wrapper.__signature__ = sig.replace(
+                parameters=[
+                    p for nome, p in sig.parameters.items()
+                    if nome != "usuario_logado"
+                ]
+            )
+        except (ValueError, TypeError):
+            pass
 
         return wrapper
     return decorator

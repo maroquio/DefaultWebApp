@@ -1,207 +1,293 @@
 """
-Testes de integracao para rotas administrativas de chamados.
+Testes de integracao das rotas administrativas de chamados (API JSON).
 
-Cobre:
-- Autenticacao obrigatoria
-- Autorizacao (apenas administradores)
-- Listagem de todos os chamados
-- Formulario de resposta a chamados
-- Resposta a chamados
-- Fechamento de chamados
-- Reabertura de chamados
-- Rate limiting
-- Tratamento de erros
+Contrato (SPA, tudo sob /api):
+- Acesso restrito a administradores; nao-admin recebe 403.
+- Mutacoes exigem header X-CSRF-Token (obtido em /api/csrf-token).
+- Sucesso retorna JSON puro: GET 200, POST 201, PATCH 200.
+- Erros seguem {detail, type, errors}: 401/403/404/409/422.
+- Sem redirect, flash ou HTML.
+
+Endpoints cobertos (routes/admin_chamados_routes.py, prefixo /api/admin/chamados):
+- GET   /api/admin/chamados                 -> PaginaResponse[ChamadoResponse]
+- GET   /api/admin/chamados/{id}            -> ChamadoResponse com interacoes
+- POST  /api/admin/chamados/{id}/interacoes -> 201 (body ANINHADO:
+        {"dto_mensagem": {...}, "dto_status": {...}})
+- PATCH /api/admin/chamados/{id}/status     -> 200 ChamadoResponse
+
+Usa a fixture criar_chamado_admin para obter um chamado pre-existente.
 """
-from unittest.mock import patch
-
 from fastapi import status
 
-from model.chamado_model import StatusChamado, PrioridadeChamado, Chamado
-from model.chamado_interacao_model import ChamadoInteracao, TipoInteracao
-from tests.test_helpers import assert_permission_denied, assert_redirects_to
+
+# =============================================================================
+# Helpers
+# =============================================================================
+
+def _csrf(client):
+    """Obtem um token CSRF valido para a sessao atual."""
+    return client.get("/api/csrf-token").json()["token"]
 
 
-class TestAdminChamadosAutenticacao:
-    """Testes de autenticacao para rotas de admin de chamados"""
-
-    def test_listar_requer_autenticacao(self, client):
-        """Deve exigir autenticacao para listar chamados"""
-        response = client.get("/admin/chamados/listar", follow_redirects=False)
-        assert_permission_denied(response)
-
-    def test_responder_get_requer_autenticacao(self, client):
-        """Deve exigir autenticacao para acessar formulario de resposta"""
-        response = client.get("/admin/chamados/1/responder", follow_redirects=False)
-        assert_permission_denied(response)
-
-    def test_responder_post_requer_autenticacao(self, client):
-        """Deve exigir autenticacao para enviar resposta"""
-        response = client.post("/admin/chamados/1/responder", data={
-            "mensagem": "Resposta teste",
-            "status_chamado": "Em Análise"
-        }, follow_redirects=False)
-        assert_permission_denied(response)
-
-    def test_fechar_requer_autenticacao(self, client):
-        """Deve exigir autenticacao para fechar chamado"""
-        response = client.post("/admin/chamados/1/fechar", follow_redirects=False)
-        assert_permission_denied(response)
-
-    def test_reabrir_requer_autenticacao(self, client):
-        """Deve exigir autenticacao para reabrir chamado"""
-        response = client.post("/admin/chamados/1/reabrir", follow_redirects=False)
-        assert_permission_denied(response)
-
+# =============================================================================
+# Autorizacao
+# =============================================================================
 
 class TestAdminChamadosAutorizacao:
-    """Testes de autorizacao para rotas de admin de chamados"""
+    """Apenas administradores acessam as rotas de admin."""
 
-    def test_listar_requer_admin(self, cliente_autenticado):
-        """Apenas admin pode listar todos os chamados"""
-        response = cliente_autenticado.get("/admin/chamados/listar", follow_redirects=False)
-        # Cliente comum deve ser negado (403 ou redirect)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+    def test_listar_sem_auth_401(self, client):
+        response = client.get("/api/admin/chamados")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_responder_get_requer_admin(self, cliente_autenticado):
-        """Apenas admin pode acessar formulario de resposta"""
-        response = cliente_autenticado.get("/admin/chamados/1/responder", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+    def test_listar_nao_admin_403(self, cliente_autenticado):
+        response = cliente_autenticado.get("/api/admin/chamados")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_fechar_requer_admin(self, cliente_autenticado):
-        """Apenas admin pode fechar chamado"""
-        response = cliente_autenticado.post("/admin/chamados/1/fechar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+    def test_obter_nao_admin_403(self, cliente_autenticado):
+        response = cliente_autenticado.get("/api/admin/chamados/1")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_reabrir_requer_admin(self, cliente_autenticado):
-        """Apenas admin pode reabrir chamado"""
-        response = cliente_autenticado.post("/admin/chamados/1/reabrir", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_403_FORBIDDEN]
+    def test_responder_nao_admin_403(self, cliente_autenticado):
+        token = _csrf(cliente_autenticado)
+        response = cliente_autenticado.post(
+            "/api/admin/chamados/1/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "Resposta de teste do admin."},
+                "dto_status": {"status": "Em Análise"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    def test_alterar_status_nao_admin_403(self, cliente_autenticado):
+        token = _csrf(cliente_autenticado)
+        response = cliente_autenticado.patch(
+            "/api/admin/chamados/1/status",
+            json={"status": "Resolvido"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+# =============================================================================
+# Listagem
+# =============================================================================
 
 class TestAdminListarChamados:
-    """Testes de listagem de chamados para administradores"""
+    """GET /api/admin/chamados (todos os chamados do sistema)."""
 
-    def test_admin_pode_listar_chamados(self, admin_autenticado):
-        """Admin deve conseguir listar chamados"""
-        response = admin_autenticado.get("/admin/chamados/listar")
-        assert response.status_code == status.HTTP_200_OK
-        assert "chamado" in response.text.lower()
-
-    def test_listar_exibe_template_correto(self, admin_autenticado):
-        """Deve renderizar template de listagem"""
-        response = admin_autenticado.get("/admin/chamados/listar")
+    def test_listar_vazio(self, admin_autenticado):
+        response = admin_autenticado.get("/api/admin/chamados")
         assert response.status_code == status.HTTP_200_OK
 
+        corpo = response.json()
+        assert corpo["items"] == []
+        assert corpo["total"] == 0
 
-class TestAdminResponderChamado:
-    """Testes para resposta de chamados por administradores"""
-
-    def test_get_responder_chamado_inexistente(self, admin_autenticado):
-        """Deve tratar chamado inexistente"""
-        response = admin_autenticado.get("/admin/chamados/99999/responder", follow_redirects=False)
-        # Deve redirecionar ou retornar 404
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_404_NOT_FOUND]
-
-    def test_post_responder_chamado_inexistente(self, admin_autenticado):
-        """Deve tratar POST para chamado inexistente"""
-        response = admin_autenticado.post("/admin/chamados/99999/responder", data={
-            "mensagem": "Resposta teste",
-            "status_chamado": "Em Análise"
-        }, follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_404_NOT_FOUND]
-
-    def test_responder_com_dados_validos(self, admin_autenticado, criar_chamado_admin):
-        """Admin deve conseguir responder chamado com dados validos"""
-        chamado_id = criar_chamado_admin
-
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/responder", data={
-            "mensagem": "Resposta do administrador ao chamado",
-            "status_chamado": "Em Análise"
-        }, follow_redirects=False)
-
-        assert_redirects_to(response, "/admin/chamados/listar")
-
-    def test_responder_com_mensagem_vazia(self, admin_autenticado, criar_chamado_admin):
-        """Deve rejeitar mensagem vazia"""
-        chamado_id = criar_chamado_admin
-
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/responder", data={
-            "mensagem": "",
-            "status_chamado": "Em Análise"
-        }, follow_redirects=True)
-
+    def test_listar_com_chamado(self, admin_autenticado, criar_chamado_admin):
+        response = admin_autenticado.get("/api/admin/chamados")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_responder_com_status_invalido(self, admin_autenticado, criar_chamado_admin):
-        """Deve rejeitar status invalido"""
-        chamado_id = criar_chamado_admin
+        corpo = response.json()
+        assert corpo["total"] == 1
+        assert corpo["items"][0]["id"] == criar_chamado_admin
+        # Listagem nao carrega o historico de interacoes
+        assert corpo["items"][0]["interacoes"] is None
 
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/responder", data={
-            "mensagem": "Resposta valida do administrador",
-            "status_chamado": "StatusInvalido"
-        }, follow_redirects=True)
+    def test_listar_filtro_status(self, admin_autenticado, criar_chamado_admin):
+        response = admin_autenticado.get(
+            "/api/admin/chamados", params={"status_filtro": "Aberto"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["total"] == 1
 
+        vazio = admin_autenticado.get(
+            "/api/admin/chamados", params={"status_filtro": "Resolvido"}
+        )
+        assert vazio.json()["total"] == 0
+
+
+# =============================================================================
+# Detalhe
+# =============================================================================
+
+class TestAdminObterChamado:
+    """GET /api/admin/chamados/{id}."""
+
+    def test_obter_detalhe(self, admin_autenticado, criar_chamado_admin):
+        response = admin_autenticado.get(f"/api/admin/chamados/{criar_chamado_admin}")
         assert response.status_code == status.HTTP_200_OK
 
+        corpo = response.json()
+        assert corpo["id"] == criar_chamado_admin
+        assert corpo["interacoes"] is not None
+        assert len(corpo["interacoes"]) >= 1
 
-class TestAdminFecharChamado:
-    """Testes para fechamento de chamados"""
-
-    def test_fechar_chamado_existente(self, admin_autenticado, criar_chamado_admin):
-        """Admin deve conseguir fechar chamado existente"""
-        chamado_id = criar_chamado_admin
-
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/fechar", follow_redirects=False)
-
-        assert_redirects_to(response, "/admin/chamados/listar")
-
-    def test_fechar_chamado_inexistente(self, admin_autenticado):
-        """Deve tratar fechamento de chamado inexistente"""
-        response = admin_autenticado.post("/admin/chamados/99999/fechar", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_404_NOT_FOUND]
+    def test_obter_inexistente_404(self, admin_autenticado):
+        response = admin_autenticado.get("/api/admin/chamados/999999")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-class TestAdminReabrirChamado:
-    """Testes para reabertura de chamados"""
+# =============================================================================
+# Resposta do admin (interacao + alteracao de status; body aninhado)
+# =============================================================================
 
-    def test_reabrir_chamado_fechado(self, admin_autenticado, criar_chamado_admin):
-        """Admin deve conseguir reabrir chamado fechado"""
-        chamado_id = criar_chamado_admin
+class TestAdminResponder:
+    """POST /api/admin/chamados/{id}/interacoes (body aninhado)."""
 
-        # Primeiro fechar o chamado
-        admin_autenticado.post(f"/admin/chamados/{chamado_id}/fechar", follow_redirects=False)
+    def test_responder_com_mudanca_status(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.post(
+            f"/api/admin/chamados/{criar_chamado_admin}/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "Estamos analisando a sua solicitacao."},
+                "dto_status": {"status": "Em Análise"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_201_CREATED
 
-        # Depois tentar reabrir
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/reabrir", follow_redirects=False)
+        corpo = response.json()
+        assert corpo["status"] == "Em Análise"
+        tipos = [i["tipo"] for i in corpo["interacoes"]]
+        assert "Resposta do Administrador" in tipos
 
-        assert_redirects_to(response, "/admin/chamados/listar")
+    def test_responder_e_fechar(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.post(
+            f"/api/admin/chamados/{criar_chamado_admin}/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "Problema resolvido, encerrando o chamado."},
+                "dto_status": {"status": "Fechado"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_201_CREATED
 
-    def test_reabrir_chamado_inexistente(self, admin_autenticado):
-        """Deve tratar reabertura de chamado inexistente"""
-        response = admin_autenticado.post("/admin/chamados/99999/reabrir", follow_redirects=False)
-        assert response.status_code in [status.HTTP_303_SEE_OTHER, status.HTTP_404_NOT_FOUND]
+        corpo = response.json()
+        assert corpo["status"] == "Fechado"
+        assert corpo["data_fechamento"] is not None
 
-    def test_reabrir_chamado_nao_fechado(self, admin_autenticado, criar_chamado_admin):
-        """Nao deve permitir reabrir chamado que nao esta fechado"""
-        chamado_id = criar_chamado_admin  # Chamado esta Aberto, nao Fechado
+    def test_responder_mensagem_curta_422(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.post(
+            f"/api/admin/chamados/{criar_chamado_admin}/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "curta"},
+                "dto_status": {"status": "Em Análise"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/reabrir", follow_redirects=False)
+    def test_responder_status_invalido_422(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.post(
+            f"/api/admin/chamados/{criar_chamado_admin}/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "Mensagem valida para o teste."},
+                "dto_status": {"status": "Inexistente"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Deve redirecionar com mensagem de erro
-        assert_redirects_to(response, "/admin/chamados/listar")
+    def test_responder_inexistente_404(self, admin_autenticado):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.post(
+            "/api/admin/chamados/999999/interacoes",
+            json={
+                "dto_mensagem": {"mensagem": "Mensagem valida para o teste."},
+                "dto_status": {"status": "Em Análise"},
+            },
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-class TestAdminChamadosRateLimiting:
-    """Testes de rate limiting para rotas de admin de chamados"""
+# =============================================================================
+# Alteracao de status (PATCH)
+# =============================================================================
 
-    def test_rate_limit_responder(self, admin_autenticado, criar_chamado_admin):
-        """Rate limit deve bloquear respostas excessivas"""
-        chamado_id = criar_chamado_admin
+class TestAdminAlterarStatus:
+    """PATCH /api/admin/chamados/{id}/status."""
 
-        with patch('routes.admin_chamados_routes.admin_chamado_responder_limiter.verificar', return_value=False):
-            response = admin_autenticado.post(f"/admin/chamados/{chamado_id}/responder", data={
-                "mensagem": "Resposta de teste",
-                "status_chamado": "Em Análise"
-            }, follow_redirects=False)
+    def test_alterar_status(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Resolvido"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "Resolvido"
 
-            assert_redirects_to(response, f"/admin/chamados/{chamado_id}/responder")
+    def test_fechar_grava_data_fechamento(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Fechado"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        corpo = response.json()
+        assert corpo["status"] == "Fechado"
+        assert corpo["data_fechamento"] is not None
+
+    def test_reabertura_invalida_409(self, admin_autenticado, criar_chamado_admin):
+        """Chamado fechado so pode ser reaberto como 'Em Análise'."""
+        token = _csrf(admin_autenticado)
+        # Primeiro fecha
+        fechar = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Fechado"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert fechar.status_code == status.HTTP_200_OK
+
+        # Tenta reabrir como 'Resolvido' (proibido) -> 409
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Resolvido"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+    def test_reabertura_valida_em_analise(self, admin_autenticado, criar_chamado_admin):
+        """De 'Fechado' para 'Em Análise' e permitido."""
+        token = _csrf(admin_autenticado)
+        admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Fechado"},
+            headers={"X-CSRF-Token": token},
+        )
+
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Em Análise"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "Em Análise"
+
+    def test_alterar_status_invalido_422(self, admin_autenticado, criar_chamado_admin):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            f"/api/admin/chamados/{criar_chamado_admin}/status",
+            json={"status": "Inexistente"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_alterar_status_inexistente_404(self, admin_autenticado):
+        token = _csrf(admin_autenticado)
+        response = admin_autenticado.patch(
+            "/api/admin/chamados/999999/status",
+            json={"status": "Resolvido"},
+            headers={"X-CSRF-Token": token},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND

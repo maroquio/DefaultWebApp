@@ -55,54 +55,29 @@ def setup_test_database():
 
 @pytest.fixture(scope="function", autouse=True)
 def limpar_rate_limiter():
-    """Limpa o rate limiter antes de cada teste para evitar bloqueios"""
-    # Importar após configuração do banco de dados
-    from routes.auth_routes import login_limiter, cadastro_limiter, esqueci_senha_limiter
-    from routes.admin_usuarios_routes import admin_usuarios_limiter
-    from routes.admin_backups_routes import admin_backups_limiter, backup_download_limiter
-    from routes.admin_configuracoes_routes import admin_config_limiter
-    from routes.chamados_routes import chamado_criar_limiter, chamado_responder_limiter
-    from routes.admin_chamados_routes import admin_chamado_responder_limiter
-    from routes.usuario_routes import (
-        upload_foto_limiter, alterar_senha_limiter, form_get_limiter
-    )
-    from routes.chat_routes import (
-        chat_mensagem_limiter, chat_sala_limiter,
-        busca_usuarios_limiter, chat_listagem_limiter
-    )
-    from routes.public_routes import public_limiter
-    from routes.examples_routes import examples_limiter
+    """
+    Limpa todos os rate limiters antes/depois de cada teste para evitar bloqueios.
 
-    # Lista de todos os limiters
-    limiters = [
-        login_limiter,
-        cadastro_limiter,
-        esqueci_senha_limiter,
-        admin_usuarios_limiter,
-        admin_backups_limiter,
-        backup_download_limiter,
-        admin_config_limiter,
-        chamado_criar_limiter,
-        chamado_responder_limiter,
-        admin_chamado_responder_limiter,
-        upload_foto_limiter,
-        alterar_senha_limiter,
-        form_get_limiter,
-        chat_mensagem_limiter,
-        chat_sala_limiter,
-        busca_usuarios_limiter,
-        chat_listagem_limiter,
-        public_limiter,
-        examples_limiter,
-    ]
+    Descobre os limiters por reflexão nos módulos de rotas (robusto a renomeações),
+    coletando qualquer instância de RateLimiter declarada em nível de módulo.
+    """
+    import importlib
+    import pkgutil
+    import routes as routes_pkg
+    from util.rate_limiter import RateLimiter
 
-    # Limpar antes do teste
+    limiters = []
+    for _, mod_name, _ in pkgutil.iter_modules(routes_pkg.__path__):
+        modulo = importlib.import_module(f"routes.{mod_name}")
+        for valor in vars(modulo).values():
+            if isinstance(valor, RateLimiter):
+                limiters.append(valor)
+
     for limiter in limiters:
         limiter.limpar()
 
     yield
 
-    # Limpar depois do teste também
     for limiter in limiters:
         limiter.limpar()
 
@@ -226,14 +201,15 @@ def criar_usuario(client):
     Útil para criar múltiplos usuários em um teste
     """
     def _criar_usuario(nome: str, email: str, senha: str, perfil: str = Perfil.CLIENTE.value):
-        """Cadastra um usuário via endpoint de cadastro"""
-        response = client.post("/cadastrar", data={
+        """Cadastra um usuário via endpoint JSON de cadastro (com CSRF)."""
+        token = client.get("/api/csrf-token").json()["token"]
+        response = client.post("/api/cadastrar", json={
             "perfil": perfil,
             "nome": nome,
             "email": email,
             "senha": senha,
             "confirmar_senha": senha
-        }, follow_redirects=False)
+        }, headers={"X-CSRF-Token": token})
         return response
 
     return _criar_usuario
@@ -246,11 +222,12 @@ def fazer_login(client):
     Retorna o cliente já autenticado
     """
     def _fazer_login(email: str, senha: str):
-        """Faz login e retorna o cliente autenticado"""
-        response = client.post("/login", data={
+        """Faz login via endpoint JSON (com CSRF) e retorna a resposta."""
+        token = client.get("/api/csrf-token").json()["token"]
+        response = client.post("/api/login", json={
             "email": email,
             "senha": senha
-        }, follow_redirects=False)
+        }, headers={"X-CSRF-Token": token})
         return response
 
     return _fazer_login
@@ -408,15 +385,16 @@ def usuario_com_foto(cliente_autenticado, foto_teste_base64):
     Returns:
         TestClient autenticado com foto já salva
     """
-    # Atualizar foto do perfil
-    response = cliente_autenticado.post(
-        "/perfil/foto/atualizar",
-        json={"imagem": foto_teste_base64},
-        follow_redirects=False
+    # Atualizar foto do perfil (endpoint JSON com CSRF)
+    token = cliente_autenticado.get("/api/csrf-token").json()["token"]
+    response = cliente_autenticado.put(
+        "/api/usuario/foto",
+        json={"foto_base64": foto_teste_base64},
+        headers={"X-CSRF-Token": token},
     )
 
     # Verificar se foto foi salva com sucesso
-    assert response.status_code in [status.HTTP_200_OK, status.HTTP_303_SEE_OTHER]
+    assert response.status_code == status.HTTP_200_OK
 
     return cliente_autenticado
 
