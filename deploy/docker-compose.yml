@@ -3,7 +3,7 @@
 # precisa de frontend/ (build do SPA) e backend/ (API FastAPI).
 services:
   web:
-    container_name: dwa.cachoeiro.es
+    container_name: dwa.ifes.site
     build:
       context: ..
       dockerfile: deploy/Dockerfile

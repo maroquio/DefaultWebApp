@@ -13,7 +13,7 @@ load_dotenv()
 
 # === Configurações da Aplicação ===
 APP_NAME = os.getenv("APP_NAME", "Sistema Web")
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8400")
 SECRET_KEY = os.getenv("SECRET_KEY", "sua-chave-secreta-super-segura-mude-isso-em-producao")
 
 # === Validação de Segurança ===
@@ -54,7 +54,7 @@ RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", APP_NAME)
 
 # === Configurações do Servidor ===
 HOST = os.getenv("HOST", "localhost")
-PORT = int(os.getenv("PORT", "8000"))
+PORT = int(os.getenv("PORT", "8400"))
 RELOAD = os.getenv("RELOAD", "True").lower() == "true"
 
 # === Modo de Execução ===

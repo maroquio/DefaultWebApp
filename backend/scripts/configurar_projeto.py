@@ -217,15 +217,15 @@ if not env_path.exists():
     substituicoes = {
         "APP_NAME=SeuProjeto": f"APP_NAME={nome_projeto}",
         "APP_NAME=MeuProjeto": f"APP_NAME={nome_projeto}",
-        "SECRET_KEY=cole_a_chave_de_sessao_aqui # gere em https://generate-secret.now.sh/64": f"SECRET_KEY={secret_key}",
+        "SECRET_KEY=cole_a_chave_de_sessao_aqui": f"SECRET_KEY={secret_key}",
         "PORT=8400": f"PORT={porta}",
         "HOST=127.0.0.1": "HOST=127.0.0.1",
     }
 
     if resend_key:
-        substituicoes["RESEND_API_KEY=cole_a_chave_de_api_do_resend_aqui # gere em https://resend.com/"] = f"RESEND_API_KEY={resend_key}"
+        substituicoes["RESEND_API_KEY=cole_a_chave_de_api_do_resend_aqui"] = f"RESEND_API_KEY={resend_key}"
     if resend_from:
-        substituicoes["RESEND_FROM_EMAIL=noreply@seuprojeto.cachoeiro.es"] = f"RESEND_FROM_EMAIL={resend_from}"
+        substituicoes["RESEND_FROM_EMAIL=noreply@seuprojeto.ifes.site"] = f"RESEND_FROM_EMAIL={resend_from}"
         substituicoes['RESEND_FROM_NAME="Seu Projeto"'] = f'RESEND_FROM_NAME="{resend_from_name}"'
 
     if conteudo_env:
@@ -361,6 +361,7 @@ if not resend_key:
     print("     Configure RESEND_API_KEY no .env quando necessário.")
     print()
 
-print(cor("  Dica:", YELLOW) + " Remova o módulo /exemplos quando iniciar o desenvolvimento real.")
-print(cor("        Edite routes/examples_routes.py e desregistre em main.py.", ""))
+print(cor("  Dica:", YELLOW) + " O módulo /exemplos é só FRONTEND (páginas demo).")
+print(cor("        Remova frontend/src/pages/exemplos/ e suas rotas em router.tsx.", ""))
+print(cor("        Não há routes/examples_routes.py no backend. Veja docs/FORKING.md.", ""))
 print()

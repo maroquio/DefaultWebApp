@@ -21,7 +21,7 @@ LOG_RETENTION_DAYS=30
 
 # Email (Resend.com)
 RESEND_API_KEY=${RESEND_API_KEY}
-RESEND_FROM_EMAIL=noreply@cachoeiro.es
+RESEND_FROM_EMAIL=noreply@ifes.site
 RESEND_FROM_NAME="Default Web App"
 
 # App

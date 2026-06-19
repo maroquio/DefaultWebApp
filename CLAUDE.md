@@ -10,7 +10,7 @@ Boilerplate educacional (projetos integradores) com **arquitetura SPLIT**: API R
 - `frontend/` — SPA React 19 + React Router 7 + TypeScript + Zod + Zustand + Vite. UI Bootstrap 5.3.8 + bootstrap-icons.
 - Deploy: **dwa.ifes.site**. Em dev, Vite faz proxy de `/api`, `/static`, `/health` → backend (same-origin, sem CORS).
 
-> **Porta do backend é inconsistente no repo**: `config.py` e `.env.example` usam default **8000**, mas `vite.config.ts` proxia para `VITE_BACKEND_URL` com fallback **8400**. Com `.env` default (8000) e Vite sem `VITE_BACKEND_URL`, há mismatch — alinhe `PORT` no `.env` com o alvo do proxy. Verifique o `.env` real antes de assumir a porta.
+> **Esquema de portas (3 camadas)**: **8000** = porta interna do container (Uvicorn no Docker; imutável). **8400** = dev local (default do backend, alvo do proxy Vite, default do `configurar_projeto.py`). **8410** = porta publicada no VPS para o starter kit (`deploy/docker-compose.yml` mapeia `8410:8000`). Novos projetos forkados publicam em **outra** porta de host (8420, 8430, ...).
 
 ## Comandos
 
@@ -18,7 +18,7 @@ Boilerplate educacional (projetos integradores) com **arquitetura SPLIT**: API R
 O `.python-version` aponta para 3.14 (não instalado) — **sempre** usar o interpretador do venv:
 
 ```bash
-backend/.venv/bin/python main.py                    # sobe API (porta via .env PORT; default 8000)
+backend/.venv/bin/python main.py                    # sobe API (porta via .env PORT; default dev 8400)
 backend/.venv/bin/python -m pytest                  # todos os testes
 backend/.venv/bin/python -m pytest tests/unit       # só unitários
 backend/.venv/bin/python -m pytest tests/integration/test_x.py::TestClasse::test_metodo  # um teste

@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
 // Em desenvolvimento o Vite serve o SPA e faz proxy de /api e /static
-// para o backend FastAPI (default localhost:8000), mantendo same-origin
+// para o backend FastAPI (default localhost:8400), mantendo same-origin
 // para que o cookie de sessão e o CSRF funcionem sem CORS.
 // Porta do backend FastAPI em dev (ver WebSPA/backend/.env -> PORT). Override
 // via VITE_BACKEND_URL se necessario.
