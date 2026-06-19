@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../../lib/api'
 import type { LogArquivo } from '../../../lib/types'
@@ -6,6 +6,11 @@ import { useFetch } from '../../../hooks/useFetch'
 import Spinner from '../../../components/ui/Spinner'
 
 const NIVEIS = ['TODOS', 'INFO', 'ERROR'] as const
+
+// Limite de linhas renderizadas por padrão. Arquivos de log podem ter milhares
+// de linhas (vários MB); renderizar tudo de uma vez no DOM trava a página.
+// Mostramos as mais recentes (final do arquivo) e deixamos carregar o resto.
+const LIMITE_LINHAS = 500
 
 function hojeISO(): string {
   // Data local (não UTC): evita pular para o dia seguinte à noite no fuso BRT.
@@ -22,6 +27,7 @@ export default function AdminAuditoriaLogsPage() {
 
   const [data, setData] = useState(hojeISO())
   const [nivel, setNivel] = useState('TODOS')
+  const [mostrarTudo, setMostrarTudo] = useState(false)
 
   const {
     data: log,
@@ -40,7 +46,21 @@ export default function AdminAuditoriaLogsPage() {
     e.preventDefault()
     setData(dataCampo)
     setNivel(nivelCampo)
+    setMostrarTudo(false)
   }
+
+  // Fatiamento do conteúdo: por padrão só as últimas LIMITE_LINHAS linhas.
+  const conteudo = useMemo(() => {
+    const texto = log?.conteudo ?? ''
+    if (!texto) return { texto: '', total: 0, exibidas: 0, truncado: false }
+    const linhas = texto.split('\n')
+    const total = linhas.length
+    if (mostrarTudo || total <= LIMITE_LINHAS) {
+      return { texto, total, exibidas: total, truncado: false }
+    }
+    const recentes = linhas.slice(total - LIMITE_LINHAS)
+    return { texto: recentes.join('\n'), total, exibidas: LIMITE_LINHAS, truncado: true }
+  }, [log?.conteudo, mostrarTudo])
 
   return (
     <div className="row">
@@ -130,9 +150,27 @@ export default function AdminAuditoriaLogsPage() {
                   <i className="bi bi-exclamation-triangle" /> {log.erro}
                 </div>
               ) : log.conteudo ? (
-                <pre className="error-traceback overflow-auto font-monospace small mb-0 p-3">
-                  {log.conteudo}
-                </pre>
+                <>
+                  {conteudo.truncado && (
+                    <div className="alert alert-warning rounded-0 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                      <span>
+                        <i className="bi bi-info-circle" /> Exibindo as últimas{' '}
+                        <strong>{conteudo.exibidas}</strong> de <strong>{conteudo.total}</strong>{' '}
+                        linhas (mais recentes ao final).
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => setMostrarTudo(true)}
+                      >
+                        <i className="bi bi-arrows-expand" /> Carregar todas as {conteudo.total} linhas
+                      </button>
+                    </div>
+                  )}
+                  <pre className="error-traceback overflow-auto font-monospace small mb-0 p-3">
+                    {conteudo.texto}
+                  </pre>
+                </>
               ) : (
                 <div className="alert alert-warning mb-0 rounded-0">
                   <i className="bi bi-exclamation-triangle" /> Nenhum log encontrado para os filtros
