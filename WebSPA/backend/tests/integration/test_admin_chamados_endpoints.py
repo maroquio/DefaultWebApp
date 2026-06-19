@@ -216,10 +216,9 @@ class TestResponder:
         assert len(corpo["interacoes"]) >= 1
         tipos = [i["tipo"] for i in corpo["interacoes"]]
         assert "Resposta do Administrador" in tipos
-        # NOTA: tem_resposta_admin sai False aqui porque o endpoint usa
-        # chamado_repo.obter_por_id (que não popula esse flag, sempre default
-        # False); só obter_por_usuario o calcula. Contrato real, não bug do teste.
-        assert corpo["tem_resposta_admin"] is False
+        # Após a resposta do admin, o flag deve refletir a realidade.
+        # (obter_por_id agora popula tem_resposta_admin, como obter_por_usuario.)
+        assert corpo["tem_resposta_admin"] is True
 
     def test_responder_fechando_grava_data_fechamento(self, admin_autenticado, cliente_id):
         chamado_id = _criar_chamado(cliente_id, titulo="Chamado para ser fechado")

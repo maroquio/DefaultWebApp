@@ -216,12 +216,12 @@ class TestStream:
 
     def test_stream_registrado_como_sse(self):
         """Verifica, sem abrir conexão viva, que a rota /api/chat/stream existe
-        e é um StreamingResponse text/event-stream (inspeção da app, não request).
+        e está montada como GET sob /api/chat (inspeção da app, não request).
 
-        Isto cobre o 'wiring' do caminho feliz com segurança: confirma que o
-        endpoint é GET, está montado sob /api/chat e que seu callable é o
-        handler de stream — sem disparar o gerador infinito que pendura o
-        TestClient."""
+        Isto cobre o 'wiring' do caminho feliz com segurança: confirma que
+        existe exatamente uma rota com esse path e que o método GET está
+        presente — sem acoplar a nomes internos de função e sem disparar o
+        gerador infinito que pendura o TestClient."""
         from main import app
 
         rotas_stream = [
@@ -230,8 +230,7 @@ class TestStream:
         ]
         assert len(rotas_stream) == 1
         rota = rotas_stream[0]
-        assert "GET" in getattr(rota, "methods", set())
-        assert getattr(rota, "endpoint").__name__ == "stream_mensagens"
+        assert "GET" in (getattr(rota, "methods", None) or set())
 
 
 # =============================================================================
@@ -677,6 +676,51 @@ class TestBuscarUsuarios:
         assert resp.status_code == status.HTTP_429_TOO_MANY_REQUESTS
         assert resp.json()["type"] == "rate_limited"
         assert "Retry-After" in resp.headers
+
+
+# =============================================================================
+# GET é isento de CSRF (o middleware só checa mutações)
+# =============================================================================
+
+class TestGetIsentoCsrf:
+    def test_get_conversas_ignora_csrf_invalido_200(self, cliente_autenticado):
+        """GET é isento de CSRF: um X-CSRF-Token inválido NÃO bloqueia o GET.
+
+        Não usamos /stream aqui (StreamingResponse pendura o TestClient).
+        """
+        resp = cliente_autenticado.get(
+            "/api/chat/conversas",
+            headers={"X-CSRF-Token": "token-errado"},
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
+
+    def test_get_total_nao_lidas_ignora_csrf_invalido_200(self, cliente_autenticado):
+        """Reforço: outro GET com CSRF inválido ainda retorna 200."""
+        resp = cliente_autenticado.get(
+            "/api/chat/mensagens/nao-lidas/total",
+            headers={"X-CSRF-Token": "token-errado"},
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["total"] == 0
+
+
+# =============================================================================
+# Vendedor autenticado consegue acessar o chat (@requer_autenticacao() sem lista)
+# =============================================================================
+
+class TestVendedorAcessaChat:
+    def test_vendedor_lista_conversas_200(self, vendedor_autenticado):
+        """@requer_autenticacao() sem lista de perfis permite QUALQUER usuário
+        autenticado — inclusive VENDEDOR."""
+        resp = vendedor_autenticado.get("/api/chat/conversas")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
+
+    def test_vendedor_total_nao_lidas_200(self, vendedor_autenticado):
+        resp = vendedor_autenticado.get("/api/chat/mensagens/nao-lidas/total")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["total"] == 0
 
 
 # =============================================================================

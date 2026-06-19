@@ -137,12 +137,21 @@ def obter_por_usuario(usuario_id: int) -> list[Chamado]:
 
 
 def obter_por_id(id: int) -> Optional[Chamado]:
+    from repo import chamado_interacao_repo
+
     with obter_conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(OBTER_POR_ID, (id,))
         row = cursor.fetchone()
         if row:
-            return _row_to_chamado(row)
+            chamado = _row_to_chamado(row)
+            # Popular o flag de resposta do admin para que qualquer leitura de
+            # um único chamado (detalhe, responder, alterar status) reflita a
+            # realidade — antes só obter_por_usuario o calculava.
+            chamado.tem_resposta_admin = chamado_interacao_repo.tem_resposta_admin(
+                chamado.id
+            )
+            return chamado
         return None
 
 

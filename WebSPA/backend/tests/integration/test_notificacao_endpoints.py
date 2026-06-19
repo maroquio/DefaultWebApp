@@ -87,7 +87,8 @@ class TestListar:
         assert corpo["total"] == 0
         assert corpo["pagina"] == 1
         assert corpo["por_pagina"] == 15
-        assert corpo["total_paginas"] in (0, 1)
+        # total_paginas é determinístico: max(1, (0+15-1)//15) == 1 (Paginacao.__post_init__)
+        assert corpo["total_paginas"] == 1
 
     def test_lista_com_notificacoes(self, cliente_autenticado, usuario_logado_id):
         _criar(usuario_logado_id, titulo="Primeira")
@@ -98,6 +99,9 @@ class TestListar:
         assert resp.status_code == status.HTTP_200_OK
         corpo = resp.json()
         assert corpo["total"] == 2
+        assert corpo["pagina"] == 1
+        assert corpo["por_pagina"] == 15
+        assert corpo["total_paginas"] == 1  # 2 itens / 15 por página → 1 página
         assert len(corpo["items"]) == 2
         item = corpo["items"][0]
         # Shape do NotificacaoResponse
@@ -105,10 +109,9 @@ class TestListar:
             assert campo in item
         assert item["usuario_id"] == usuario_logado_id
         assert item["lida"] is False
-        # Enum serializado como string do valor
+        # Enum serializado como string do valor: criamos exatamente INFO e SUCESSO.
         tipos = {i["tipo"] for i in corpo["items"]}
-        assert tipos <= {"info", "sucesso", "aviso", "erro"}
-        assert "sucesso" in tipos
+        assert tipos == {"info", "sucesso"}
 
     def test_paginacao_segunda_pagina(self, cliente_autenticado, usuario_logado_id):
         # 15 por página → criar 16 para forçar 2 páginas
@@ -118,9 +121,10 @@ class TestListar:
         assert resp.status_code == status.HTTP_200_OK
         corpo = resp.json()
         assert corpo["pagina"] == 2
+        assert corpo["por_pagina"] == 15
         assert corpo["total"] == 16
-        assert corpo["total_paginas"] == 2
-        assert len(corpo["items"]) == 1
+        assert corpo["total_paginas"] == 2  # 16 itens / 15 por página → 2 páginas
+        assert len(corpo["items"]) == 1  # 16 - 15 = 1 item na segunda página
 
     def test_isolamento_nao_ve_notificacao_de_outro(
         self, cliente_autenticado, criar_usuario_direto

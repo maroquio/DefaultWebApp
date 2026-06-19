@@ -283,6 +283,48 @@ class TestCriar:
 
 
 # =============================================================================
+# Perfil VENDEDOR (cobertura de autorização)
+# =============================================================================
+
+class TestPerfilVendedor:
+    """`@requer_autenticacao()` (sem lista de perfis) permite qualquer autenticado.
+
+    Logo, um Vendedor autenticado deve conseguir LISTAR e CRIAR pagamentos
+    exatamente como um Cliente — não há restrição de perfil nestes endpoints.
+    """
+
+    def test_vendedor_lista_pagamentos_200(self, vendedor_autenticado):
+        resp = vendedor_autenticado.get("/api/pagamentos")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == []
+
+    def test_vendedor_cria_pagamento_201(self, vendedor_autenticado, vendedor_teste):
+        token = _csrf(vendedor_autenticado)
+        provider = _provider_fake(checkout_url="https://sandbox.mp/checkout/VEND")
+        with patch(
+            "routes.pagamento_routes.PaymentService.obter_provider",
+            return_value=provider,
+        ):
+            resp = vendedor_autenticado.post(
+                "/api/pagamentos",
+                json={"descricao": "Plano do Vendedor", "valor": 59.90},
+                headers={"X-CSRF-Token": token},
+            )
+        assert resp.status_code == status.HTTP_201_CREATED
+        corpo = resp.json()
+        assert corpo["init_point"] == "https://sandbox.mp/checkout/VEND"
+        assert isinstance(corpo["pagamento_id"], int)
+        assert corpo["pagamento_id"] > 0
+        provider.criar_checkout.assert_called_once()
+
+        # O pagamento ficou associado ao próprio vendedor logado.
+        uid = _id_usuario_por_email(vendedor_teste["email"])
+        lista = vendedor_autenticado.get("/api/pagamentos").json()
+        assert len(lista) == 1
+        assert lista[0]["usuario_id"] == uid
+
+
+# =============================================================================
 # GET /api/pagamentos/{id}  (obter)
 # =============================================================================
 
@@ -523,6 +565,36 @@ class TestWebhookStripe:
             return_value=adapter,
         ):
             resp = client.post("/api/pagamentos/webhook/stripe", content=b"invalido")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json() == {"status": "ignored"}
+
+    def test_webhook_stripe_assinatura_invalida_ignorado(self, client):
+        """Assinatura Stripe inválida → adapter REAL lança e devolve None → 'ignored'.
+
+        Aqui NÃO mockamos o StripeAdapter: exercitamos o caminho real de validação
+        de assinatura. Com STRIPE_WEBHOOK_SECRET configurado e um header
+        ``Stripe-Signature`` ausente/incorreto, ``stripe.Webhook.construct_event``
+        levanta ``SignatureVerificationError``, que o adapter captura
+        (``processar_webhook`` retorna None) e a rota traduz para HTTP 200
+        ``{"status": "ignored"}`` (resposta rápida para não disparar reenvios).
+        """
+        from util.config_cache import config
+
+        # Faz o adapter entrar no ramo de validação real de assinatura.
+        config._cache["stripe_webhook_secret"] = "whsec_test_dummy_secret"
+        try:
+            payload = json.dumps(
+                {"id": "evt_1", "type": "checkout.session.completed"}
+            ).encode()
+            # Header de assinatura inválido (não corresponde ao secret).
+            resp = client.post(
+                "/api/pagamentos/webhook/stripe",
+                content=payload,
+                headers={"Stripe-Signature": "t=1,v1=assinatura_invalida"},
+            )
+        finally:
+            config._cache.pop("stripe_webhook_secret", None)
+
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json() == {"status": "ignored"}
 
