@@ -1,4 +1,0 @@
-[flake8]
-max-line-length = 120
-ignore = F403,F405,N805,ANN401,W503
-exclude = .venv,venv,__pycache__,.git,*.egg-info,build,dist
