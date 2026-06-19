@@ -64,14 +64,10 @@ export default function AdminChamadoResponderPage() {
       recarregar()
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
-        // Erros do body aninhado podem vir prefixados; normaliza para 'mensagem'/'status'.
-        const norm: Record<string, string[]> = {}
-        for (const [campo, msgs] of Object.entries(err.errors)) {
-          if (campo.includes('mensagem')) norm.mensagem = msgs
-          else if (campo.includes('status')) norm.status = msgs
-          else norm[campo] = msgs
-        }
-        setErros(norm)
+        // O backend (processar_erros_validacao_lista) já chaveia os erros pelo
+        // último segmento da loc, então o body aninhado dto_mensagem/dto_status
+        // chega como 'mensagem'/'status' — exatamente as chaves do respostaSchema.
+        setErros(err.errors)
       } else {
         toast.erro(err instanceof ApiError ? err.message : 'Erro ao enviar a resposta.')
       }

@@ -11,6 +11,11 @@ import type { Usuario } from '../../lib/types'
 
 const FOTO_FALLBACK = '/static/img/user.jpg'
 
+// Espelha o contrato do backend (PUT /usuario/foto): máx 10MB e tipos de imagem.
+// Pré-validar no cliente evita round-trips que só retornariam 413/400.
+const FOTO_MAX_BYTES = 10 * 1024 * 1024
+const FOTO_TIPOS = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
 function lerComoBase64(arquivo: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -32,6 +37,14 @@ export default function PerfilVisualizarPage() {
     const arquivo = e.target.files?.[0]
     e.target.value = ''
     if (!arquivo) return
+    if (!FOTO_TIPOS.includes(arquivo.type)) {
+      toast.erro('Formato inválido. Use JPG, PNG, GIF ou WEBP.')
+      return
+    }
+    if (arquivo.size > FOTO_MAX_BYTES) {
+      toast.erro('Imagem muito grande. O tamanho máximo é 10MB.')
+      return
+    }
     setEnviando(true)
     try {
       const foto_base64 = await lerComoBase64(arquivo)

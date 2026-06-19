@@ -63,8 +63,12 @@ export default function AdminConfiguracoesPage() {
       setEditados({})
       recarregar()
     } catch (e) {
-      if (e instanceof ApiError) toast.erro(e.message)
-      else toast.erro((e as Error).message)
+      if (e instanceof ApiError) {
+        // Em 422 o detalhe por-chave da validação fica em `errors`; surfacar
+        // isso em vez do `detail` genérico ("Os dados fornecidos são inválidos").
+        const detalhes = e.errors ? Object.values(e.errors).flat().join(' ') : ''
+        toast.erro(detalhes || e.message)
+      } else toast.erro((e as Error).message)
     } finally {
       setSalvando(false)
     }
