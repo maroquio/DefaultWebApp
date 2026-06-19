@@ -47,3 +47,6 @@ desktop.ini
 # ---------------------------------------------------------------------------
 projects/
 .lesson-bridge/
+
+# Artefatos do Playwright MCP (snapshots, screenshots, logs de console)
+.playwright-mcp/

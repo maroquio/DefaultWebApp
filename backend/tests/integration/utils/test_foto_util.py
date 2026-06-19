@@ -28,21 +28,38 @@ from util.foto_util import (
 class TestObterCaminhoFotoUsuario:
     """Testes para a função obter_caminho_foto_usuario()"""
 
-    def test_id_1_retorna_caminho_correto(self):
-        """ID 1 deve retornar caminho com zeros à esquerda"""
+    @pytest.fixture
+    def pasta_fotos_tmp(self, tmp_path, monkeypatch):
+        """Aponta PASTA_FOTOS para um diretório temporário isolado."""
+        pasta = tmp_path / "usuarios"
+        pasta.mkdir()
+        monkeypatch.setattr("util.foto_util.PASTA_FOTOS", pasta)
+        return pasta
+
+    def test_id_1_retorna_caminho_correto_quando_foto_existe(self, pasta_fotos_tmp):
+        """ID 1 deve retornar caminho com zeros à esquerda quando a foto existe"""
+        (pasta_fotos_tmp / "000001.jpg").write_bytes(b"x")
         resultado = obter_caminho_foto_usuario(1)
         assert "000001.jpg" in resultado
         assert resultado.startswith("/")
 
-    def test_id_grande_retorna_caminho_correto(self):
-        """ID grande deve formatar corretamente"""
+    def test_id_grande_retorna_caminho_correto_quando_foto_existe(self, pasta_fotos_tmp):
+        """ID grande deve formatar corretamente quando a foto existe"""
+        (pasta_fotos_tmp / "123456.jpg").write_bytes(b"x")
         resultado = obter_caminho_foto_usuario(123456)
         assert "123456.jpg" in resultado
 
-    def test_caminho_inclui_pasta(self):
-        """Caminho deve incluir pasta de usuários"""
+    def test_caminho_inclui_pasta_quando_foto_existe(self, pasta_fotos_tmp):
+        """Caminho deve incluir pasta de usuários quando a foto existe"""
+        (pasta_fotos_tmp / "000001.jpg").write_bytes(b"x")
         resultado = obter_caminho_foto_usuario(1)
         assert "usuarios" in resultado
+
+    def test_retorna_foto_padrao_quando_foto_nao_existe(self, pasta_fotos_tmp):
+        """Sem o arquivo da foto, deve cair para a foto padrão (evita 404)"""
+        resultado = obter_caminho_foto_usuario(1)
+        assert resultado == f"/{FOTO_DEFAULT}"
+        assert "000001.jpg" not in resultado
 
 
 class TestObterPathAbsolutoFoto:

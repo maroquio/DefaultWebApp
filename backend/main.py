@@ -204,7 +204,17 @@ if __name__ == "__main__":
     logger.info("=" * 60)
 
     try:
-        uvicorn.run("main:app", host=HOST, port=PORT, reload=RELOAD, log_level="info")
+        uvicorn.run(
+            "main:app",
+            host=HOST,
+            port=PORT,
+            reload=RELOAD,
+            log_level="info",
+            # Honra X-Forwarded-Proto/-For quando atrás de proxy reverso (TLS),
+            # garantindo scheme https em redirects e url_for.
+            proxy_headers=True,
+            forwarded_allow_ips="*",
+        )
     except KeyboardInterrupt:
         logger.info("Servidor encerrado pelo usuário")
     except Exception as e:

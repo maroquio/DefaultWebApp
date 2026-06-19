@@ -30,15 +30,22 @@ QUALIDADE_FOTO = 90
 
 def obter_caminho_foto_usuario(id: int) -> str:
     """
-    Retorna o caminho absoluto da foto do usuário para uso em templates.
+    Retorna o caminho da foto do usuário para uso no frontend.
+
+    Se o arquivo da foto não existir (ex: deploy novo com volume de uploads
+    zerado, ou usuário sem foto), retorna a foto padrão em vez de um caminho
+    que resultaria em 404 no navegador.
 
     Args:
         id: ID do usuário
 
     Returns:
-        String com caminho absoluto (ex: /static/img/usuarios/000001.jpg)
+        String com caminho (ex: /static/img/usuarios/000001.jpg) ou o padrão
+        /static/img/user.jpg quando a foto do usuário não existe.
     """
-    return f"/{PASTA_FOTOS}/{id:06d}.jpg"
+    if (PASTA_FOTOS / f"{id:06d}.jpg").exists():
+        return f"/{PASTA_FOTOS}/{id:06d}.jpg"
+    return f"/{FOTO_DEFAULT}"
 
 
 def obter_path_absoluto_foto(id: int) -> Path:
