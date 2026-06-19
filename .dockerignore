@@ -1,0 +1,39 @@
+# Contexto de build = raiz do repo (ver deploy/Dockerfile). Mantém o contexto
+# enxuto e evita copiar dependências/artefatos que são gerados dentro da imagem.
+
+# Git / IDE
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Frontend (node_modules e build são (re)gerados no stage Node)
+frontend/node_modules
+frontend/dist
+frontend/.vite
+**/*.tsbuildinfo
+
+# Backend (venv, caches e dados locais não vão para a imagem)
+backend/.venv
+backend/__pycache__
+**/__pycache__
+**/*.pyc
+backend/.pytest_cache
+backend/.mypy_cache
+backend/.flake8
+backend/dados.db
+backend/dados.db-*
+backend/logs
+backend/backups
+backend/tests
+
+# Caches da raiz
+.pytest_cache
+.mypy_cache
+
+# Deploy (não precisa entrar na imagem)
+deploy
+docs
+projects
+logs

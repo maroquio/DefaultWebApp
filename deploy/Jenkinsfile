@@ -8,10 +8,12 @@ pipeline {
                     string(credentialsId: 'RESEND_API_KEY', variable: 'RESEND_API_KEY'),
                     string(credentialsId: 'SECRET_KEY', variable: 'SECRET_KEY')
                 ]) {
+                    // O .env é gravado em backend/.env porque o Dockerfile multi-stage
+                    // copia o backend com "COPY backend/ ./" (contexto = raiz do repo).
                     sh '''#!/bin/bash
-                        cat > .env << ENVFILE
-# Database
-DATABASE_PATH=dados.db
+                        cat > backend/.env << ENVFILE
+# Database (dentro do volume persistente dwa_data -> /app/data)
+DATABASE_PATH=/app/data/dados.db
 
 # Logging
 LOG_LEVEL=INFO
@@ -24,11 +26,14 @@ RESEND_FROM_NAME="Default Web App"
 
 # App
 APP_NAME=DefaultWebApp
-BASE_URL=http://localhost:8400
+BASE_URL=http://localhost:8410
 SECRET_KEY=${SECRET_KEY}
 TIMEZONE=America/Sao_Paulo
 RUNNING_MODE=Production
 RELOAD=False
+
+# SPA (build do frontend copiado para o container pelo Dockerfile)
+SPA_DIST_PATH=/app/frontend_dist
 
 # Fotos de Perfil
 FOTO_PERFIL_TAMANHO_MAX=256
@@ -103,13 +108,13 @@ RATE_LIMIT_PUBLIC_MINUTOS=1
 RATE_LIMIT_EXAMPLES_MAX=100
 RATE_LIMIT_EXAMPLES_MINUTOS=1
 
-# Server
+# Server (porta INTERNA do container; o compose publica 8410:8000)
 HOST=0.0.0.0
-PORT=8400
+PORT=8000
 ENVFILE
-                        chmod 600 .env
-                        echo "Arquivo .env criado com sucesso!"
-                        ls -la .env
+                        chmod 600 backend/.env
+                        echo "Arquivo backend/.env criado com sucesso!"
+                        ls -la backend/.env
                     '''
                 }
             }
@@ -117,13 +122,14 @@ ENVFILE
 
         stage('Build Docker') {
             steps {
-                sh 'docker compose build'
+                // O build context aponta para a raiz ("..") via deploy/docker-compose.yml.
+                sh 'docker compose -f deploy/docker-compose.yml build'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d'
+                sh 'docker compose -f deploy/docker-compose.yml up -d'
             }
         }
     }

@@ -1,0 +1,29 @@
+# Execute a partir do diretório deploy/ (ou aponte -f deploy/docker-compose.yml).
+# O contexto de build é a RAIZ do repositório, pois o Dockerfile multi-stage
+# precisa de frontend/ (build do SPA) e backend/ (API FastAPI).
+services:
+  web:
+    container_name: dwa.cachoeiro.es
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8410:8000"
+    restart: unless-stopped
+    environment:
+      # Banco SQLite dentro do volume persistente (ver volume dwa_data abaixo).
+      DATABASE_PATH: /app/data/dados.db
+    # Persiste o banco SQLite e os uploads entre recriações do container.
+    volumes:
+      - dwa_data:/app/data
+      - dwa_uploads:/app/static/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  dwa_data:
+  dwa_uploads:
