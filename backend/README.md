@@ -139,7 +139,7 @@ Criado no startup a partir de `data/usuarios_seed.json`:
 .venv/bin/python -m pytest                    # tudo
 .venv/bin/python -m pytest tests/unit/        # unitários
 .venv/bin/python -m pytest tests/integration/ # integração (asserem JSON/status)
-.venv/bin/python -m pytest -m auth            # por marcador (auth, crud, slow, integration, unit, e2e)
+.venv/bin/python -m pytest -m auth            # por marcador (auth, crud, slow, integration, unit)
 ```
 Não há testes e2e neste backend (Playwright foi removido na conversão para SPA).
 

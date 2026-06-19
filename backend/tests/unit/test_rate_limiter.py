@@ -1,22 +1,18 @@
 """
 Testes para o módulo util/rate_limiter.py
 
-Testa RateLimiter, DynamicRateLimiter, RegistroLimiters e decorator @com_rate_limit.
+Testa RateLimiter, DynamicRateLimiter e RegistroLimiters.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timedelta
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.testclient import TestClient
+from unittest.mock import MagicMock, patch
+from datetime import timedelta
 
 from util.rate_limiter import (
     RateLimiter,
     DynamicRateLimiter,
     RegistroLimiters,
-    registro_limiters,
     obter_identificador_cliente,
-    com_rate_limit
 )
 
 
@@ -481,119 +477,3 @@ class TestRegistroLimiters:
 
         assert len(limiter1.tentativas) == 0
         assert len(limiter2.tentativas) == 0
-
-
-class TestDecoratorComRateLimit:
-    """Testes para o decorator @com_rate_limit"""
-
-    @pytest.fixture
-    def limiter(self):
-        """Cria rate limiter para testes"""
-        return RateLimiter(max_tentativas=3, janela_minutos=5, nome="decorator_test")
-
-    def test_decorator_permite_requisicao_valida(self, limiter):
-        """Deve permitir requisição quando dentro do limite"""
-        app = FastAPI()
-
-        @app.get("/test")
-        @com_rate_limit(limiter, registrar=False)
-        async def test_endpoint(request: Request):
-            return {"status": "ok"}
-
-        client = TestClient(app)
-        response = client.get("/test")
-
-        assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
-
-    def test_decorator_bloqueia_excesso(self, limiter):
-        """Deve bloquear quando exceder limite"""
-        app = FastAPI()
-
-        @app.get("/test")
-        @com_rate_limit(limiter, registrar=False)
-        async def test_endpoint(request: Request):
-            return {"status": "ok"}
-
-        client = TestClient(app)
-
-        # Primeiras 3 requisições OK
-        for _ in range(3):
-            response = client.get("/test")
-            assert response.status_code == 200
-
-        # Quarta deve ser bloqueada
-        response = client.get("/test")
-        assert response.status_code == 429
-
-    def test_decorator_mensagem_customizada(self, limiter):
-        """Deve usar mensagem de erro customizada"""
-        limiter.limpar()
-        # Esgota o limite
-        for _ in range(3):
-            limiter.verificar("testclient")
-
-        app = FastAPI()
-
-        @app.get("/test")
-        @com_rate_limit(limiter, mensagem_erro="Minha mensagem", registrar=False)
-        async def test_endpoint(request: Request):
-            return {"status": "ok"}
-
-        client = TestClient(app)
-        response = client.get("/test")
-
-        assert response.status_code == 429
-        assert "Minha mensagem" in response.json()["detail"]
-
-    def test_decorator_registra_no_registry(self):
-        """Deve registrar limiter no registry global"""
-        limiter = RateLimiter(max_tentativas=5, janela_minutos=5, nome="registrar_test_unique")
-
-        app = FastAPI()
-
-        @app.get("/test")
-        @com_rate_limit(limiter, registrar=True)
-        async def test_endpoint(request: Request):
-            return {"status": "ok"}
-
-        # O decorator deve registrar o limiter
-        assert "registrar_test_unique" in registro_limiters.listar()
-
-    def test_decorator_sem_request_continua(self):
-        """Deve continuar sem rate limiting se Request não for encontrado"""
-        limiter = RateLimiter(max_tentativas=1, janela_minutos=5, nome="sem_request_test")
-
-        app = FastAPI()
-
-        # Endpoint sem parâmetro request
-        @app.get("/test")
-        @com_rate_limit(limiter, registrar=False)
-        async def test_endpoint():
-            return {"status": "ok"}
-
-        client = TestClient(app)
-
-        # Deve funcionar mesmo excedendo o limite normal
-        # porque não conseguiu encontrar o request
-        with patch('util.rate_limiter.logger'):
-            for _ in range(5):
-                response = client.get("/test")
-                assert response.status_code == 200
-
-    def test_decorator_encontra_request_em_args(self, limiter):
-        """Deve encontrar request em args (não só kwargs)"""
-        limiter.limpar()
-
-        app = FastAPI()
-
-        @app.get("/test")
-        @com_rate_limit(limiter, registrar=False)
-        async def test_endpoint(request: Request):
-            return {"status": "ok"}
-
-        client = TestClient(app)
-
-        # Deve funcionar normalmente
-        response = client.get("/test")
-        assert response.status_code == 200

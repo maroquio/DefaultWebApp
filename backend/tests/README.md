@@ -17,16 +17,17 @@ Este documento define as convenções, padrões e melhores práticas para escrev
 
 ### Organização de Arquivos
 
-Os testes estão organizados em três categorias:
+Os testes estão organizados em duas categorias principais (unit, integration),
+além de helpers compartilhados:
 
 ```
 tests/
 ├── conftest.py                  # Fixtures compartilhadas (herdadas por todas as pastas)
 ├── test_helpers.py              # Funções helper para assertions
-├── test_permission_helpers.py   # Helpers de permissão
-├── test_validation_helpers.py   # Helpers de validação
-├── test_repository_helpers.py   # Helpers de repositório
 ├── README.md                    # Este arquivo
+│
+├── helpers/                     # Helpers auxiliares
+│   └── test_validation_helpers.py
 │
 ├── unit/                        # Testes unitários (isolados, com mocks)
 │   ├── conftest.py              # Configuração específica para testes unitários
@@ -37,33 +38,34 @@ tests/
 │   ├── test_enum_base.py        # Classe base de enums
 │   ├── test_usuario_logado_model.py  # Dataclass UsuarioLogado
 │   ├── test_rate_limiter.py     # Rate limiter
-│   ├── test_db_util.py          # Utilitários de banco
 │   └── test_configuracao_dto.py # DTOs de configuração
 │
-├── integration/                 # Testes de integração (HTTP + banco)
-│   ├── conftest.py              # Configuração específica para integração
-│   ├── test_auth.py             # Autenticação
-│   ├── test_security.py         # Segurança
-│   ├── test_perfil.py           # Perfil do usuário
-│   ├── test_usuario.py          # Dashboard do usuário
-│   ├── test_admin_usuarios.py   # Administração de usuários
-│   ├── test_admin_backups.py    # Backups
-│   ├── test_admin_configuracoes.py  # Configurações
-│   ├── test_public.py           # Rotas públicas
-│   ├── test_chamados.py         # Sistema de chamados
-│   └── ...                      # Outros testes de integração
-│
-└── e2e/                         # Testes end-to-end (Playwright)
-    ├── conftest.py              # Fixtures Playwright e servidor
-    ├── test_cadastro.py         # Fluxo de cadastro via browser
-    └── test_e2e_helpers.py      # Helpers E2E
+└── integration/                 # Testes de integração (HTTP + banco)
+    ├── conftest.py              # Configuração específica para integração
+    ├── repos/ · routes/ · utils/   # Subpastas de apoio
+    ├── test_auth_endpoints.py             # Autenticação
+    ├── test_usuario_endpoints.py          # Perfil/dashboard do usuário
+    ├── test_admin_usuarios_endpoints.py   # Administração de usuários
+    ├── test_admin_backups_endpoints.py    # Backups
+    ├── test_admin_chamados_endpoints.py   # Chamados (admin)
+    ├── test_admin_configuracoes_endpoints.py  # Configurações
+    ├── test_admin_pagamentos_endpoints.py # Pagamentos (admin)
+    ├── test_chamados_endpoints.py         # Chamados
+    ├── test_chat_endpoints.py             # Chat (SSE)
+    ├── test_chat_manager.py               # Gerenciador de chat
+    ├── test_config_hybrido.py             # Config híbrida banco→.env
+    ├── test_csrf_protection.py            # Proteção CSRF
+    ├── test_migrar_config.py              # Migração de config para o banco
+    ├── test_notificacao_endpoints.py      # Notificações
+    └── test_pagamento_endpoints.py        # Pagamentos
 ```
+
+> Não há suíte e2e neste backend (Playwright foi removido na conversão para SPA).
 
 **Categorias de testes:**
 
 - **unit/**: Testes unitários - testam funções e classes isoladamente, usando mocks
 - **integration/**: Testes de integração - testam múltiplos componentes via HTTP/banco
-- **e2e/**: Testes end-to-end - simulam usuário real via Playwright
 
 ### Organização de Classes
 
@@ -634,13 +636,9 @@ pytest tests/unit/
 # Apenas testes de integração
 pytest tests/integration/
 
-# Apenas testes E2E (requer Playwright instalado)
-pytest tests/e2e/
-
 # Usando markers (aplica automaticamente pelas pastas)
 pytest -m unit
 pytest -m integration
-pytest -m e2e
 ```
 
 ### Markers Úteis

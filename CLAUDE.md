@@ -22,7 +22,7 @@ backend/.venv/bin/python main.py                    # sobe API (porta via .env P
 backend/.venv/bin/python -m pytest                  # todos os testes
 backend/.venv/bin/python -m pytest tests/unit       # só unitários
 backend/.venv/bin/python -m pytest tests/integration/test_x.py::TestClasse::test_metodo  # um teste
-backend/.venv/bin/python -m pytest -m "not slow"    # markers: slow, integration, unit, auth, crud, e2e
+backend/.venv/bin/python -m pytest -m "not slow"    # markers: slow, integration, unit, auth, crud
 ```
 Docs interativas em `/docs`. `pytest.ini` usa `asyncio_mode=auto`.
 

@@ -50,3 +50,10 @@ projects/
 
 # Artefatos do Playwright MCP (snapshots, screenshots, logs de console)
 .playwright-mcp/
+
+# ---------------------------------------------------------------------------
+# Caches de ferramentas (na raiz; subprojetos reforçam nos próprios .gitignore)
+# ---------------------------------------------------------------------------
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
