@@ -117,16 +117,23 @@ async def generic_exception_handler(request: Request, exc: Exception) -> Respons
         exc_info=True,
     )
 
+    # `errors` é estritamente {campo: [msgs]} de validação. O traceback de dev
+    # NÃO entra nesse espaço (poluiria consumidores genéricos que achatam
+    # errors em toast); vai num campo `debug` separado, fora do contrato de erro.
+    debug = None
     if IS_DEVELOPMENT:
         detail = f"{type(exc).__name__}: {str(exc)}"
-        errors = {"traceback": traceback.format_exc().splitlines()}
+        debug = {"traceback": traceback.format_exc().splitlines()}
     else:
         detail = "Erro interno do servidor. Nossa equipe foi notificada."
-        errors = None
 
-    return resposta_erro(
+    resposta = resposta_erro(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail=detail,
         tipo="internal_error",
-        errors=errors,
+        errors=None,
     )
+    if debug is not None:
+        corpo = {"detail": detail, "type": "internal_error", "errors": None, "debug": debug}
+        return JSONResponse(status_code=resposta.status_code, content=corpo)
+    return resposta
