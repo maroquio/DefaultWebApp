@@ -4,12 +4,13 @@ Backend **FastAPI** que expõe uma **API JSON pura** para um frontend **SPA em R
 Derivado do boilerplate `WebStandard` (FastAPI + Jinja) e convertido para servir apenas
 JSON: sem templates, sem HTML renderizado no servidor.
 
-> **O frontend ainda não existe.** Este repositório contém somente o backend. O SPA em
-> React (React Router + Zod + Zustand) será construído numa fase posterior e consumirá
-> esta API via `fetch(..., { credentials: 'include' })`.
+> **Arquitetura SPLIT.** O SPA em React (React Router 7 + Zod + Zustand) vive em
+> [`../frontend`](../frontend) e consome esta API via `fetch(..., { credentials: 'include' })`.
+> Em dev o Vite faz proxy de `/api`, `/static` e `/health` para este backend (same-origin,
+> sem CORS). Em produção o FastAPI também serve o build do SPA (`index.html` + assets).
 
-A referência completa das decisões de arquitetura e do contrato da API está em
-**[`../docs/PLANO_BACKEND.md`](../docs/PLANO_BACKEND.md)**.
+A referência completa de arquitetura e do contrato da API está no
+**[`../CLAUDE.md`](../CLAUDE.md)** (raiz do repositório).
 
 ## Stack
 
@@ -37,6 +38,10 @@ A referência completa das decisões de arquitetura e do contrato da API está e
 ### Pré-requisitos
 - Python 3.11+ e pip.
 
+> O arquivo `.python-version` aponta para 3.14 (pode não estar instalado). As versões
+> em `requirements.txt` (Pydantic 2.13, httpx 0.28) já têm wheels para 3.14, mas
+> 3.11–3.13 funcionam. Use sempre o interpretador do venv local (`.venv/bin/python`).
+
 ### Instalação
 ```bash
 python3 -m venv .venv
@@ -47,13 +52,15 @@ cp .env.example .env             # edite ao menos SECRET_KEY e APP_NAME
 
 ### Desenvolvimento
 ```bash
-python main.py
+.venv/bin/python main.py         # ou: source .venv/bin/activate && python main.py
 ```
-Sobe em `http://localhost:8000` (configurável via `HOST`/`PORT`). Documentação
-interativa da API em `http://localhost:8000/docs`.
+Sobe em `http://localhost:8000` por padrão (configurável via `HOST`/`PORT` no `.env`).
+Documentação interativa da API em `/docs`.
 
-Com o SPA presente em dev, o **Vite** roda separado e faz **proxy de `/api`** para o
-backend (mesma origem) — então não há configuração de CORS.
+Com o SPA presente em dev, o **Vite** roda separado (porta 5180) e faz **proxy de `/api`,
+`/static` e `/health`** para este backend (mesma origem) — sem CORS. O Vite proxia para
+`VITE_BACKEND_URL` (fallback `http://127.0.0.1:8400`); se o backend subir em outra porta,
+ajuste `PORT` no `.env` **e** o alvo do proxy para que batam.
 
 ### Produção
 - Construa o build do React em `SPA_DIST_PATH` (default `../frontend/dist`).
@@ -127,15 +134,14 @@ Criado no startup a partir de `data/usuarios_seed.json`:
 ## Testes
 
 ```bash
-pytest                       # tudo
-pytest tests/unit/           # unitários
-pytest tests/integration/    # integração (asserem JSON/status)
-pytest -m auth               # por marcador
+.venv/bin/python -m pytest                    # tudo
+.venv/bin/python -m pytest tests/unit/        # unitários
+.venv/bin/python -m pytest tests/integration/ # integração (asserem JSON/status)
+.venv/bin/python -m pytest -m auth            # por marcador (auth, crud, slow, integration, unit, e2e)
 ```
 Não há testes e2e neste backend (Playwright foi removido na conversão para SPA).
 
 ## Documentação Adicional
 
-- **[`../docs/PLANO_BACKEND.md`](../docs/PLANO_BACKEND.md)** — arquitetura e contrato (fonte da verdade).
+- **[`../CLAUDE.md`](../CLAUDE.md)** — arquitetura, contrato e convenções (fonte da verdade para agentes).
 - **`/docs`** (em runtime) — OpenAPI/Swagger gerado automaticamente.
-- **`CLAUDE.md`** — guia para agentes de código trabalhando neste backend.
