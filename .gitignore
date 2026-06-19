@@ -1,3 +1,49 @@
-projects/
+# ===========================================================================
+# DefaultWebApp — .gitignore RAIZ
+# Escopo: apenas regras cross-cutting (SO, editores, segredos, workspace).
+# Python/backend  -> backend/.gitignore
+# Node/frontend   -> frontend/.gitignore
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Segredos (catch-all; cada subprojeto reforça o próprio .env)
+# ---------------------------------------------------------------------------
+*.pem
+*.key
+secrets.json
+
+# ---------------------------------------------------------------------------
+# Logs e diretórios de runtime na raiz
+# ---------------------------------------------------------------------------
 logs/
+*.log
+
+# ---------------------------------------------------------------------------
+# Editores e IDEs
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Sistema operacional
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Diretórios específicos deste workspace
+# ---------------------------------------------------------------------------
+projects/
 .lesson-bridge/

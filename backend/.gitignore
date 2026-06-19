@@ -42,6 +42,8 @@ env/
 *.sqlite
 *.sqlite3
 *.db-journal
+*.db-wal
+*.db-shm
 
 # Logs
 logs/
@@ -50,8 +52,12 @@ logs/
 # Tests
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .tox/
+.nox/
+.hypothesis/
 
 # Environment variables
 .env.local
@@ -62,6 +68,9 @@ htmlcov/
 temp/
 tmp/
 .mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
 
 
 # IA Files

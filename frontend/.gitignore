@@ -1,8 +1,36 @@
-node_modules
-dist
-dist-ssr
+# ===========================================================================
+# Frontend — React 19 + Vite + TypeScript
+# ===========================================================================
+
+# Dependências
+node_modules/
+
+# Build
+dist/
+dist-ssr/
 *.local
-.DS_Store
+
+# TypeScript (build incremental)
+*.tsbuildinfo
+
+# Caches de bundler / linter
+.vite/
+.cache/
+.eslintcache
+.parcel-cache/
+
+# Segredos / ambiente
 .env
 .env.*.local
+
+# Logs de gerenciadores de pacote
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cobertura de testes (Vitest)
+coverage/
+
+# Sistema operacional
+.DS_Store
