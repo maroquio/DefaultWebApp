@@ -188,7 +188,7 @@ CONFIGS_PARA_MIGRAR = {
         "Suporte"
     ),
 
-    # === Rate Limiting - Admin e Páginas Públicas ===
+    # === Rate Limiting - Admin ===
     "rate_limit_backup_download_max": (
         "RATE_LIMIT_BACKUP_DOWNLOAD_MAX",
         "Máximo de downloads de backup",
@@ -199,25 +199,47 @@ CONFIGS_PARA_MIGRAR = {
         "Período em minutos para download de backup",
         "Admin"
     ),
-    "rate_limit_public_max": (
-        "RATE_LIMIT_PUBLIC_MAX",
-        "Máximo de requisições em páginas públicas",
-        "Páginas Públicas"
+    "rate_limit_admin_backups_max": (
+        "RATE_LIMIT_ADMIN_BACKUPS_MAX",
+        "Máximo de requisições à área de backups",
+        "Admin"
     ),
-    "rate_limit_public_minutos": (
-        "RATE_LIMIT_PUBLIC_MINUTOS",
-        "Período em minutos para páginas públicas",
-        "Páginas Públicas"
+    "rate_limit_admin_backups_minutos": (
+        "RATE_LIMIT_ADMIN_BACKUPS_MINUTOS",
+        "Período em minutos para área de backups",
+        "Admin"
     ),
-    "rate_limit_examples_max": (
-        "RATE_LIMIT_EXAMPLES_MAX",
-        "Máximo de requisições em páginas de exemplo",
-        "Páginas Públicas"
+    "rate_limit_admin_usuarios_max": (
+        "RATE_LIMIT_ADMIN_USUARIOS_MAX",
+        "Máximo de requisições à gestão de usuários",
+        "Admin"
     ),
-    "rate_limit_examples_minutos": (
-        "RATE_LIMIT_EXAMPLES_MINUTOS",
-        "Período em minutos para páginas de exemplo",
-        "Páginas Públicas"
+    "rate_limit_admin_usuarios_minutos": (
+        "RATE_LIMIT_ADMIN_USUARIOS_MINUTOS",
+        "Período em minutos para gestão de usuários",
+        "Admin"
+    ),
+    "rate_limit_admin_config_max": (
+        "RATE_LIMIT_ADMIN_CONFIG_MAX",
+        "Máximo de requisições à tela de configurações",
+        "Admin"
+    ),
+    "rate_limit_admin_config_minutos": (
+        "RATE_LIMIT_ADMIN_CONFIG_MINUTOS",
+        "Período em minutos para tela de configurações",
+        "Admin"
+    ),
+
+    # === Rate Limiting - Pagamentos ===
+    "rate_limit_pagamento_criar_max": (
+        "RATE_LIMIT_PAGAMENTO_CRIAR_MAX",
+        "Máximo de criações de pagamento",
+        "Pagamentos"
+    ),
+    "rate_limit_pagamento_criar_minutos": (
+        "RATE_LIMIT_PAGAMENTO_CRIAR_MINUTOS",
+        "Período em minutos para criação de pagamento",
+        "Pagamentos"
     ),
 
     # === Pagamentos ===

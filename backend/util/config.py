@@ -74,65 +74,12 @@ PASSWORD_MAX_LENGTH = int(os.getenv("PASSWORD_MAX_LENGTH", "128"))
 TOAST_AUTO_HIDE_DELAY_MS = int(os.getenv("TOAST_AUTO_HIDE_DELAY_MS", "5000"))
 
 # === Configurações de Rate Limiting ===
-# Autenticação
-RATE_LIMIT_LOGIN_MAX = int(os.getenv("RATE_LIMIT_LOGIN_MAX", "5"))
-RATE_LIMIT_LOGIN_MINUTOS = int(os.getenv("RATE_LIMIT_LOGIN_MINUTOS", "5"))
-RATE_LIMIT_CADASTRO_MAX = int(os.getenv("RATE_LIMIT_CADASTRO_MAX", "3"))
-RATE_LIMIT_CADASTRO_MINUTOS = int(os.getenv("RATE_LIMIT_CADASTRO_MINUTOS", "10"))
-RATE_LIMIT_ESQUECI_SENHA_MAX = int(os.getenv("RATE_LIMIT_ESQUECI_SENHA_MAX", "1"))
-RATE_LIMIT_ESQUECI_SENHA_MINUTOS = int(os.getenv("RATE_LIMIT_ESQUECI_SENHA_MINUTOS", "1"))
-
-# Upload de Foto de Perfil
-RATE_LIMIT_UPLOAD_FOTO_MAX = int(os.getenv("RATE_LIMIT_UPLOAD_FOTO_MAX", "5"))
-RATE_LIMIT_UPLOAD_FOTO_MINUTOS = int(os.getenv("RATE_LIMIT_UPLOAD_FOTO_MINUTOS", "10"))
-
-# Alteração de Senha
-RATE_LIMIT_ALTERAR_SENHA_MAX = int(os.getenv("RATE_LIMIT_ALTERAR_SENHA_MAX", "5"))
-RATE_LIMIT_ALTERAR_SENHA_MINUTOS = int(os.getenv("RATE_LIMIT_ALTERAR_SENHA_MINUTOS", "15"))
-
-# Chat - Mensagens
-RATE_LIMIT_CHAT_MESSAGE_MAX = int(os.getenv("RATE_LIMIT_CHAT_MESSAGE_MAX", "30"))
-RATE_LIMIT_CHAT_MESSAGE_MINUTOS = int(os.getenv("RATE_LIMIT_CHAT_MESSAGE_MINUTOS", "1"))
-
-# Chat - Salas
-RATE_LIMIT_CHAT_SALA_MAX = int(os.getenv("RATE_LIMIT_CHAT_SALA_MAX", "10"))
-RATE_LIMIT_CHAT_SALA_MINUTOS = int(os.getenv("RATE_LIMIT_CHAT_SALA_MINUTOS", "10"))
-
-# Chat - Busca de Usuários
-RATE_LIMIT_BUSCA_USUARIOS_MAX = int(os.getenv("RATE_LIMIT_BUSCA_USUARIOS_MAX", "30"))
-RATE_LIMIT_BUSCA_USUARIOS_MINUTOS = int(os.getenv("RATE_LIMIT_BUSCA_USUARIOS_MINUTOS", "1"))
-
-# Chamados - Criação
-RATE_LIMIT_CHAMADO_CRIAR_MAX = int(os.getenv("RATE_LIMIT_CHAMADO_CRIAR_MAX", "5"))
-RATE_LIMIT_CHAMADO_CRIAR_MINUTOS = int(os.getenv("RATE_LIMIT_CHAMADO_CRIAR_MINUTOS", "30"))
-
-# Chamados - Respostas (Usuário)
-RATE_LIMIT_CHAMADO_RESPONDER_MAX = int(os.getenv("RATE_LIMIT_CHAMADO_RESPONDER_MAX", "10"))
-RATE_LIMIT_CHAMADO_RESPONDER_MINUTOS = int(os.getenv("RATE_LIMIT_CHAMADO_RESPONDER_MINUTOS", "10"))
-
-# Chamados - Respostas (Admin)
-RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MAX = int(os.getenv("RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MAX", "20"))
-RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MINUTOS = int(os.getenv("RATE_LIMIT_ADMIN_CHAMADO_RESPONDER_MINUTOS", "5"))
-
-# Chat - Listagens (Conversas e Mensagens)
-RATE_LIMIT_CHAT_LISTAGEM_MAX = int(os.getenv("RATE_LIMIT_CHAT_LISTAGEM_MAX", "60"))
-RATE_LIMIT_CHAT_LISTAGEM_MINUTOS = int(os.getenv("RATE_LIMIT_CHAT_LISTAGEM_MINUTOS", "1"))
-
-# Admin - Download de Backups
-RATE_LIMIT_BACKUP_DOWNLOAD_MAX = int(os.getenv("RATE_LIMIT_BACKUP_DOWNLOAD_MAX", "5"))
-RATE_LIMIT_BACKUP_DOWNLOAD_MINUTOS = int(os.getenv("RATE_LIMIT_BACKUP_DOWNLOAD_MINUTOS", "10"))
-
-# Formulários GET (Edição de Perfil)
-RATE_LIMIT_FORM_GET_MAX = int(os.getenv("RATE_LIMIT_FORM_GET_MAX", "60"))
-RATE_LIMIT_FORM_GET_MINUTOS = int(os.getenv("RATE_LIMIT_FORM_GET_MINUTOS", "1"))
-
-# Páginas Públicas
-RATE_LIMIT_PUBLIC_MAX = int(os.getenv("RATE_LIMIT_PUBLIC_MAX", "100"))
-RATE_LIMIT_PUBLIC_MINUTOS = int(os.getenv("RATE_LIMIT_PUBLIC_MINUTOS", "1"))
-
-# Páginas de Exemplos
-RATE_LIMIT_EXAMPLES_MAX = int(os.getenv("RATE_LIMIT_EXAMPLES_MAX", "100"))
-RATE_LIMIT_EXAMPLES_MINUTOS = int(os.getenv("RATE_LIMIT_EXAMPLES_MINUTOS", "1"))
+# NOTA: os valores de rate limiting NÃO são lidos por constantes neste módulo.
+# Cada rota instancia um DynamicRateLimiter (ver util/rate_limiter.py) que lê o
+# valor diretamente do banco via config_cache (chave minúscula, ex.:
+# "rate_limit_login_max"), com um padrão hardcoded como fallback. Os valores são
+# semeados no banco a partir do .env por util/migrar_config.py na inicialização e
+# ficam editáveis em runtime via PUT /api/admin/configuracoes.
 
 # === Configurações de Pagamento ===
 # Mercado Pago
