@@ -129,6 +129,11 @@ ENVFILE
 
         stage('Deploy') {
             steps {
+                // Derruba a stack anterior antes de subir para reusar/limpar a rede
+                // do projeto e evitar acúmulo de redes órfãs (que esgota os
+                // address pools do Docker: "all predefined address pools have
+                // been fully subnetted"). O "|| true" evita falha no primeiro deploy.
+                sh 'docker compose -f deploy/docker-compose.yml down --remove-orphans || true'
                 sh 'docker compose -f deploy/docker-compose.yml up -d'
             }
         }
