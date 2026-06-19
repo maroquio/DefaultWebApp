@@ -81,7 +81,7 @@ def _obter_chamado(id: int) -> Chamado:
 # Listagem
 # =============================================================================
 
-@router.get("/", response_model=PaginaResponse[ChamadoResponse])
+@router.get("", response_model=PaginaResponse[ChamadoResponse])
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(
     request: Request,

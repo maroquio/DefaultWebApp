@@ -1,6 +1,6 @@
 """Schemas de resposta do módulo de chat (mensageria 1-a-1 via SSE)."""
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -113,6 +113,30 @@ class ConversaResponse(BaseModel):
             nao_lidas=nao_lidas,
             ultima_atividade=sala.ultima_atividade,
         )
+
+
+class EventoNovaMensagemSSE(BaseModel):
+    """Evento SSE emitido quando uma nova mensagem é enviada em uma sala.
+
+    Fonte única de verdade do payload do stream ``GET /chat/stream``; o frontend
+    espelha esta forma em ``EventoSSE`` (ChatWidget.tsx). Serializar sempre com
+    ``model_dump(mode="json")`` para garantir datas em ISO-8601.
+    """
+
+    tipo: Literal["nova_mensagem"] = "nova_mensagem"
+    sala_id: str = Field(..., description="Identificador da sala da mensagem")
+    mensagem: ChatMensagemResponse = Field(..., description="Mensagem recém-criada")
+
+
+class EventoAtualizarContadorSSE(BaseModel):
+    """Evento SSE emitido quando mensagens de uma sala são marcadas como lidas.
+
+    Sinaliza ao cliente para reconsultar o contador de não-lidas. Não carrega
+    corpo de mensagem.
+    """
+
+    tipo: Literal["atualizar_contador"] = "atualizar_contador"
+    sala_id: str = Field(..., description="Identificador da sala afetada")
 
 
 class TotalNaoLidasResponse(BaseModel):

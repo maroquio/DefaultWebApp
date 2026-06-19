@@ -152,7 +152,7 @@ class TestDetectarTipoBackup:
 
     def test_backup_automatico(self):
         """Deve detectar backup automático"""
-        assert _detectar_tipo_backup("backup_auto_2025-01-15_10-30-00.db") == "automático"
+        assert _detectar_tipo_backup("backup_auto_2025-01-15_10-30-00.db") == "automatico"
 
 
 class TestExtrairDataDoNome:
@@ -368,7 +368,7 @@ class TestListarBackups:
         backups = listar_backups()
 
         tipos = {b.nome_arquivo: b.tipo for b in backups}
-        assert tipos["backup_auto_2025-01-12_10-00-00.db"] == "automático"
+        assert tipos["backup_auto_2025-01-12_10-00-00.db"] == "automatico"
         assert tipos["backup_2025-01-15_10-00-00.db"] == "manual"
 
     def test_listar_diretorio_vazio(self):

@@ -93,7 +93,7 @@ def _obter_chamado_do_usuario(id: int, usuario_logado: UsuarioLogado) -> Chamado
 # Listagem
 # =============================================================================
 
-@router.get("/", response_model=PaginaResponse[ChamadoResponse])
+@router.get("", response_model=PaginaResponse[ChamadoResponse])
 @requer_autenticacao()
 async def listar(
     request: Request,
@@ -130,7 +130,7 @@ async def listar(
 # =============================================================================
 
 @router.post(
-    "/",
+    "",
     response_model=ChamadoResponse,
     status_code=status.HTTP_201_CREATED,
 )

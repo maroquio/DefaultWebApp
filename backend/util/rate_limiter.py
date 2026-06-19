@@ -461,7 +461,8 @@ def com_rate_limit(
                 )
                 raise HTTPException(
                     status_code=429,
-                    detail=f"{mensagem_erro} (aguarde {limiter.janela_minutos} minuto(s))"
+                    detail=f"{mensagem_erro} (aguarde {limiter.janela_minutos} minuto(s))",
+                    headers={"Retry-After": str(limiter.janela_minutos * 60)},
                 )
 
             # Continuar com a função original

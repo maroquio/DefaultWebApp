@@ -36,7 +36,7 @@ class BackupInfo:
     data_criacao: datetime
     tamanho_bytes: int
     tamanho_formatado: str
-    tipo: str  # "manual" ou "automático"
+    tipo: str  # "manual" ou "automatico" (valor de contrato; sem acento)
 
 
 def _formatar_tamanho(bytes: int) -> str:
@@ -102,9 +102,9 @@ def _detectar_tipo_backup(nome_arquivo: str) -> str:
         nome_arquivo: Nome do arquivo de backup
 
     Returns:
-        "automático" se contém "_auto_", "manual" caso contrário
+        "automatico" se contém "_auto_", "manual" caso contrário
     """
-    return "automático" if "_auto_" in nome_arquivo else "manual"
+    return "automatico" if "_auto_" in nome_arquivo else "manual"
 
 
 def _extrair_data_do_nome(nome_arquivo: str) -> Optional[datetime]:
@@ -334,7 +334,7 @@ def restaurar_backup(nome_arquivo: str, criar_backup_antes: bool = True) -> tupl
             if sucesso:
                 # Obter o último backup criado (que acabamos de criar)
                 backups = listar_backups()
-                if backups and backups[0].tipo == "automático":
+                if backups and backups[0].tipo == "automatico":
                     nome_backup_automatico = backups[0].nome_arquivo
                     caminho_backup_seguranca = BACKUP_DIR / nome_backup_automatico
                     logger.info(f"Backup de segurança criado: {nome_backup_automatico}")

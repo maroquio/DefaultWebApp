@@ -29,6 +29,8 @@ from dtos.responses.chat_response import (
     ChatMensagemResponse,
     ChatSalaResponse,
     ConversaResponse,
+    EventoAtualizarContadorSSE,
+    EventoNovaMensagemSSE,
     TotalNaoLidasResponse,
     UsuarioBuscaResponse,
 )
@@ -311,24 +313,13 @@ async def enviar_mensagem(
 
     resposta = ChatMensagemResponse.de_mensagem(nova_mensagem)
 
-    # Broadcast via SSE para ambos os participantes
-    mensagem_sse = {
-        "tipo": "nova_mensagem",
-        "sala_id": nova_mensagem.sala_id,
-        "mensagem": {
-            "id": nova_mensagem.id,
-            "sala_id": nova_mensagem.sala_id,
-            "usuario_id": nova_mensagem.usuario_id,
-            "mensagem": nova_mensagem.mensagem,
-            "data_envio": (
-                nova_mensagem.data_envio.isoformat()
-                if nova_mensagem.data_envio
-                else None
-            ),
-            "lida_em": None,
-        },
-    }
-    await gerenciador_chat.broadcast_para_sala(dto.sala_id, mensagem_sse)
+    # Broadcast via SSE para ambos os participantes (payload tipado: ver
+    # EventoNovaMensagemSSE; reusa `resposta`, que já tem lida_em=None por ser
+    # mensagem recém-inserida).
+    evento_sse = EventoNovaMensagemSSE(sala_id=nova_mensagem.sala_id, mensagem=resposta)
+    await gerenciador_chat.broadcast_para_sala(
+        dto.sala_id, evento_sse.model_dump(mode="json")
+    )
 
     return resposta
 
@@ -354,10 +345,10 @@ async def marcar_como_lidas(
     chat_mensagem_repo.marcar_como_lidas(sala_id, usuario_id)
     chat_participante_repo.atualizar_ultima_leitura(sala_id, usuario_id)
 
-    # Notificar via SSE para atualizar contador
+    # Notificar via SSE para atualizar contador (payload tipado)
+    evento_sse = EventoAtualizarContadorSSE(sala_id=sala_id)
     await gerenciador_chat.broadcast_para_sala(
-        sala_id,
-        {"tipo": "atualizar_contador", "sala_id": sala_id},
+        sala_id, evento_sse.model_dump(mode="json")
     )
 
     return MensagemResponse(message="Mensagens marcadas como lidas.")
