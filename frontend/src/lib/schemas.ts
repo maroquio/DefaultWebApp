@@ -27,7 +27,7 @@ export const cadastroSchema = z
     nome: z
       .string()
       .min(4, 'O nome deve ter no mínimo 4 caracteres')
-      .max(100, 'O nome deve ter no máximo 100 caracteres')
+      .max(128, 'O nome deve ter no máximo 128 caracteres')
       .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome.'),
     email: emailSchema,
     senha: senhaSchema,

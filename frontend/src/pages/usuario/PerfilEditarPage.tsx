@@ -14,7 +14,7 @@ const schema = z.object({
     .string()
     .trim()
     .min(4, 'O nome deve ter no mínimo 4 caracteres.')
-    .max(100, 'O nome deve ter no máximo 100 caracteres.')
+    .max(128, 'O nome deve ter no máximo 128 caracteres.')
     .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome.'),
   email: z.string().trim().email('E-mail inválido.'),
 })
@@ -75,7 +75,7 @@ export default function PerfilEditarPage() {
                 onChange={setNome}
                 erro={erroDe('nome')}
                 obrigatorio
-                maxLength={100}
+                maxLength={128}
               />
               <TextField
                 label="E-mail"

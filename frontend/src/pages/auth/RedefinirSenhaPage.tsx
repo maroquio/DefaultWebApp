@@ -37,6 +37,9 @@ export default function RedefinirSenhaPage() {
       navigate('/login', { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.errors) setErros(err.errors)
+      // Token inválido/expirado chega como 400 (detail string, errors=null):
+      // direciona ao alerta dedicado de token em vez de cair em toast.
+      else if (err instanceof ApiError && err.status === 400) setErros({ token: [err.message] })
       else toast.erro(err instanceof Error ? err.message : 'Falha ao redefinir a senha.')
     } finally {
       setEnviando(false)
@@ -53,6 +56,13 @@ export default function RedefinirSenhaPage() {
                 <h3 className="card-title text-center mb-4">
                   <i className="bi bi-shield-lock" /> Redefinir Senha
                 </h3>
+
+                {erros.geral?.[0] && (
+                  <div className="alert alert-danger" role="alert">
+                    <i className="bi bi-exclamation-triangle me-2" />
+                    {erros.geral[0]}
+                  </div>
+                )}
 
                 {token ? (
                   <>

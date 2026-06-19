@@ -85,6 +85,13 @@ export default function CadastroPage() {
                   <i className="bi bi-person-plus" /> Criar Conta
                 </h3>
 
+                {erros.geral?.[0] && (
+                  <div className="alert alert-danger" role="alert">
+                    <i className="bi bi-exclamation-triangle me-2" />
+                    {erros.geral[0]}
+                  </div>
+                )}
+
                 <div className="mb-3">
                   <label className="form-label">
                     Perfil<span className="text-danger"> *</span>
@@ -115,7 +122,7 @@ export default function CadastroPage() {
                   onChange={setNome}
                   erro={erros.nome?.[0]}
                   autoComplete="name"
-                  maxLength={100}
+                  maxLength={128}
                   obrigatorio
                 />
 

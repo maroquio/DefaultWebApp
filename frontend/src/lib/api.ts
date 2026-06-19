@@ -10,12 +10,14 @@ const BASE = '/api'
 
 export type ErroTipo =
   | 'validation_error'
+  | 'bad_request'
   | 'not_found'
   | 'unauthorized'
   | 'forbidden'
   | 'conflict'
   | 'rate_limited'
   | 'internal_error'
+  | 'error'
   | string
 
 /** Erro padronizado lançado por todas as chamadas à API. */

@@ -179,8 +179,8 @@ export interface UsuarioBusca {
 export interface ConfigItem {
   chave: string
   valor: string
-  descricao?: string
-  categoria?: string
+  descricao?: string | null
+  categoria: string
 }
 export interface ConfigCategoria {
   categoria: string

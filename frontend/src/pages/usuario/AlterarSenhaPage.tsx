@@ -70,6 +70,12 @@ export default function AlterarSenhaPage() {
         <div className="card shadow-sm">
           <form onSubmit={aoEnviar} autoComplete="off">
             <div className="card-body p-4">
+              {erroDe('geral') && (
+                <div className="alert alert-danger" role="alert">
+                  <i className="bi bi-exclamation-triangle me-2" />
+                  {erroDe('geral')}
+                </div>
+              )}
               <TextField
                 label="Senha Atual"
                 name="senha_atual"

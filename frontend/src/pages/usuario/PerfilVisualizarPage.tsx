@@ -1,6 +1,6 @@
 // Visualizacao do perfil do usuario logado.
 // Replica templates/perfil/visualizar.html. Upload de foto simples (sem cropper).
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
@@ -30,6 +30,12 @@ export default function PerfilVisualizarPage() {
   const setUsuario = useAuthStore((s) => s.setUsuario)
   const inputRef = useRef<HTMLInputElement>(null)
   const [enviando, setEnviando] = useState(false)
+
+  // A store já traz o usuário do /api/me do boot; aqui buscamos dados frescos
+  // do servidor (GET /usuario/perfil) para refletir alterações fora desta aba.
+  useEffect(() => {
+    api.get<Usuario>('/usuario/perfil').then(setUsuario).catch(() => {})
+  }, [setUsuario])
 
   if (!usuario) return null
 
