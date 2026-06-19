@@ -174,12 +174,25 @@ if not IS_DEVELOPMENT and SPA_DIST_PATH.exists():
         name="spa-assets",
     )
 
-    @app.get("/{caminho_spa:path}", include_in_schema=False)
-    async def servir_spa(caminho_spa: str):
-        """Serve o index.html do SPA para qualquer rota não-API."""
-        return FileResponse(index_html)
+    # Fallback do SPA via handler de 404 (em vez de uma rota catch-all).
+    # Uma rota "/{path:path}" sombrearia as URLs de API sem barra final
+    # (ex: GET /api/admin/usuarios), devolvendo o index.html no lugar de
+    # acionar o redirect 307 para a versão com barra (/api/admin/usuarios/).
+    # Com o fallback de 404, apenas requisições de NAVEGAÇÃO (GET de páginas
+    # que não casam nenhuma rota) recebem o index.html; /api segue retornando
+    # JSON (inclusive o redirect de barra final das coleções).
+    async def spa_fallback_handler(request, exc):
+        if (
+            exc.status_code == 404
+            and request.method in ("GET", "HEAD")
+            and not request.url.path.startswith(("/api", "/static", "/assets"))
+        ):
+            return FileResponse(index_html)
+        return await http_exception_handler(request, exc)
 
-    logger.info(f"SPA servido a partir de {SPA_DIST_PATH}")
+    app.add_exception_handler(StarletteHTTPException, spa_fallback_handler)
+
+    logger.info(f"SPA servido a partir de {SPA_DIST_PATH} (fallback 404)")
 
 
 if __name__ == "__main__":
