@@ -9,6 +9,7 @@ Boilerplate educacional (projetos integradores) com **arquitetura SPLIT**: API R
 - `backend/` — FastAPI (Python 3.11+, SQLite **sem ORM**, SQL puro com prepared statements). Serve **apenas JSON** sob `/api` + `static/`. Em produção também serve o `index.html` do SPA buildado.
 - `frontend/` — SPA React 19 + React Router 7 + TypeScript + Zod + Zustand + Vite. UI Bootstrap 5.3.8 + bootstrap-icons.
 - Deploy: **dwa.ifes.site**. Em dev, Vite faz proxy de `/api`, `/static`, `/health` → backend (same-origin, sem CORS).
+- `projects/` e `.lesson-bridge/` são **workspace externo** (specs de outros projetos, plugins) — não fazem parte deste app; **ignore-os** ao analisar/editar o código.
 
 > **Esquema de portas (3 camadas)**: **8000** = porta interna do container (Uvicorn no Docker; imutável). **8400** = dev local (default do backend, alvo do proxy Vite, default do `configurar_projeto.py`). **8410** = porta publicada no VPS para o starter kit (`deploy/docker-compose.yml` mapeia `8410:8000`). Novos projetos forkados publicam em **outra** porta de host (8420, 8430, ...).
 
