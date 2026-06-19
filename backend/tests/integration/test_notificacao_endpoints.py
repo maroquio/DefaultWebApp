@@ -80,7 +80,7 @@ def _criar(usuario_id, titulo="Aviso", mensagem="Mensagem de teste",
 
 class TestListar:
     def test_lista_vazia_retorna_pagina_vazia(self, cliente_autenticado):
-        resp = cliente_autenticado.get("/api/notificacoes/")
+        resp = cliente_autenticado.get("/api/notificacoes")
         assert resp.status_code == status.HTTP_200_OK
         corpo = resp.json()
         assert corpo["items"] == []
@@ -95,7 +95,7 @@ class TestListar:
         _criar(usuario_logado_id, titulo="Segunda", tipo=TipoNotificacao.SUCESSO,
                url_acao="/destino")
 
-        resp = cliente_autenticado.get("/api/notificacoes/")
+        resp = cliente_autenticado.get("/api/notificacoes")
         assert resp.status_code == status.HTTP_200_OK
         corpo = resp.json()
         assert corpo["total"] == 2
@@ -132,12 +132,12 @@ class TestListar:
         outro_id = criar_usuario_direto("Outro", "outro@example.com", "Senha@123")
         _criar(outro_id, titulo="Do outro usuário")
 
-        resp = cliente_autenticado.get("/api/notificacoes/")
+        resp = cliente_autenticado.get("/api/notificacoes")
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["total"] == 0
 
     def test_sem_sessao_401(self, client):
-        resp = client.get("/api/notificacoes/")
+        resp = client.get("/api/notificacoes")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert resp.json()["type"] == "unauthorized"
 
@@ -321,7 +321,7 @@ class TestExcluirLidas:
         assert "1" in resp.json()["message"]
 
         # Sobra apenas a não lida
-        corpo = cliente_autenticado.get("/api/notificacoes/").json()
+        corpo = cliente_autenticado.get("/api/notificacoes").json()
         assert corpo["total"] == 1
         assert corpo["items"][0]["titulo"] == "Nao lida"
 
@@ -334,7 +334,7 @@ class TestExcluirLidas:
         assert resp.status_code == status.HTTP_200_OK
         assert "message" in resp.json()
         # Notificação não lida permanece
-        assert cliente_autenticado.get("/api/notificacoes/").json()["total"] == 1
+        assert cliente_autenticado.get("/api/notificacoes").json()["total"] == 1
 
     def test_nao_afeta_outro_usuario(
         self, cliente_autenticado, criar_usuario_direto
@@ -380,7 +380,7 @@ class TestExcluir:
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         assert resp.content == b""  # 204 sem corpo
         # Some da listagem
-        assert cliente_autenticado.get("/api/notificacoes/").json()["total"] == 0
+        assert cliente_autenticado.get("/api/notificacoes").json()["total"] == 0
 
     def test_inexistente_404(self, cliente_autenticado):
         token = _csrf(cliente_autenticado)

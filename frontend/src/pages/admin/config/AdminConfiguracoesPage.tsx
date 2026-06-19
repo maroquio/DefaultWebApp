@@ -54,7 +54,7 @@ export default function AdminConfiguracoesPage() {
     setSalvando(true)
     try {
       const resultado = await api.put<SalvarConfigResultado>('/admin/configuracoes', {
-        configs: alteradas.map(([chave, valor]) => ({ chave, valor })),
+        configs: Object.fromEntries(alteradas.map(([chave, valor]) => [chave, String(valor)])),
       })
       toast.sucesso(resultado.message || `${resultado.atualizadas} configuração(ões) salva(s).`)
       if (resultado.chaves_nao_encontradas?.length) {

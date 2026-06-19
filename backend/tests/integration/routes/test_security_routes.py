@@ -70,19 +70,19 @@ class TestEscalacaoPrivilegios:
 
     def test_nao_autenticado_em_area_admin_retorna_401(self, client):
         """Sem sessão, área admin deve retornar 401"""
-        response = client.get("/api/admin/usuarios/")
+        response = client.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_cliente_nao_acessa_admin_usuarios_retorna_403(self, cliente_autenticado):
         """Cliente autenticado em área admin deve receber 403"""
-        response = cliente_autenticado.get("/api/admin/usuarios/")
+        response = cliente_autenticado.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_cliente_nao_cria_usuario_admin_retorna_403(self, cliente_autenticado):
         """Cliente não deve poder criar usuário via endpoint admin (403)"""
         token = _csrf(cliente_autenticado)
         response = cliente_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Hacker Admin",
                 "email": "hacker@example.com",
@@ -100,7 +100,7 @@ class TestEscalacaoPrivilegios:
 
     def test_admin_acessa_admin_usuarios_retorna_200(self, admin_autenticado):
         """Admin deve acessar a listagem de usuários (200)"""
-        response = admin_autenticado.get("/api/admin/usuarios/")
+        response = admin_autenticado.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_200_OK
         corpo = response.json()
         assert "items" in corpo

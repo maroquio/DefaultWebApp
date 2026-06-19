@@ -9,6 +9,7 @@ export const senhaSchema = z
   .regex(/[A-Z]/, 'A senha deve conter pelo menos 1 letra maiúscula')
   .regex(/[a-z]/, 'A senha deve conter pelo menos 1 letra minúscula')
   .regex(/[0-9]/, 'A senha deve conter pelo menos 1 número')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'A senha deve conter ao menos um caractere especial.')
 
 export const emailSchema = z.string().min(1, 'Informe o e-mail').email('E-mail inválido')
 
@@ -25,8 +26,9 @@ export const cadastroSchema = z
     }),
     nome: z
       .string()
-      .min(3, 'O nome deve ter no mínimo 3 caracteres')
-      .max(100, 'O nome deve ter no máximo 100 caracteres'),
+      .min(4, 'O nome deve ter no mínimo 4 caracteres')
+      .max(100, 'O nome deve ter no máximo 100 caracteres')
+      .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome.'),
     email: emailSchema,
     senha: senhaSchema,
     confirmar_senha: z.string().min(1, 'Confirme a senha'),
@@ -39,8 +41,9 @@ export type CadastroForm = z.infer<typeof cadastroSchema>
 
 const nomeUsuarioSchema = z
   .string()
-  .min(3, 'O nome deve ter no mínimo 3 caracteres')
+  .min(4, 'O nome deve ter no mínimo 4 caracteres')
   .max(100, 'O nome deve ter no máximo 100 caracteres')
+  .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome.')
 
 const perfilAdminSchema = z.enum([Perfil.ADMIN, Perfil.CLIENTE, Perfil.VENDEDOR], {
   message: 'Selecione um perfil',

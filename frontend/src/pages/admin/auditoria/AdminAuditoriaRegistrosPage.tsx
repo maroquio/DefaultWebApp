@@ -218,7 +218,7 @@ export default function AdminAuditoriaRegistrosPage() {
                       <th scope="col">Entidade</th>
                       <th scope="col">ID Entidade</th>
                       <th scope="col">Usuário</th>
-                      <th scope="col">Descrição</th>
+                      <th scope="col">Detalhes</th>
                       <th scope="col">Data/Hora</th>
                     </tr>
                   </thead>
@@ -239,7 +239,7 @@ export default function AdminAuditoriaRegistrosPage() {
                           <code className="text-primary">{reg.entidade}</code>
                         </td>
                         <td>
-                          {reg.entidade_id != null && reg.entidade_id !== '' ? (
+                          {reg.entidade_id != null ? (
                             <span className="badge bg-light text-dark border">
                               #{reg.entidade_id}
                             </span>
@@ -248,19 +248,29 @@ export default function AdminAuditoriaRegistrosPage() {
                           )}
                         </td>
                         <td>
-                          {reg.usuario_id != null ? (
+                          {reg.usuario_nome ? (
                             <span className="badge bg-light text-dark border">
-                              <i className="bi bi-person" /> {reg.usuario_id}
+                              <i className="bi bi-person" /> {reg.usuario_nome}
+                            </span>
+                          ) : reg.usuario_id != null ? (
+                            <span className="badge bg-light text-dark border">
+                              <i className="bi bi-person" /> #{reg.usuario_id}
                             </span>
                           ) : (
                             <span className="text-muted small">Sistema</span>
                           )}
                         </td>
                         <td>
-                          <small>{reg.descricao || '—'}</small>
+                          {reg.dados_depois || reg.dados_antes ? (
+                            <code className="small text-muted d-inline-block text-truncate" style={{ maxWidth: '20rem' }}>
+                              {reg.dados_depois || reg.dados_antes}
+                            </code>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
                         </td>
                         <td>
-                          <small className="text-muted">{formatarDataHora(reg.data_acao)}</small>
+                          <small className="text-muted">{formatarDataHora(reg.data)}</small>
                         </td>
                       </tr>
                     ))}

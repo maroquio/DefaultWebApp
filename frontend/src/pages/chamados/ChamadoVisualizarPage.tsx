@@ -19,14 +19,15 @@ const schema = z.object({
     .max(2000, 'A mensagem deve ter no máximo 2000 caracteres.'),
 })
 
+// O backend serializa `tipo` com os VALORES do enum (rótulos PT-BR), não os nomes.
 const ROTULO_TIPO: Record<TipoInteracao, string> = {
-  ABERTURA: 'Abertura',
-  RESPOSTA_USUARIO: 'Resposta do Usuário',
-  RESPOSTA_ADMIN: 'Resposta do Suporte',
+  Abertura: 'Abertura',
+  'Resposta do Usuário': 'Resposta do Usuário',
+  'Resposta do Administrador': 'Resposta do Suporte',
 }
 
 function ehDoSuporte(tipo: TipoInteracao): boolean {
-  return tipo === 'RESPOSTA_ADMIN'
+  return tipo === 'Resposta do Administrador'
 }
 
 export default function ChamadoVisualizarPage() {

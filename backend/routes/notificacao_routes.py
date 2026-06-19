@@ -40,7 +40,7 @@ router = APIRouter(prefix="/notificacoes")
 # Listagem
 # =============================================================================
 
-@router.get("/", response_model=PaginaResponse[NotificacaoResponse])
+@router.get("", response_model=PaginaResponse[NotificacaoResponse])
 @requer_autenticacao()
 async def listar(
     request: Request,

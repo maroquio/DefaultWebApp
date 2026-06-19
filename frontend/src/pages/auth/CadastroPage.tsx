@@ -185,6 +185,7 @@ export default function CadastroPage() {
                     <li>Pelo menos 1 letra maiúscula</li>
                     <li>Pelo menos 1 letra minúscula</li>
                     <li>Pelo menos 1 número</li>
+                    <li>Pelo menos 1 caractere especial (ex: !@#$%)</li>
                   </ul>
                 </div>
               </div>

@@ -15,7 +15,9 @@ class LoginDTO(BaseModel):
     senha: str = Field(..., description="Senha do usuário")
 
     _validar_email = field_validator("email")(validar_email())
-    _validar_senha = field_validator("senha")(validar_senha_forte())
+    _validar_senha = field_validator("senha")(
+        validar_string_obrigatoria("Senha", tamanho_minimo=1)
+    )
 
 
 class CadastroDTO(BaseModel):

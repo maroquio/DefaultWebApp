@@ -13,8 +13,9 @@ const schema = z.object({
   nome: z
     .string()
     .trim()
-    .min(3, 'O nome deve ter no mínimo 3 caracteres.')
-    .max(100, 'O nome deve ter no máximo 100 caracteres.'),
+    .min(4, 'O nome deve ter no mínimo 4 caracteres.')
+    .max(100, 'O nome deve ter no máximo 100 caracteres.')
+    .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome.'),
   email: z.string().trim().email('E-mail inválido.'),
 })
 

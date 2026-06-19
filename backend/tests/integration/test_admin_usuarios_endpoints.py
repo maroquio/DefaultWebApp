@@ -40,17 +40,17 @@ def _id_do_admin(admin_autenticado):
 
 class TestListar:
     def test_lista_sem_sessao_401(self, client):
-        resp = client.get("/api/admin/usuarios/")
+        resp = client.get("/api/admin/usuarios")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert resp.json()["type"] == "unauthorized"
 
     def test_lista_perfil_nao_admin_403(self, cliente_autenticado):
-        resp = cliente_autenticado.get("/api/admin/usuarios/")
+        resp = cliente_autenticado.get("/api/admin/usuarios")
         assert resp.status_code == status.HTTP_403_FORBIDDEN
         assert resp.json()["type"] == "forbidden"
 
     def test_lista_sucesso_shape_pagina(self, admin_autenticado):
-        resp = admin_autenticado.get("/api/admin/usuarios/")
+        resp = admin_autenticado.get("/api/admin/usuarios")
         assert resp.status_code == status.HTTP_200_OK
         corpo = resp.json()
         # PaginaResponse[T]
@@ -165,26 +165,26 @@ class TestCriar:
 
     def test_criar_sem_sessao_401(self, client):
         token = _csrf(client)
-        resp = client.post("/api/admin/usuarios/", json=self._payload(),
+        resp = client.post("/api/admin/usuarios", json=self._payload(),
                            headers={"X-CSRF-Token": token})
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert resp.json()["type"] == "unauthorized"
 
     def test_criar_perfil_nao_admin_403(self, cliente_autenticado):
         token = _csrf(cliente_autenticado)
-        resp = cliente_autenticado.post("/api/admin/usuarios/", json=self._payload(),
+        resp = cliente_autenticado.post("/api/admin/usuarios", json=self._payload(),
                                         headers={"X-CSRF-Token": token})
         assert resp.status_code == status.HTTP_403_FORBIDDEN
         assert resp.json()["type"] == "forbidden"
 
     def test_criar_sem_csrf_403(self, admin_autenticado):
-        resp = admin_autenticado.post("/api/admin/usuarios/", json=self._payload())
+        resp = admin_autenticado.post("/api/admin/usuarios", json=self._payload())
         assert resp.status_code == status.HTTP_403_FORBIDDEN
         assert resp.json()["type"] == "forbidden"
 
     def test_criar_sucesso_201(self, admin_autenticado):
         token = _csrf(admin_autenticado)
-        resp = admin_autenticado.post("/api/admin/usuarios/", json=self._payload(),
+        resp = admin_autenticado.post("/api/admin/usuarios", json=self._payload(),
                                       headers={"X-CSRF-Token": token})
         assert resp.status_code == status.HTTP_201_CREATED
         corpo = resp.json()
@@ -199,7 +199,7 @@ class TestCriar:
                              Perfil.CLIENTE.value)
         token = _csrf(admin_autenticado)
         resp = admin_autenticado.post(
-            "/api/admin/usuarios/", json=self._payload(email="dup@example.com"),
+            "/api/admin/usuarios", json=self._payload(email="dup@example.com"),
             headers={"X-CSRF-Token": token},
         )
         assert resp.status_code == status.HTTP_409_CONFLICT
@@ -210,7 +210,7 @@ class TestCriar:
     def test_criar_email_invalido_422(self, admin_autenticado):
         token = _csrf(admin_autenticado)
         resp = admin_autenticado.post(
-            "/api/admin/usuarios/", json=self._payload(email="nao-eh-email"),
+            "/api/admin/usuarios", json=self._payload(email="nao-eh-email"),
             headers={"X-CSRF-Token": token},
         )
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -219,7 +219,7 @@ class TestCriar:
     def test_criar_senha_fraca_422(self, admin_autenticado):
         token = _csrf(admin_autenticado)
         resp = admin_autenticado.post(
-            "/api/admin/usuarios/", json=self._payload(senha="123"),
+            "/api/admin/usuarios", json=self._payload(senha="123"),
             headers={"X-CSRF-Token": token},
         )
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -228,7 +228,7 @@ class TestCriar:
     def test_criar_perfil_invalido_422(self, admin_autenticado):
         token = _csrf(admin_autenticado)
         resp = admin_autenticado.post(
-            "/api/admin/usuarios/", json=self._payload(perfil="Inexistente"),
+            "/api/admin/usuarios", json=self._payload(perfil="Inexistente"),
             headers={"X-CSRF-Token": token},
         )
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -237,7 +237,7 @@ class TestCriar:
     def test_criar_nome_vazio_422(self, admin_autenticado):
         token = _csrf(admin_autenticado)
         resp = admin_autenticado.post(
-            "/api/admin/usuarios/", json=self._payload(nome=""),
+            "/api/admin/usuarios", json=self._payload(nome=""),
             headers={"X-CSRF-Token": token},
         )
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

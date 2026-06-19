@@ -38,12 +38,12 @@ class TestAdminUsuariosAutorizacao:
 
     def test_listar_sem_autenticacao_401(self, client):
         """Não autenticado recebe 401 ao listar."""
-        response = client.get("/api/admin/usuarios/")
+        response = client.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_listar_nao_admin_403(self, cliente_autenticado):
         """Cliente comum recebe 403 ao listar."""
-        response = cliente_autenticado.get("/api/admin/usuarios/")
+        response = cliente_autenticado.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_obter_nao_admin_403(self, cliente_autenticado):
@@ -55,7 +55,7 @@ class TestAdminUsuariosAutorizacao:
         """Cliente comum recebe 403 ao tentar criar usuário."""
         token = _csrf(cliente_autenticado)
         response = cliente_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Qualquer Um",
                 "email": "qualquer@example.com",
@@ -70,7 +70,7 @@ class TestAdminUsuariosAutorizacao:
         """Não autenticado recebe 401 ao tentar criar usuário."""
         token = _csrf(client)
         response = client.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Qualquer Um",
                 "email": "qualquer@example.com",
@@ -99,7 +99,7 @@ class TestListarUsuarios:
 
     def test_listar_200_envelope_paginado(self, admin_autenticado, admin_teste):
         """Admin lista usuários e recebe um PaginaResponse."""
-        response = admin_autenticado.get("/api/admin/usuarios/")
+        response = admin_autenticado.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_200_OK
 
         corpo = response.json()
@@ -118,7 +118,7 @@ class TestListarUsuarios:
 
     def test_listar_item_tem_campos_response(self, admin_autenticado):
         """Cada item segue o contrato de UsuarioResponse (sem senha)."""
-        response = admin_autenticado.get("/api/admin/usuarios/")
+        response = admin_autenticado.get("/api/admin/usuarios")
         assert response.status_code == status.HTTP_200_OK
 
         item = response.json()["items"][0]
@@ -180,7 +180,7 @@ class TestCriarUsuario:
         """Admin cria usuário e recebe 201 com o recurso criado."""
         token = _csrf(admin_autenticado)
         response = admin_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Novo Usuario Admin",
                 "email": "novousuario@example.com",
@@ -207,7 +207,7 @@ class TestCriarUsuario:
         """Admin pode criar outro admin."""
         token = _csrf(admin_autenticado)
         response = admin_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Novo Admin",
                 "email": "novoadmin@example.com",
@@ -223,7 +223,7 @@ class TestCriarUsuario:
         """E-mail já cadastrado retorna 409 com contrato de erro."""
         token = _csrf(admin_autenticado)
         response = admin_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Outro Nome",
                 "email": admin_teste["email"],  # já existe
@@ -243,7 +243,7 @@ class TestCriarUsuario:
         """Senha fraca é barrada pela validação do DTO (422)."""
         token = _csrf(admin_autenticado)
         response = admin_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Usuario Teste",
                 "email": "fraco@example.com",
@@ -258,7 +258,7 @@ class TestCriarUsuario:
         """Perfil inexistente é barrado pela validação do DTO (422)."""
         token = _csrf(admin_autenticado)
         response = admin_autenticado.post(
-            "/api/admin/usuarios/",
+            "/api/admin/usuarios",
             json={
                 "nome": "Usuario Teste",
                 "email": "perfilinvalido@example.com",

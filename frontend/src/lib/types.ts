@@ -36,7 +36,7 @@ export const StatusPagamento = {
 export type StatusPagamentoValor = (typeof StatusPagamento)[keyof typeof StatusPagamento]
 
 export type TipoNotificacao = 'info' | 'sucesso' | 'aviso' | 'erro'
-export type TipoInteracao = 'ABERTURA' | 'RESPOSTA_USUARIO' | 'RESPOSTA_ADMIN'
+export type TipoInteracao = 'Abertura' | 'Resposta do Usuário' | 'Resposta do Administrador'
 
 // ===== Comuns =====
 export interface MensagemResponse {
@@ -60,7 +60,7 @@ export interface Usuario {
   email: string
   perfil: string
   foto_url: string
-  data_cadastro: string
+  data_cadastro?: string | null
   data_atualizacao?: string | null
 }
 export interface DashboardData {
@@ -71,12 +71,15 @@ export interface DashboardData {
 // ===== Chamados =====
 export interface ChamadoInteracao {
   id: number
+  chamado_id: number
   usuario_id: number
   mensagem: string
   tipo: TipoInteracao
-  data_interacao: string
+  data_interacao?: string | null
   status_resultante?: string | null
-  lida_em?: string | null
+  data_leitura?: string | null
+  usuario_nome?: string | null
+  usuario_email?: string | null
 }
 export interface Chamado {
   id: number
@@ -84,13 +87,13 @@ export interface Chamado {
   status: string
   prioridade: string
   usuario_id: number
-  data_abertura: string
+  data_abertura?: string | null
   data_fechamento?: string | null
-  interacoes?: ChamadoInteracao[]
-  // Campos auxiliares que algumas listagens podem trazer:
-  nome_usuario?: string
+  usuario_nome?: string | null
+  usuario_email?: string | null
   mensagens_nao_lidas?: number
   tem_resposta_admin?: boolean
+  interacoes?: ChamadoInteracao[] | null
 }
 
 // ===== Notificações =====
@@ -100,14 +103,20 @@ export interface Notificacao {
   titulo: string
   mensagem: string
   tipo: TipoNotificacao
-  url_acao?: string | null
-  data_criacao: string
   lida: boolean
-  lida_em?: string | null
+  url_acao?: string | null
+  data_criacao?: string | null
 }
 export interface NaoLidasResumo {
   total: number
-  items: { id: number; titulo: string; tipo: TipoNotificacao }[]
+  items: {
+    id: number
+    titulo: string
+    mensagem: string
+    tipo: TipoNotificacao
+    url_acao?: string | null
+    data_criacao?: string | null
+  }[]
 }
 
 // ===== Pagamentos =====
@@ -117,12 +126,14 @@ export interface Pagamento {
   descricao: string
   valor: number
   status: string
-  provider?: string | null
+  provider: string
   preference_id?: string | null
   payment_id?: string | null
+  external_reference?: string | null
   url_checkout?: string | null
-  data_criacao: string
+  data_criacao?: string | null
   data_atualizacao?: string | null
+  usuario_nome?: string | null
 }
 export interface CriarPagamentoResultado {
   init_point: string
@@ -131,34 +142,37 @@ export interface CriarPagamentoResultado {
 export interface DadosProvider {
   pagamento: Pagamento
   provider_nome: string
-  dados_provider: Record<string, unknown>
+  dados_provider: Record<string, unknown> | null
 }
 
 // ===== Chat =====
 export interface ChatSala {
-  id: number
-  criada_em: string
-  ultima_atividade: string
+  sala_id: string
 }
 export interface ChatMensagem {
   id: number
-  sala_id: number
+  sala_id: string
   usuario_id: number
   mensagem: string
-  data_envio: string
+  data_envio?: string | null
   lida_em?: string | null
 }
 export interface Conversa {
-  sala_id: number
-  outro_usuario: { id: number; nome: string; foto_url: string }
-  ultima_mensagem: { mensagem: string; data_envio?: string | null }
+  sala_id: string
+  outro_usuario: { id: number; nome: string; email: string; foto_url: string }
+  ultima_mensagem?: {
+    mensagem: string
+    data_envio?: string | null
+    usuario_id: number
+  } | null
   nao_lidas: number
-  ultima_atividade: string
+  ultima_atividade?: string | null
 }
 export interface UsuarioBusca {
   id: number
   nome: string
-  foto_url?: string
+  email: string
+  foto_url: string
 }
 
 // ===== Configurações / Auditoria / Backups =====
@@ -190,12 +204,15 @@ export interface LogArquivo {
 }
 export interface AuditoriaRegistro {
   id: number
+  usuario_id?: number | null
+  usuario_nome?: string | null
   acao: string
   entidade: string
-  entidade_id?: number | string | null
-  usuario_id?: number | null
-  descricao?: string | null
-  data_acao: string
+  entidade_id?: number | null
+  dados_antes?: string | null
+  dados_depois?: string | null
+  ip?: string | null
+  data?: string | null
 }
 export interface BackupInfo {
   nome_arquivo: string

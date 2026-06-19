@@ -79,7 +79,7 @@ def _conflito_email(mensagem_erro: str) -> HTTPException:
 # Listagem
 # =============================================================================
 
-@router.get("/", response_model=PaginaResponse[UsuarioResponse])
+@router.get("", response_model=PaginaResponse[UsuarioResponse])
 @requer_autenticacao([Perfil.ADMIN.value])
 async def listar(
     request: Request,
@@ -127,7 +127,7 @@ async def obter(
 # =============================================================================
 
 @router.post(
-    "/",
+    "",
     response_model=UsuarioResponse,
     status_code=status.HTTP_201_CREATED,
 )

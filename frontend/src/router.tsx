@@ -106,6 +106,7 @@ export const router = createBrowserRouter([
               { path: '/pagamentos/listar', element: <PagamentosListarPage /> },
               { path: '/pagamentos/criar', element: <PagamentoCriarPage /> },
               { path: '/pagamentos/sucesso', element: <PagamentoSucessoPage /> },
+              { path: '/pagamentos/paypal/capturar', element: <PagamentoSucessoPage /> },
               { path: '/pagamentos/pendente', element: <PagamentoPendentePage /> },
               { path: '/pagamentos/falha', element: <PagamentoFalhaPage /> },
               { path: '/pagamentos/:id', element: <PagamentoDetalhesPage /> },

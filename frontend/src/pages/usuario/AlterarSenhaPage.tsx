@@ -4,18 +4,19 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { api, ApiError } from '../../lib/api'
+import { senhaSchema } from '../../lib/schemas'
 import { toast } from '../../store/uiStore'
 import { TextField, SubmitButton } from '../../components/form/Field'
 
 const schema = z
   .object({
     senha_atual: z.string().min(1, 'Informe a senha atual.'),
-    senha_nova: z.string().min(8, 'A nova senha deve ter no mínimo 8 caracteres.'),
-    confirmar_nova: z.string().min(1, 'Confirme a nova senha.'),
+    senha_nova: senhaSchema,
+    confirmar_senha: z.string().min(1, 'Confirme a nova senha.'),
   })
-  .refine((d) => d.senha_nova === d.confirmar_nova, {
+  .refine((d) => d.senha_nova === d.confirmar_senha, {
     message: 'As senhas não coincidem.',
-    path: ['confirmar_nova'],
+    path: ['confirmar_senha'],
   })
 
 export default function AlterarSenhaPage() {
@@ -36,7 +37,7 @@ export default function AlterarSenhaPage() {
     const parsed = schema.safeParse({
       senha_atual: senhaAtual,
       senha_nova: senhaNova,
-      confirmar_nova: confirmarNova,
+      confirmar_senha: confirmarNova,
     })
     if (!parsed.success) {
       setErros(parsed.error.flatten().fieldErrors)
@@ -95,11 +96,11 @@ export default function AlterarSenhaPage() {
                 <div className="col-lg-6">
                   <TextField
                     label="Confirmar Nova Senha"
-                    name="confirmar_nova"
+                    name="confirmar_senha"
                     type="password"
                     value={confirmarNova}
                     onChange={setConfirmarNova}
-                    erro={erroDe('confirmar_nova')}
+                    erro={erroDe('confirmar_senha')}
                     obrigatorio
                     autoComplete="new-password"
                   />

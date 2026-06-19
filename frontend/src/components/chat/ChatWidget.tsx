@@ -8,9 +8,11 @@ import { useAuthStore } from '../../store/authStore'
 import { toast } from '../../store/uiStore'
 
 // Evento recebido pelo EventSource (ver chat_routes.enviar_mensagem / marcar_como_lidas).
+// O backend emite `sala_id` como string (formato "menor_id_maior_id") e o payload
+// da mensagem traz `data_envio` e `lida_em` possivelmente nulos.
 interface EventoSSE {
   tipo: 'nova_mensagem' | 'atualizar_contador'
-  sala_id: number | string
+  sala_id: string
   mensagem?: ChatMensagem
 }
 
@@ -21,7 +23,7 @@ export default function ChatWidget() {
   const [totalNaoLidas, setTotalNaoLidas] = useState(0)
 
   const [conversas, setConversas] = useState<Conversa[]>([])
-  const [salaAtual, setSalaAtual] = useState<number | null>(null)
+  const [salaAtual, setSalaAtual] = useState<string | null>(null)
   const [nomeOutro, setNomeOutro] = useState<string>('')
   const [mensagens, setMensagens] = useState<ChatMensagem[]>([])
   const [carregandoMensagens, setCarregandoMensagens] = useState(false)
@@ -33,7 +35,7 @@ export default function ChatWidget() {
   const [enviando, setEnviando] = useState(false)
 
   // Refs para acesso atualizado dentro do handler do EventSource.
-  const salaAtualRef = useRef<number | null>(null)
+  const salaAtualRef = useRef<string | null>(null)
   const abertoRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const buscaDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -71,7 +73,7 @@ export default function ChatWidget() {
   }, [])
 
   const marcarLidas = useCallback(
-    async (salaId: number) => {
+    async (salaId: string) => {
       try {
         await api.post(`/chat/mensagens/lidas/${salaId}`)
         setConversas((cs) =>
@@ -86,7 +88,7 @@ export default function ChatWidget() {
   )
 
   const abrirSala = useCallback(
-    async (salaId: number, nome: string) => {
+    async (salaId: string, nome: string) => {
       setSalaAtual(salaId)
       setNomeOutro(nome)
       setMensagens([])
@@ -124,7 +126,7 @@ export default function ChatWidget() {
 
       if (evento.tipo === 'nova_mensagem' && evento.mensagem) {
         const msg = evento.mensagem
-        const salaId = Number(evento.sala_id)
+        const salaId = evento.sala_id
         const ehDaSalaAberta = abertoRef.current && salaAtualRef.current === salaId
 
         if (ehDaSalaAberta) {
@@ -204,7 +206,7 @@ export default function ChatWidget() {
       setBusca('')
       setSugestoes([])
       await carregarConversas()
-      await abrirSala(sala.id, u.nome)
+      await abrirSala(sala.sala_id, u.nome)
     } catch (e) {
       toast.erro(e instanceof ApiError ? e.message : 'Falha ao iniciar conversa.')
     }
@@ -381,7 +383,7 @@ export default function ChatWidget() {
                           )}
                         </div>
                         <span className="d-block text-muted text-truncate" style={{ fontSize: '0.75rem' }}>
-                          {c.ultima_mensagem.mensagem || 'Sem mensagens'}
+                          {c.ultima_mensagem?.mensagem || 'Sem mensagens'}
                         </span>
                       </div>
                     </button>

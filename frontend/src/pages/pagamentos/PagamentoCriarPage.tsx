@@ -15,7 +15,8 @@ const schema = z.object({
     .max(255, 'A descrição deve ter no máximo 255 caracteres'),
   valor: z
     .number({ message: 'Informe um valor válido' })
-    .positive('O valor deve ser maior que zero'),
+    .positive('O valor deve ser maior que zero')
+    .max(999999.99, 'Valor máximo é R$ 999.999,99.'),
 })
 
 /** Converte string com vírgula ou ponto decimal em número (float). */

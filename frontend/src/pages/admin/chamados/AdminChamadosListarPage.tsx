@@ -16,13 +16,6 @@ import { formatarDataHora } from '../../../lib/format'
 
 const POR_PAGINA = 10
 
-// O backend serializa o nome/e-mail do dono como `usuario_nome`/`usuario_email`,
-// enquanto o tipo base expõe `nome_usuario`. Aceitamos ambos para robustez.
-type ChamadoAdmin = Chamado & {
-  usuario_nome?: string | null
-  usuario_email?: string | null
-}
-
 export default function AdminChamadosListarPage() {
   // Campos do formulário (controlados) e filtros efetivamente aplicados.
   const [busca, setBusca] = useState('')
@@ -34,7 +27,7 @@ export default function AdminChamadosListarPage() {
   const [prioridade, setPrioridade] = useState('')
   const [pagina, setPagina] = useState(1)
 
-  const { data, carregando, erro } = useFetch<PaginaResponse<ChamadoAdmin>>(
+  const { data, carregando, erro } = useFetch<PaginaResponse<Chamado>>(
     (signal) =>
       api.get('/admin/chamados', {
         params: {
@@ -175,7 +168,7 @@ export default function AdminChamadosListarPage() {
                     </thead>
                     <tbody>
                       {chamados.map((chamado) => {
-                        const nome = chamado.usuario_nome ?? chamado.nome_usuario ?? '-'
+                        const nome = chamado.usuario_nome ?? '—'
                         return (
                           <tr key={chamado.id}>
                             <td>

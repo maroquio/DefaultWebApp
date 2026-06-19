@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { z } from 'zod'
 import { api, ApiError } from '../../../lib/api'
-import type { Chamado, ChamadoInteracao } from '../../../lib/types'
+import type { Chamado } from '../../../lib/types'
 import { StatusChamado } from '../../../lib/types'
 import { useFetch } from '../../../hooks/useFetch'
 import { toast, useUIStore } from '../../../store/uiStore'
@@ -11,21 +11,7 @@ import { TextAreaField, SelectField, SubmitButton } from '../../../components/fo
 import Spinner from '../../../components/ui/Spinner'
 import { formatarDataHora } from '../../../lib/format'
 
-// O backend serializa campos extras não presentes nos tipos base; estendemos
-// localmente para acessá-los com segurança.
-type InteracaoAdmin = Omit<ChamadoInteracao, 'tipo'> & {
-  // O backend serializa `tipo` como o rótulo em português (ex: "Resposta do Administrador").
-  tipo: string
-  usuario_nome?: string | null
-  data_leitura?: string | null
-}
-type ChamadoAdmin = Omit<Chamado, 'interacoes'> & {
-  usuario_nome?: string | null
-  usuario_email?: string | null
-  interacoes?: InteracaoAdmin[]
-}
-
-// Valor de `tipo` serializado para respostas do administrador.
+// Valor de `tipo` serializado para respostas do administrador (rótulo PT-BR do enum).
 const TIPO_RESPOSTA_ADMIN = 'Resposta do Administrador'
 
 const respostaSchema = z.object({
@@ -41,7 +27,7 @@ export default function AdminChamadoResponderPage() {
   const { id } = useParams<{ id: string }>()
   const pedirConfirmacao = useUIStore((s) => s.pedirConfirmacao)
 
-  const { data, carregando, erro, recarregar } = useFetch<ChamadoAdmin>(
+  const { data, carregando, erro, recarregar } = useFetch<Chamado>(
     (signal) => api.get(`/admin/chamados/${id}`, { signal }),
     [id],
   )
@@ -126,7 +112,7 @@ export default function AdminChamadoResponderPage() {
 
   const chamado = data
   const interacoes = chamado.interacoes ?? []
-  const nome = chamado.usuario_nome ?? chamado.nome_usuario ?? '-'
+  const nome = chamado.usuario_nome ?? '—'
   const fechado = chamado.status === StatusChamado.FECHADO
 
   const opcoesStatus = Object.values(StatusChamado).map((s) => ({ valor: s, rotulo: s }))
