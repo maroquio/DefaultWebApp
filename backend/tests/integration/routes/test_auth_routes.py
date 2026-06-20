@@ -181,6 +181,27 @@ class TestCadastro:
         assert usuario is not None
         assert usuario.perfil == Perfil.CLIENTE.value
 
+    def test_cadastro_com_perfil_admin_retorna_403(self, client):
+        """Auto-cadastro com perfil Administrador deve ser rejeitado (anti-escalada)."""
+        from repo import usuario_repo
+
+        token = _csrf(client)
+        response = client.post(
+            "/api/cadastrar",
+            json={
+                "perfil": Perfil.ADMIN.value,
+                "nome": "Invasor Malicioso",
+                "email": "invasor@example.com",
+                "senha": "Senha@123",
+                "confirmar_senha": "Senha@123",
+            },
+            headers={"X-CSRF-Token": token},
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # Não deve ter criado nada no banco.
+        assert usuario_repo.obter_por_email("invasor@example.com") is None
+
     def test_cadastro_com_email_duplicado_retorna_409(self, client, criar_usuario, usuario_teste):
         """E-mail já cadastrado deve retornar 409 (conflito)"""
         criar_usuario(

@@ -34,3 +34,20 @@ class Perfil(EnumEntidade):
     CLIENTE = "Cliente"
     VENDEDOR = "Vendedor"
     # FIM DOS PERFIS ############################################
+
+    @classmethod
+    def perfis_autocadastro(cls) -> list["Perfil"]:
+        """
+        Perfis que um anônimo PODE escolher no auto-cadastro público.
+
+        NUNCA inclui ADMIN: aceitar o perfil enviado pelo cliente sem filtrar
+        permite escalada de privilégio (um anônimo se registraria como
+        Administrador). O auto-cadastro (auth_routes.post_cadastrar) valida o
+        perfil recebido contra esta lista; a escolha de perfil administrativo
+        fica restrita às rotas de admin.
+
+        Fork: ajuste a regra ao seu domínio. Se o signup público tiver um único
+        perfil, retorne só esse (ex.: `return [cls.CLIENTE]`). Se exigir
+        aprovação manual, combine com um StatusConta inicial "Pendente".
+        """
+        return [perfil for perfil in cls if perfil != cls.ADMIN]

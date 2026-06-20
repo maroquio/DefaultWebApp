@@ -4,6 +4,7 @@ from pathlib import Path
 
 from repo import usuario_repo
 from model.usuario_model import Usuario
+from util.config import IS_DEVELOPMENT
 from util.security import criar_hash_senha
 from util.logger_config import logger
 from util.perfis import Perfil
@@ -123,7 +124,24 @@ def inicializar_dados():
     logger.info("=" * 50)
 
     try:
+        # Admin/usuários-base: SEMPRE carregados (dev e produção). É a única
+        # forma de ter um administrador inicial num banco recém-criado.
         carregar_usuarios_seed()
+
+        # Dados de DEMO de domínio (clientes/registros de exemplo): só em
+        # desenvolvimento/QA. inicializar_dados() roda incondicionalmente no
+        # startup, então sem este gate os dados de demo vazariam para produção
+        # na primeira subida com banco vazio (ver docs/FORKING.md §10e).
+        #
+        # Fork: registre aqui suas funções carregar_<dominio>_demo() — elas
+        # devem ser idempotentes (guarda de tabela vazia). Ex.:
+        #     carregar_imoveis_demo()
+        if IS_DEVELOPMENT:
+            logger.info("Ambiente de desenvolvimento: seed de dados demo habilitado.")
+            # (nenhum seed de demo de domínio no starter)
+        else:
+            logger.info("Ambiente de produção: seed de dados demo ignorado.")
+
         logger.info("=" * 50)
         logger.info("Dados seed carregados!")
         logger.info("=" * 50)

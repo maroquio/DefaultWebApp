@@ -28,6 +28,7 @@ from util.csrf_protection import obter_token_csrf
 from util.datetime_util import agora
 from util.email_service import servico_email
 from util.logger_config import logger
+from util.perfis import Perfil
 from util.rate_limiter import DynamicRateLimiter
 from util.security import (
     criar_hash_senha,
@@ -135,6 +136,22 @@ async def post_logout(request: Request):
 async def post_cadastrar(request: Request, dto: CadastroDTO):
     """Cria um novo usuário."""
     checar_rate_limit(cadastro_limiter, request)
+
+    # Guarda anti-escalada de privilégio: o perfil chega do cliente, então o
+    # servidor precisa rejeitar qualquer perfil fora da lista de auto-cadastro
+    # (que NUNCA inclui ADMIN). Sem isso, um anônimo poderia se registrar como
+    # Administrador. A escolha de perfil admin só existe nas rotas de admin.
+    perfis_permitidos = {perfil.value for perfil in Perfil.perfis_autocadastro()}
+    if dto.perfil not in perfis_permitidos:
+        mensagem_perfil = "Perfil não permitido para auto-cadastro."
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "detail": mensagem_perfil,
+                "type": "forbidden",
+                "errors": {"perfil": [mensagem_perfil]},
+            },
+        )
 
     disponivel, mensagem_erro = verificar_email_disponivel(dto.email)
     if not disponivel:

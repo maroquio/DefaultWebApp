@@ -26,7 +26,10 @@ RESEND_FROM_NAME="Default Web App"
 
 # App
 APP_NAME=DefaultWebApp
-BASE_URL=http://localhost:8410
+# BASE_URL = origem pública HTTPS (links de e-mail e back_urls/webhooks de
+# pagamento). NUNCA use localhost aqui: todo link enviado ao usuário ficaria
+# inacessível. Fork: troque pelo seu domínio público (ver docs/FORKING.md §2b).
+BASE_URL=https://dwa.ifes.site
 SECRET_KEY=${SECRET_KEY}
 TIMEZONE=America/Sao_Paulo
 RUNNING_MODE=Production
