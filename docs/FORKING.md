@@ -36,7 +36,7 @@ cd backend && .venv/bin/python scripts/configurar_projeto.py
 Ele reescreve, sem apagar arquivos existentes sem confirmação:
 - `backend/.env` (a partir de `.env.example`): `APP_NAME`, `SECRET_KEY` (gerada), `PORT`, `RESEND_*`.
 - `backend/util/perfis.py`: o enum `Perfil` com os perfis do novo projeto (Administrador + extras).
-- `backend/data/usuarios_seed.json`: o admin inicial.
+- `backend/data/admin_seed.json`: o admin inicial.
 
 > O configurador cobre só o **dev local**. O deploy (abaixo) é editado à mão.
 

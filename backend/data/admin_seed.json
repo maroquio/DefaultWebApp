@@ -1,0 +1,10 @@
+{
+  "usuarios": [
+    {
+      "nome": "Administrador Padrão",
+      "email": "dwa@ifes.site",
+      "senha": "Admin!123",
+      "perfil": "Administrador"
+    }
+  ]
+}

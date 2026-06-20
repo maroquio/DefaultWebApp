@@ -88,7 +88,7 @@ backend/
 ├── sql/                    # Queries SQL como constantes (prepared statements)
 ├── routes/                 # Routers por módulo (todos sob /api)
 ├── util/                   # auth, csrf, rate limit, e-mail, fotos, datetime, config, etc.
-├── data/                   # Seed data (usuarios_seed.json)
+├── data/                   # Seed data (admin_seed.json)
 ├── static/                 # Uploads/fotos de perfil servidos em /static
 ├── tests/                  # unit/ e integration/ (sem e2e)
 ├── .env.example
@@ -125,7 +125,7 @@ Veja `.env.example` para a lista completa e comentada. Destaques:
 
 ## Usuário Padrão (seed)
 
-Criado no startup a partir de `data/usuarios_seed.json`:
+Criado no startup a partir de `data/admin_seed.json`:
 
 | Perfil | E-mail | Senha |
 |--------|--------|-------|

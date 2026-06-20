@@ -59,8 +59,8 @@ class TestCarregarUsuariosSeed:
             carregar_usuarios_seed()
 
     def test_cria_admin_definido_no_json(self, tmp_path):
-        """Deve criar o usuário configurado em data/usuarios_seed.json"""
-        seed_file = tmp_path / "usuarios_seed.json"
+        """Deve criar o usuário configurado em data/admin_seed.json"""
+        seed_file = tmp_path / "admin_seed.json"
         seed_file.write_text(
             json.dumps({"usuarios": [
                 {"nome": "Chefe", "email": "chefe@empresa.com",

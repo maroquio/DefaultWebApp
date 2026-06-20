@@ -11,7 +11,7 @@ Uso:
 O script irá:
 1. Criar o arquivo .env com configurações personalizadas
 2. Atualizar util/perfis.py com os perfis do seu projeto
-3. Atualizar data/usuarios_seed.json com o administrador configurado
+3. Atualizar data/admin_seed.json com o administrador configurado
 4. Exibir os próximos passos
 
 SEGURANÇA: Este script nunca sobrescreve arquivos existentes sem confirmação.
@@ -304,8 +304,8 @@ class Perfil(EnumEntidade):
     perfis_path.write_text(novo_conteudo, encoding="utf-8")
     ok(f"util/perfis.py atualizado com {len(todos_perfis)} perfil(s)")
 
-# ── 3. Atualizar data/usuarios_seed.json ────────────────────────────────────
-seed_path = Path("data/usuarios_seed.json")
+# ── 3. Atualizar data/admin_seed.json ────────────────────────────────────
+seed_path = Path("data/admin_seed.json")
 if seed_path.exists():
     # Ler dados existentes
     try:
@@ -335,7 +335,7 @@ if seed_path.exists():
                 json.dumps(novo_seed, ensure_ascii=False, indent=2),
                 encoding="utf-8"
             )
-            ok(f"data/usuarios_seed.json atualizado com admin {admin_email}")
+            ok(f"data/admin_seed.json atualizado com admin {admin_email}")
     except (json.JSONDecodeError, OSError) as e:
         erro(f"Erro ao processar seed: {e}")
 

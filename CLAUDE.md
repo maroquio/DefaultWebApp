@@ -59,7 +59,7 @@ Camadas: **Routes → DTOs → Repos → SQL → DB**. `main.py` registra repos 
 - **DB datetime**: usar `agora()` de `util/datetime_util.py` ao salvar (NUNCA `.strftime()`).
 - **Validação de form**: validators em `dtos/validators.py`; levantam `ValueError` → 422.
 - **Rate limit**: `util/api_helpers.py:checar_rate_limit` (já emite header `Retry-After`), usado por todas as rotas. `util/rate_limiter.py:com_rate_limit` é decorator legado **não usado**.
-- **Seed admin**: `backend/data/usuarios_seed.json` (perfil Administrador) — útil p/ testar páginas protegidas/admin.
+- **Seed admin**: `backend/data/admin_seed.json` (perfil Administrador) — útil p/ testar páginas protegidas/admin.
 
 ## Arquitetura frontend (`frontend/src/`)
 
