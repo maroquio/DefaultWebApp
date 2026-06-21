@@ -52,13 +52,25 @@ Ele reescreve, sem apagar arquivos existentes sem confirmação:
 
 ### 2b. Deploy — edite à mão
 **`deploy/docker-compose.yml`**:
+- **`name: <slug>` (topo do arquivo) — OBRIGATÓRIO e o mais esquecido.** (hoje `name: dwa`)
 - `container_name: <slug>.<dominio>`  (hoje `dwa.ifes.site`)
 - `ports: ["<porta_host>:8000"]`  (hoje `8410:8000`)
-- volumes (montagem **e** declaração no fim do arquivo):
-  `<slug>_data:/app/data` e `<slug>_uploads:/app/static/uploads`  (hoje `dwa_data`/`dwa_uploads`)
+- volumes (montagem, declaração no fim **e o `name:` físico de cada volume**):
+  `<slug>_data:/app/data` e `<slug>_uploads:/app/static/uploads`, com `name: <slug>_data`/`<slug>_uploads`
+  na declaração  (hoje `dwa_data`/`dwa_uploads`)
+
+> 🚨 **CORREÇÃO 3 — `name: <slug>` no compose é OBRIGATÓRIO (causa de 502 em massa).**
+> Sem o `name:` no topo, o Compose deriva o nome do projeto da **pasta** do arquivo (`deploy/`),
+> então **todo fork vira o mesmo projeto `deploy`** no host. Como o `Jenkinsfile` roda
+> `docker compose down --remove-orphans` antes do `up`, **cada deploy DERRUBA os containers dos
+> outros forks** → 502 Bad Gateway em todos, menos o último deployado. O `name` precisa ser
+> **único por projeto** no VPS. Confirmado na prática (06/2026): cavi/girochoffer/lancebet
+> colidiam todos no projeto `deploy`; só ficava de pé o último deploy.
 
 > ⚠️ Renomear os volumes é **obrigatório**: dois projetos com `dwa_data` no mesmo host Docker
-> compartilhariam/colidiriam o banco SQLite e os uploads.
+> compartilhariam/colidiriam o banco SQLite e os uploads. Fixe o `name:` de cada volume (nome
+> físico no host) para os dados **não dependerem** do project name — assim renomear o projeto
+> nunca cria um volume vazio por engano.
 
 **`deploy/Jenkinsfile`** (gera o `backend/.env` de produção no CI) — define as variáveis abaixo:
 

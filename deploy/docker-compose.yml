@@ -1,3 +1,10 @@
+# ⚠️ NOME DO PROJETO COMPOSE — OBRIGATÓRIO trocar por fork (ver docs/FORKING.md §2b).
+# Sem este `name:`, o Compose deriva o nome do projeto da PASTA do arquivo (`deploy/`),
+# então TODO fork vira o mesmo projeto "deploy" no host. Consequência: cada deploy roda
+# `docker compose down --remove-orphans` e DERRUBA os containers dos outros forks
+# (502 Bad Gateway nos demais). O `name` precisa ser ÚNICO por projeto no VPS.
+name: dwa
+
 # Execute a partir do diretório deploy/ (ou aponte -f deploy/docker-compose.yml).
 # O contexto de build é a RAIZ do repositório, pois o Dockerfile multi-stage
 # precisa de frontend/ (build do SPA) e backend/ (API FastAPI).
@@ -25,5 +32,10 @@ services:
       start_period: 40s
 
 volumes:
+  # `name:` fixa o nome FÍSICO do volume no host (sem o prefixo do projeto).
+  # Ao trocar o `name:` do projeto (topo) por fork, troque também estes para
+  # `<slug>_data`/`<slug>_uploads` — assim os dados não dependem do project name.
   dwa_data:
+    name: dwa_data
   dwa_uploads:
+    name: dwa_uploads
